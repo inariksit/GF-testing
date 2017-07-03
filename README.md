@@ -12,7 +12,8 @@ Generating test cases for GF grammars
   * For semantic purposes, ideally at least one human and non-human noun
   * All pronouns, if they show in verbal inflection; but when testing an unrelated feature, should just stick to one pronoun
   * Determiners should have variation: e.g. articles, numbers, demonstratives, possessives
- 
+* Test for empty strings in grammars! They may require just the right combination of parameters to show themselves; easy example, some case for some noun is linearised as `[]` instead of `nonExist`, and combined with a certain preposition (or PartNP or PossNP) it gets chosen. 
+
 ## Slightly more advanced ideas
 * Define groups of functions as pools where to draw constructors to form trees. Like soft whitelists; “this pool is meant to test relative clauses”, and then generate, e.g. using FEAT, from this pool
   * Different pools can partially overlap, and some constructors probably appear in all of them (such as `UseN`).
