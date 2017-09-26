@@ -4,15 +4,17 @@ module Lib
 
 import Grammar
 import Paths_GF_testing
+import Control.Applicative
 import Debug.Trace
 
 someFunc :: IO ()
 someFunc = do
   grName <- getDataFileName "MiniTest.pgf" 
-  gr <- readGrammar grName
+  gr <- readGrammar grName  
   let funsWithArgs = filter hasArg $ symbols gr
   let nextLevels = map (nextLevel gr) funsWithArgs
-  pr $ (zip3 funsWithArgs nextLevels (map (map $ linearize gr) nextLevels))
+  mapM_ pr $ (zip3 funsWithArgs nextLevels (map (map $ linearize gr) nextLevels))
+
   --let upToFive = levels gr (funsWithArgs !! 6)
   --mapM_ (print . \(i,trs) -> (i, map (linearize gr) trs)) $ upToFive
 
@@ -27,27 +29,36 @@ levels gr s = take 5 $ iterate go firstLevel
 
 
 nextLevel :: Grammar -> Symbol -> [Tree]
-nextLevel gr s = trees
+nextLevel gr origS = concat trees
 
  where
-  (argCats,resCat) = typ s -- e.g. ([Adj,CN],CN) for AdjCN
+  (argCats,resCat) = typ origS -- e.g. ([Adj,CN],CN) for AdjCN
 
   -- gives default tree that uses the function we are testing
-  defTree x | x == resCat = App s (defaultTree gr `map` argCats)
+  defTree x | x == resCat = App origS (defaultTree gr <$> argCats)
             | otherwise   = defaultTree gr x
+
 
   -- All functions in the grammar that use the result category
   funs = [ s | s@(Symbol _ (args, _)) <- symbols gr
-             , resCat `elem` args]  :: [Symbol]
+             , resCat `elem` args
+             , s /= origS ]  :: [Symbol]
 
   -- Apply the previously found functions, get trees.
-  trees = [ App f dts | f <- funs 
+  trees = [ App f <$> sequence dts | f <- funs 
                       , let (args,_) = typ f
-                      , let dts = map defTree args ]
+                      , let dts = map smTree args ]
+--                      , let dts = [map defTree args] ]
 
+  -- gives default tree that uses the function we are testing
+  smTree :: Cat -> [Tree]
+  smTree x | x == resCat = App origS <$> sequence (smallestTrees gr <$> argCats)
+           | otherwise   = smallestTrees gr x
 
 --------------------------------------------------------------------------------
-pr = mapM_ print
+pr (funName,trees,lins) =
+  do print funName
+     mapM_ print (zip trees lins)
 
 
 hasArg :: Symbol -> Bool
@@ -55,7 +66,14 @@ hasArg s = case s of
   Symbol _ ([], _) -> False
   _                -> True
 
---TODO: actually smart metric to get relevant trees!
+smallestTrees :: Grammar -> Cat -> [Tree]
+smallestTrees gr c = map (featIth gr c size) [0..amount-1]
+ where
+  (size,amount) = head $ [ (size,amount) | size <- [1..100]
+                                         , let amount = featCard gr c size
+                                         , amount > 0 ]
+
+-- Just a dummy function for getting a quick input of nextLevel
 defaultTree :: Grammar -> Cat -> Tree
 defaultTree gr c = featIth gr c nonEmptyCard 0
 
