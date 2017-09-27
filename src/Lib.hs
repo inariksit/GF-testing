@@ -55,8 +55,8 @@ nextLevel gr origF = concat trees
            | otherwise   = smallestTrees gr x
 
   -- gives smallest trees that use the function we are testing
-  repTree x | x == resCat = App origF <$> sequence (representativeTrees gr <$> argCats)
-            | otherwise   = trace ("defaultTrees: " ++ show (defaultTrees gr x)) $ representativeTrees gr x
+  repTree x | x == resCat = App origF <$> sequence (representativeTrees 4 gr <$> argCats)
+            | otherwise   = representativeTrees 4 gr x
 
   -- 1) Get all functions in the grammar that use the result category
   -- 2) Get smallest argument trees to the functions; apply the functions to them 
@@ -77,16 +77,22 @@ hasArg s = case s of
   _                -> True
 
 -- First tree of each size
-representativeTrees :: Grammar -> Cat -> [Tree]
-representativeTrees gr c = trace ("repTrees: " ++ show (filter norepeat $ featIth gr c <$> take 4 cards <*> [0]))
- $ filter norepeat $ featIth gr c <$> take 4 cards <*> [0]
+representativeTrees :: Int -> Grammar -> Cat -> [Tree]
+representativeTrees i gr cat = trace ("repTrees: " ++ show trees) $ trees
  where
-  cards = [ size | size <- [1..100]
-                 , let amount = featCard gr c size
-                 , amount > 0 ]
-  norepeat :: Tree -> Bool
-  norepeat t = let tops = ["TODO"] in nub tops == tops
+  trees = [ tree | card <- take i cards
+                 , let tree = featIth gr cat card 0 --TODO
+                 , norepeat tree ]
 
+  cards = [ size | size <- [1..100]
+                 , featCard gr cat size > 0 ]
+
+  norepeat :: Tree -> Bool
+  norepeat t = let tops = symbols [] t in nub tops == tops
+
+  symbols :: [Symbol] -> Tree -> [Symbol]
+  symbols as (App tp []) = tp:as
+  symbols as (App tp xs) = concatMap (symbols (tp:as)) xs 
 
 -- All trees of the smallest size
 smallestTrees :: Grammar -> Cat -> [Tree]
@@ -103,3 +109,4 @@ defaultTrees gr c = [featIth gr c nonEmptyCard 0]
  where
   nonEmptyCard = head $ [ card | card <- [1..100]
                                , featCard gr c card > 0 ]
+
