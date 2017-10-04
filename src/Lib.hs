@@ -10,15 +10,15 @@ import Debug.Trace
 
 someFunc :: IO ()
 someFunc = do
-  grName <- getDataFileName "MiniTest.pgf" 
+  grName <- getDataFileName "TestLang.pgf" 
   gr <- readGrammar grName  
   let funsWithArgs = filter hasArg $ symbols gr
   
-  let nextLevels = take 3 $ map (nextLevel gr) funsWithArgs
+  let nextLevels = map (nextLevel gr) funsWithArgs
+  --mapM_ print $ map (bracketedLin gr) (filter norepeat $ concat nextLevels)
 
 
-  mapM_ pr $ (zip3 funsWithArgs nextLevels (map (map (linearize gr)) nextLevels))
---  mapM_ print $ take 2 (zip3 funsWithArgs nextLevels (map (map (tabularLin gr)) nextLevels))
+  mapM_ pr $  (zip3 funsWithArgs nextLevels (map (map (linearize gr)) nextLevels))
 
   --let upToFive = levels gr (funsWithArgs !! 6)
   --mapM_ (print . \(i,trs) -> (i, map (linearize gr) trs)) $ upToFive
@@ -29,19 +29,10 @@ someFunc = do
        pr' (trees,lins)
 
   pr' ([],[]) = putStrLn ""
-  pr' (x:xs,y:ys) = do print x 
-                       print y 
+  pr' (t:ts,l:ls) = do putStrLn (show t ++ " : " ++ show (snd $ typ $ top t))
+                       print l 
                        putStrLn ""
-                       pr' (xs,ys)
-
-
---TODO: this doesn't work because the new calls to nextLevel
---don't keep the original symbol in mind.
---levels :: Grammar -> Symbol -> [(Int,[Tree])]
---levels gr s = take 5 $ iterate go firstLevel
--- where
---  firstLevel = (1, nextLevel gr s)
---  go (n,xs) = (n+1, concatMap (nextLevel gr . top) xs)
+                       pr' (ts,ls)
 
 
 nextLevel :: Grammar -> Symbol -> [Tree]
@@ -64,13 +55,15 @@ nextLevel gr origF = concat trees
 
   -- 1) Get all functions in the grammar that use the result category
   -- 2) Get smallest argument trees to the functions; apply the functions to them 
-  trees = [ concat interestingTrees
---  trees = [ filter norepeat $ App f <$> sequence argTrees -- 
+--  trees = [ concat interestingTrees
+  trees = [ filter norepeat $ App f <$> sequence argTrees -- 
             | f@(Symbol _ (args, _)) <- symbols gr
             , resCat `elem` args
             , f /= origF -- don't apply another AdjCN if the original is AdjCN
 
-            , let argTrees = repTree 3 <$> args :: [[Tree]]
+--            , let argTrees = repTree 3 <$> args :: [[Tree]]
+--            , let argTrees = map smTree args 
+            , let argTrees = map defTree args 
 
 --            , let bestTrees = foldl1 (betterExample gr) <$> argTrees
 --            , let allTrees = [App f bestTrees]
@@ -89,8 +82,6 @@ nextLevel gr origF = concat trees
                                        , let rtLin = trace (linearize gr resTree) $ linearize gr resTree
                                         ]
             ]
---            , let argTrees = map smTree args ]
---            , let argTrees = map defTree args ]
 --}
 
 --------------------------------------------------------------------------------
@@ -125,11 +116,13 @@ smallestTrees gr c = map (featIth gr c size) [0..amount-1]
 
 -- Just a dummy function for getting a quick input of nextLevel
 defaultTrees :: Grammar -> Cat -> [Tree]
-defaultTrees gr c = [featIth gr c nonEmptyCard 0]
+defaultTrees gr c = case nonEmptyCards of
+  []   -> []
+  x:xs -> [featIth gr c x 0]
 
  where
-  nonEmptyCard = head $ [ card | card <- [1..100]
-                               , featCard gr c card > 0 ]
+  nonEmptyCards = [ card | card <- [1..100]
+                        , featCard gr c card > 0 ]
 
 
 --------------------------------------------------------------------------------
@@ -152,14 +145,19 @@ betterExample gr t1 t2 =
 -- Not yet functional, just testing outputs and figuring out what to do
 changesInLin :: Grammar -> Symbol -> [Tree] -> Bool
 changesInLin gr predVP args@[you,drinkBeer] =
-    trace ("=== changesInLin:\n" ++ show youLin ++ "\n" ++ show drinkBeerLin ++ "\n" ++ show youDrinkBeerLin ++ "===") $ 
-    True
+    --trace ("=== changesInLin:\n" ++ show youLin ++ "\n" 
+    --  ++ show drinkBeerLin ++ "\n" 
+    --  ++ show youDrinkBeerLin ++ "\n"
+    --  ++ show onlyDrinkBeer ++ "===") $ 
+    drinkBeerLin /= onlyDrinkBeer
  where
-  drinkBeerLin = tabularLin gr drinkBeer :: [(String,String)]
-  youLin = tabularLin gr you :: [(String,String)]
+  lin = linearize -- tabularLin
+  drinkBeerLin = lin gr drinkBeer 
+  youLin = lin gr you 
   youDrinkBeer = App predVP args :: Tree
-  youDrinkBeerLin = tabularLin gr youDrinkBeer
-changesInLin gr predVP args = trace ("changesInLin: hit _ with " ++ show (length args, args)) $ True
+  youDrinkBeerLin = lin gr youDrinkBeer
+  onlyDrinkBeer = unwords (words youDrinkBeerLin \\ words youLin)
+changesInLin gr predVP args = True --trace ("changesInLin: hit _ with " ++ show (length args, args)) $ True
 
 
 isSubtree :: Tree -> Tree -> Bool
