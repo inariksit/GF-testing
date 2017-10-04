@@ -13,7 +13,8 @@ fun
 
   give_V3 : V3 ;
 
-  know_V2 : V2 ;
+  see_V2 : V2 ;
+
   know_VQ : VQ ;
 
   married_A2 : A2 ;
@@ -24,6 +25,15 @@ fun
   go_V : V ;
   come_V : V ;
 
+-- From Structural
+
+  always_AdV : AdV ;
+  so_AdA : AdA ;
+  and_Conj : Conj ;
+  every_Det : Det ;
+  he_Pron, i_Pron, she_Pron, they_Pron, we_Pron, youSg_Pron, youPl_Pron : Pron ;
+  if_Subj : Subj ;
+  can_VV : VV ;
 
 
 } ;

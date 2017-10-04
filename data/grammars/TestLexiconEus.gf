@@ -1,3 +1,4 @@
 concrete TestLexiconEus of TestLexicon = CatEus **
   TestLexiconI with
-    (Lexicon = LexiconEus) ;
+    (Lexicon = LexiconEus),
+    (Structural = StructuralEus) ;
