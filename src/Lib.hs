@@ -1,38 +1,36 @@
 module Lib
-    ( someFunc
+    ( assertLin
+    , hasArg
+    , lookupSymbol
     ) where
 
 import Grammar
 import Paths_GF_testing
 import Control.Applicative
 import Data.List
+import Data.Maybe
 import Debug.Trace
 
-someFunc :: IO ()
-someFunc = do
-  grName <- getDataFileName "TestLang.pgf" 
-  gr <- readGrammar grName  
-  let funsWithArgs = filter hasArg $ symbols gr
-  
-  let nextLevels = map (nextLevel gr) funsWithArgs
-  --mapM_ print $ map (bracketedLin gr) (filter norepeat $ concat nextLevels)
 
+assertLin :: Grammar -> Symbol -> IO ()
+assertLin gr fun = do
+  let treesUsingFun = nextLevel gr fun
+  print fun
+  pr (treesUsingFun, map (linearize gr) treesUsingFun)
+ where
+  pr ([],[]) = putStrLn ""
+  pr (t:ts,l:ls) = do putStrLn (show t ++ " : " ++ show (snd $ typ $ top t))
+                      print l 
+                      putStrLn ""
+                      pr (ts,ls)
 
-  mapM_ pr $  (zip3 funsWithArgs nextLevels (map (map (linearize gr)) nextLevels))
-
-  --let upToFive = levels gr (funsWithArgs !! 6)
-  --mapM_ (print . \(i,trs) -> (i, map (linearize gr) trs)) $ upToFive
-
- where 
-  pr (funName,trees,lins) =
-    do print funName
-       pr' (trees,lins)
-
-  pr' ([],[]) = putStrLn ""
-  pr' (t:ts,l:ls) = do putStrLn (show t ++ " : " ++ show (snd $ typ $ top t))
-                       print l 
-                       putStrLn ""
-                       pr' (ts,ls)
+lookupSymbol :: Grammar -> String -> Symbol
+lookupSymbol gr str = 
+  head funsWithArgs `fromMaybe`
+       lookup (mkName str) (symb2table <$> symbols gr)
+ where
+  symb2table s@(Symbol nm tp) = (nm,s)
+  funsWithArgs = filter hasArg $ symbols gr
 
 
 nextLevel :: Grammar -> Symbol -> [Tree]
@@ -163,42 +161,3 @@ changesInLin gr predVP args = True --trace ("changesInLin: hit _ with " ++ show 
 isSubtree :: Tree -> Tree -> Bool
 isSubtree t1 t2 = t1 `elem` args t2
 
-
---TODO:
-{-
-Testing the function (Symbol) UsePron:
-
-defaultTrees: [break_V2]
-(ComplV2(break_V2,UsePron(i_Pron)),"break me")
-
-defaultTrees: [UseV(travel_V)]
-(PredVP(UsePron(i_Pron),UseV(travel_V)),"I do not travel")
-
-defaultTrees: [in_Prep]
-(PrepNP(in_Prep,UsePron(i_Pron)),"in me")
-
-(UttNP(UsePron(i_Pron)),"me")
-
-
-Testing the function ComplV2
-* The testable trees are: 
-x = ComplV2(break_V2,UsePN(paris_PN))
-y = ComplV2(break_V2,MassNP(UseN(animal_N))
-z = ComplV2(break_V2,DetCN(aPl_Det,UseN(animal_N)))
-
-defaultTrees for AdvVP: [already_Adv]
-(AdvVP(x,already_Adv),"break Paris already")
-(AdvVP(y,already_Adv),"break animal already")
-(AdvVP(z,already_Adv),"break animals already")
-
-Here we don't have to show the user all 3 forms: the linearisation of x, y and z
-is always the same.
-
-defaultTrees for PredVP: [UsePN(paris_PN)]
-(PredVP(UsePN(paris_PN),x)
-(PredVP(UsePN(paris_PN),y)
-(PredVP(UsePN(paris_PN),z)
-
-Here we would want more defaultTrees: "I break Paris/animals" vs. "he breaks Paris/animals":
-the trees x, y and z have different linearization depending on the first arg to PredVP.
---}
