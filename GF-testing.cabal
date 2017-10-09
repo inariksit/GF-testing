@@ -12,17 +12,18 @@ build-type:          Simple
 extra-source-files:  README.md
 cabal-version:       >=1.10
 
-data-files:    *.pgf
+data-files:    *.pgf, *.txt
 
 data-dir:      data/
 
 library
   hs-source-dirs:      src, grammarfeat
-  exposed-modules:     Lib, Grammar
+  exposed-modules:     Lib, GrammarC
   other-modules:       Paths_GF_testing
   build-depends:       base >= 4.7 && < 5
                      , containers
                      , gf
+                     , pgf2
   default-language:    Haskell2010
 
 executable GF-testing-exe

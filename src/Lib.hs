@@ -4,7 +4,7 @@ module Lib
     , lookupSymbol
     ) where
 
-import Grammar
+import GrammarC
 import Paths_GF_testing
 import Control.Applicative
 import Data.List
@@ -19,7 +19,7 @@ assertLin gr fun = do
   pr (treesUsingFun, map (linearize gr) treesUsingFun)
  where
   pr ([],[]) = putStrLn ""
-  pr (t:ts,l:ls) = do putStrLn (show t ++ " : " ++ show (snd $ typ $ top t))
+  pr (t:ts,l:ls) = do putStrLn (show t ++ " : " ++ (snd $ typ $ top t))
                       print l 
                       putStrLn ""
                       pr (ts,ls)
@@ -130,12 +130,12 @@ hasArg s = case s of
   Symbol _ ([], _) -> False
   _                -> True
 
-betterExample :: Grammar -> Tree -> Tree -> Tree
-betterExample gr t1 t2 = 
-  if length tabLinT2 >= length tabLinT1 then t2 else t1
- where
-  tabLinT1 = nub $ map snd $ tabularLin gr t1 
-  tabLinT2 = nub $ map snd $ tabularLin gr t2
+--betterExample :: Grammar -> Tree -> Tree -> Tree
+--betterExample gr t1 t2 = 
+--  if length tabLinT2 >= length tabLinT1 then t2 else t1
+-- where
+--  tabLinT1 = nub $ map snd $ tabularLin gr t1 
+--  tabLinT2 = nub $ map snd $ tabularLin gr t2
 
 
 -- Tells whether the tree to be tested, e.g. VP "drink beer", 

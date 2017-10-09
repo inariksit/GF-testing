@@ -1,6 +1,6 @@
 module Main where
 
-import Grammar
+import GrammarC
 import Lib
 import Paths_GF_testing
 import System.Environment
