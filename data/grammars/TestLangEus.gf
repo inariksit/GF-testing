@@ -12,5 +12,6 @@ concrete TestLangEus of TestLang =
   TextX,
   IdiomEus,
   TenseX,
-  TestLexiconEus
+  LexiconEus
+--  TestLexiconEus
   ** {} ;

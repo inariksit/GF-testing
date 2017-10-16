@@ -19,5 +19,16 @@ abstract TestLang =
   Idiom,
   Tense,
 --  Transfer,
-  TestLexicon
-  ** { flags startcat=Phr ; } ;
+--  TestLexicon
+  Lexicon
+  ** { 
+
+flags startcat=Phr ; 
+
+fun
+
+-- Some ad hoc constructs for defaultTree
+  default_NP : NP ;
+
+
+} ;
