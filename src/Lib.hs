@@ -2,6 +2,7 @@ module Lib
     ( assertLin
     , hasArg
     , lookupSymbol
+    , bestExamples
     ) where
 
 import GrammarC
@@ -19,7 +20,7 @@ assertLin gr fun = do
   pr (treesUsingFun, map (linearize gr) treesUsingFun)
  where
   pr ([],[]) = putStrLn ""
-  pr (t:ts,l:ls) = do putStrLn (show t ++ " : " ++ (snd $ typ $ top t))
+  pr (t:ts,l:ls) = do putStrLn (show t ++ " : " ++ snd (typ $ top t))
                       print l 
                       putStrLn ""
                       pr (ts,ls)
@@ -63,7 +64,7 @@ nextLevel gr origF = concat trees
 --            , let argTrees = map smTree args 
             , let argTrees = map defTree args 
 
---            , let bestTrees = foldl1 (betterExample gr) <$> argTrees
+--            , let bestTrees = ... argTres
 --            , let allTrees = [App f bestTrees]
 
             , let resTrees = repTree 3 resCat --all representative trees of the interesting category
@@ -84,7 +85,6 @@ nextLevel gr origF = concat trees
 
 --------------------------------------------------------------------------------
 
-
 representativeTrees :: Int -> Grammar -> Cat -> [Tree]
 representativeTrees i gr cat = trace ("repTrees: " ++ show trees) $ concat trees
  where
@@ -102,15 +102,15 @@ norepeat :: Tree -> Bool
 norepeat t = let tops = collapse t in nub tops == tops
 
 collapse :: Tree -> [Symbol]
-collapse (App tp as) = tp : (concat $ map collapse as)
+collapse (App tp as) = tp : concatMap collapse as
 
 -- All trees of the smallest size
 smallestTrees :: Grammar -> Cat -> [Tree]
 smallestTrees gr c = map (featIth gr c size) [0..amount-1]
  where
-  (size,amount) = head $ [ (size,amount) | size <- [1..100]
-                                         , let amount = featCard gr c size
-                                         , amount > 0 ]
+  (size,amount) = head [ (size,amount) | size <- [1..100]
+                                       , let amount = featCard gr c size
+                                       , amount > 0 ]
 
 -- Just a dummy function for getting a quick input of nextLevel
 defaultTrees :: Grammar -> Cat -> [Tree]
@@ -130,12 +130,29 @@ hasArg s = case s of
   Symbol _ ([], _) -> False
   _                -> True
 
---betterExample :: Grammar -> Tree -> Tree -> Tree
---betterExample gr t1 t2 = 
---  if length tabLinT2 >= length tabLinT1 then t2 else t1
--- where
---  tabLinT1 = nub $ map snd $ tabularLin gr t1 
---  tabLinT2 = nub $ map snd $ tabularLin gr t2
+
+
+bestExamples :: Grammar -> [Tree] -> [Tree]
+bestExamples gr [] = []
+bestExamples gr trees = 
+  [ t | (t,tl) <- zip trees indexedTabLins :: [(Tree, [((String,String),Int)] )]
+      , diff tl == maxDiff ]
+ where
+  tabLins = map (tabularLin gr) trees :: [[(String,String)]] -- one list for one tree
+
+  indexedTabLins = [ go tl [] | tl <- tabLins ] :: [[((String,String),Int)]]
+
+  diff tabLins = maximum (map snd tabLins)
+  maxDiff = maximum (map diff indexedTabLins)
+
+  go :: [(String,String)] -> [((String,String),Int)] -> [((String,String),Int)]
+  go []           res = res -- :: [((String,String),Int)]
+  go (tl:tabLins) []  = go tabLins [(tl,1)]
+  go (tl:tabLins) res = 
+    case lookup (snd tl) [ (s,i) | ((f,s),i) <- res ] of
+      Just ind -> go tabLins $ (tl,ind):res
+      Nothing -> let largestInd = maximum (map snd res)
+                  in go tabLins $ (tl,largestInd+1):res
 
 
 -- Tells whether the tree to be tested, e.g. VP "drink beer", 
