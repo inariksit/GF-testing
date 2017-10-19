@@ -132,47 +132,32 @@ hasArg s = case s of
 
 
 
-bestExamples :: Grammar -> [Tree] -> [Tree]
+--bestExamples :: Grammar -> [Tree] -> [Tree]
 bestExamples gr [] = []
-bestExamples gr trees = 
-  [ t | (t,tl) <- zip trees indexedTabLins :: [(Tree, [((String,String),Int)] )]
-      , diff tl == maxDiff ]
+bestExamples gr trees = -- map fst $
+  --nubBy (\(_,tl1) (_,tl2) -> map snd tl1 == map snd tl2) -- e.g. #1,#2,#2 and #1,#1,#2
+--    [ (t,tl) | (t,tl) <- zip trees indexedTabLins :: [(Tree, [(Int,(String,String))] )]
+--             , diff tl == maxDiff ]
+
+   -- Debug version
+   sort [ tl | (t,tl) <- zip trees indexedTabLins, diff tl == maxDiff ] 
+
  where
   tabLins = map (tabularLin gr) trees :: [[(String,String)]] -- one list for one tree
 
-  indexedTabLins = [ go tl [] | tl <- tabLins ] :: [[((String,String),Int)]]
+  indexedTabLins = [ go tl [] | tl <- tabLins ] :: [[(Int,(String,String))]]
 
-  diff tabLins = maximum (map snd tabLins)
+  diff tabLins = maximum (map fst tabLins)
   maxDiff = maximum (map diff indexedTabLins)
 
-  go :: [(String,String)] -> [((String,String),Int)] -> [((String,String),Int)]
+  go :: [(String,String)] -> [(Int,(String,String))] -> [(Int,(String,String))]
   go []           res = res -- :: [((String,String),Int)]
-  go (tl:tabLins) []  = go tabLins [(tl,1)]
+  go (tl:tabLins) []  = go tabLins [(1,tl)]
   go (tl:tabLins) res = 
-    case lookup (snd tl) [ (s,i) | ((f,s),i) <- res ] of
-      Just ind -> go tabLins $ (tl,ind):res
-      Nothing -> let largestInd = maximum (map snd res)
-                  in go tabLins $ (tl,largestInd+1):res
-
-
--- Tells whether the tree to be tested, e.g. VP "drink beer", 
--- changes when combined with a given argument
--- Not yet functional, just testing outputs and figuring out what to do
-changesInLin :: Grammar -> Symbol -> [Tree] -> Bool
-changesInLin gr predVP args@[you,drinkBeer] =
-    --trace ("=== changesInLin:\n" ++ show youLin ++ "\n" 
-    --  ++ show drinkBeerLin ++ "\n" 
-    --  ++ show youDrinkBeerLin ++ "\n"
-    --  ++ show onlyDrinkBeer ++ "===") $ 
-    drinkBeerLin /= onlyDrinkBeer
- where
-  lin = linearize -- tabularLin
-  drinkBeerLin = lin gr drinkBeer 
-  youLin = lin gr you 
-  youDrinkBeer = App predVP args :: Tree
-  youDrinkBeerLin = lin gr youDrinkBeer
-  onlyDrinkBeer = unwords (words youDrinkBeerLin \\ words youLin)
-changesInLin gr predVP args = True --trace ("changesInLin: hit _ with " ++ show (length args, args)) $ True
+    case lookup (snd tl) [ (s,i) | (i,(f,s)) <- res ] of
+      Just ind -> go tabLins $ (ind,tl):res
+      Nothing -> let largestInd = maximum (map fst res)
+                  in go tabLins $ (largestInd+1,tl):res
 
 
 isSubtree :: Tree -> Tree -> Bool
