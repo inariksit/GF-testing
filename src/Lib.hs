@@ -70,11 +70,8 @@ nextLevel gr origF = concat trees
             , let resTrees = repTree 3 resCat --all representative trees of the interesting category
             , let allTrees = filter norepeat $ App f <$> sequence argTrees 
 
-            -- This is just testing output, no significance whatsoever
-            , let true = and $ changesInLin gr f <$> sequence argTrees
-            -- TODO: check out bracketed strings ???
 
-            , let interestingTrees = if not true then [] else
+            , let interestingTrees = if not True then [] else
                                       [ treesUsingResTree 
                                        | resTree <- resTrees
                                        , let treesUsingResTree = filter (isSubtree resTree) allTrees
@@ -134,13 +131,13 @@ hasArg s = case s of
 
 --bestExamples :: Grammar -> [Tree] -> [Tree]
 bestExamples gr [] = []
-bestExamples gr trees = -- map fst $
+bestExamples gr trees = --map fst $
   --nubBy (\(_,tl1) (_,tl2) -> map snd tl1 == map snd tl2) -- e.g. #1,#2,#2 and #1,#1,#2
---    [ (t,tl) | (t,tl) <- zip trees indexedTabLins :: [(Tree, [(Int,(String,String))] )]
---             , diff tl == maxDiff ]
+  --  [ (t,tl) | (t,tl) <- zip trees indexedTabLins :: [(Tree, [(Int,(String,String))] )]
+  --           , diff tl == maxDiff ]
 
    -- Debug version
-   sort [ tl | (t,tl) <- zip trees indexedTabLins, diff tl == maxDiff ] 
+   sort [ tl | (t,tl) <- zip trees indexedTabLins ] 
 
  where
   tabLins = map (tabularLin gr) trees :: [[(String,String)]] -- one list for one tree
