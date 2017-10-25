@@ -35,5 +35,4 @@ fun
   if_Subj : Subj ;
   can_VV : VV ;
 
-
 } ;

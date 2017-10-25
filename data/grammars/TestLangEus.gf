@@ -12,6 +12,10 @@ concrete TestLangEus of TestLang =
   TextX,
   IdiomEus,
   TenseX,
+  StructuralEus,
   LexiconEus
 --  TestLexiconEus
-  ** {} ;
+  ** open SyntaxEus in {
+lin
+  default_NP = mkNP beer_N ;
+} ;

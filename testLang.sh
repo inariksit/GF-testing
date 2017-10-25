@@ -11,6 +11,10 @@ if [[ $LANG == dutch ]]; then
   ISO="Dut"
   LANGISO="LangDut.gf"
 fi
+if [[ $LANG == estonian ]]; then
+  ISO="Est"
+  LANGISO="LangEst.gf"
+fi
 
 # 1) Build the TestLang.pgf with Basque, using the old grammar
 cd data

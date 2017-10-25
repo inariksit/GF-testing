@@ -12,6 +12,7 @@ concrete TestLangEst of TestLang =
   TextX,
   IdiomEst,
   TenseX,
-  LexiconEst
+  StructuralEst,
+  LexiconEst -- [apple_N,war_N,woman_N]
 --  TestLexiconEst
   ** {} ;
