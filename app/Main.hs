@@ -8,6 +8,8 @@ import System.Environment
 import Data.List
 import Data.Maybe
 
+--import qualified PGF2
+
 main :: IO ()
 main = do
   grName <- getDataFileName "TestLang.pgf" 
@@ -16,27 +18,19 @@ main = do
   gr <- readGrammar grName  
   mapM_ (print.(\(x,y,z,_) -> (x,y,z))) $ concrCats gr
 
-  mapM_ print (sort $ swapLinFuns gr)
+  mapM_ print (sort $ swapLinFuns gr) -- Not a good idea for languages with 10k+ categories >_>
 --  mapM_ print (productions gr `map` [100..120])
   putStrLn "---"
-  let zeroAgrTrees = same2 
+  let zeroArgTrees = same2 
        [ (ccat, App symbol []) 
         | (ccat,(fun,[])) <- swapLinFuns gr
         , let cat = getCat ccat
         , let symbol = Symbol fun ([],cat) ]
 
-  --let b = findTrees gr a
-  --let c = findTrees gr (a++b)
-  --let d = findTrees gr (a++b++c)
-  --let e = findTrees gr (a++b++c++d)
-  --mapM_ (print.length) [a,b,c,d,e]
-
-  --TODO: make it actually behave the same way as the manual a++b++c… example!
-  --this uses only b to get c, only c to get d etc.
-  let trees = scanr findTrees zeroAgrTrees (take 10 $ repeat gr)
-  print $ (map length trees, map (length.nub) trees)
-  mapM_ (\xs -> mapM_ print (same2 xs) >> putStrLn "---") trees
---  mapM_ print (sort $ nub $ concat trees)
+  --use scanl to find out how many trees you get at each step
+  let trees = nub $ foldl findTrees zeroArgTrees (take 10 $ repeat gr)
+  --mapM_ print $ sort trees
+  print $ length trees
 
 
   putStrLn "END"
@@ -67,9 +61,9 @@ main = do
 
   swapLinFuns gr = [ (cc,(fun,args))  | (fun,args,cc) <- linFunctions gr ]
 
-  findTrees :: Grammar -> [(ConcrCat,Tree)] -> [(ConcrCat,Tree)]
-  findTrees gr nArgTrees 
-    = [ ( ccat, App symbol foundTrees ) 
+  findTrees :: [(ConcrCat,Tree)] -> Grammar -> [(ConcrCat,Tree)]
+  findTrees nArgTrees gr
+    = nArgTrees ++ [ ( ccat, App symbol foundTrees ) 
          | (ccat,(fun,args)) <- swapLinFuns gr
          , let symbol = Symbol fun (map getCat args,getCat ccat)
          , let foundTrees = findFuns args nArgTrees :: [Tree]
