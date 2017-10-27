@@ -18,27 +18,29 @@ main = do
   gr <- readGrammar grName  
   mapM_ (print.(\(x,y,z,_) -> (x,y,z))) $ concrCats gr
 
-  mapM_ print (sort $ swapLinFuns gr) -- Not a good idea for languages with 10k+ categories >_>
+--  mapM_ print (sort $ swapLinFuns gr) -- Not a good idea for languages with 10k+ categories >_>
 --  mapM_ print (productions gr `map` [100..120])
   putStrLn "---"
   let zeroArgTrees = same2 
        [ (ccat, App symbol []) 
         | (ccat,(fun,[])) <- swapLinFuns gr
         , let cat = getCat ccat
-        , let symbol = Symbol fun ([],cat) ]
+        , let symbol = Symbol fun ([],cat) [([],ccat)] ] --TODO 
 
   --use scanl to find out how many trees you get at each step
   let trees = nub $ foldl findTrees zeroArgTrees (take 10 $ repeat gr)
   --mapM_ print $ sort trees
-  print $ length trees
+  --print $ length $ swapLinFuns gr
+  --print $ length trees
+  --print $ coercions gr
 
 
-  putStrLn "END"
+  --putStrLn "END"
 
-  --args <- getArgs
-  --case args of 
-  --  ("all":_) -> mapM_ (assertLin gr) (filter hasArg $ symbols gr)
-  --  (funNm:_) -> assertLin gr (lookupSymbol gr funNm)
+  args <- getArgs
+  case args of 
+    ("all":_) -> mapM_ (assertLin gr) (filter hasArg $ symbols gr)
+    (funNm:_) -> assertLin gr (lookupSymbol gr funNm)
 
  where
   same2 :: (Eq a) => [(a,b)] -> [(a,b)] 
@@ -59,13 +61,16 @@ main = do
   getCat (CC (Just c) _) = c
   getCat (CC Nothing _) = "TODO" --TODO: coercions
 
-  swapLinFuns gr = [ (cc,(fun,args))  | (fun,args,cc) <- linFunctions gr ]
+  swapLinFuns :: Grammar -> [(ConcrCat,(Name,[ConcrCat]))]
+  swapLinFuns gr = [ (resCcat,(fun,argCcats))  
+                    | (Symbol fun _args ccats) <- symbols gr
+                    , (argCcats,resCcat) <- ccats ]
 
   findTrees :: [(ConcrCat,Tree)] -> Grammar -> [(ConcrCat,Tree)]
   findTrees nArgTrees gr
-    = nArgTrees ++ [ ( ccat, App symbol foundTrees ) 
-         | (ccat,(fun,args)) <- swapLinFuns gr
-         , let symbol = Symbol fun (map getCat args,getCat ccat)
-         , let foundTrees = findFuns args nArgTrees :: [Tree]
+    = nArgTrees ++ [ ( resCcat, App s foundTrees ) 
+         | s@(Symbol f t ccats) <- symbols gr
+         , (argCcats,resCcat) <- ccats
+         , let foundTrees = findFuns argCcats nArgTrees :: [Tree]
          , not (null foundTrees) 
       ] 

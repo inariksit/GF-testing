@@ -15,7 +15,7 @@ import Debug.Trace
 
 assertLin :: Grammar -> Symbol -> IO ()
 assertLin gr fun = do
-  let treesUsingFun = nextLevel gr fun
+  let treesUsingFun = concat $ nextLevel gr fun
   print fun
   pr (treesUsingFun, map (linearize gr) treesUsingFun)
  where
@@ -30,15 +30,17 @@ lookupSymbol gr str =
   head funsWithArgs `fromMaybe`
        lookup (mkName str) (symb2table <$> symbols gr)
  where
-  symb2table s@(Symbol nm tp) = (nm,s)
+  symb2table s@(Symbol nm _ _) = (nm,s)
   funsWithArgs = filter hasArg $ symbols gr
 
 
-nextLevel :: Grammar -> Symbol -> [Tree]
+nextLevel :: Grammar -> Symbol -> [[Tree]] -- a list for each concrete category
 nextLevel gr origF = concat trees
 
  where
-  (argCats,resCat) = typ origF -- e.g. ([Adj,CN],CN) for AdjCN
+--  (argCats,resCat) = typ origF -- e.g. ([Adj,CN],CN) for AdjCN
+  (argCats,resCat) = head $ concrTypes origF -- e.g. ([Adj,CN],CN) for AdjCN
+
 
   -- gives default tree that uses the function we are testing
   defTree x | x == resCat = App origF <$> sequence (defaultTrees gr <$> argCats)
@@ -55,34 +57,39 @@ nextLevel gr origF = concat trees
   -- 1) Get all functions in the grammar that use the result category
   -- 2) Get smallest argument trees to the functions; apply the functions to them 
 --  trees = [ concat interestingTrees
-  trees = [ filter norepeat $ App f <$> sequence argTrees -- 
-            | f@(Symbol _ (args, _)) <- symbols gr
-            , resCat `elem` args
-            , f /= origF -- don't apply another AdjCN if the original is AdjCN
+  trees = [ [ filter norepeat $ App f <$> sequence argTrees -- 
+              | (argCcats,resCcat) <- ccats
+              , resCat `elem` argCcats
+              , f /= origF -- don't apply another AdjCN if the original is AdjCN
+              , let argTrees = map defTree argCcats  ]
 
+            | f@(Symbol _ (args, _) ccats) <- symbols gr ]
+--            , resCat `elem` args
+
+  
 --            , let argTrees = repTree 3 <$> args :: [[Tree]]
 --            , let argTrees = map smTree args 
-            , let argTrees = map defTree args 
+--            , let argTrees = map defTree argCcats 
 
---            , let bestTrees = ... argTres
---            , let allTrees = [App f bestTrees]
+----            , let bestTrees = ... argTres
+----            , let allTrees = [App f bestTrees]
 
-            , let resTrees = repTree 3 resCat --all representative trees of the interesting category
-            , let allTrees = filter norepeat $ App f <$> sequence argTrees 
+--            , let resTrees = repTree 3 resCat --all representative trees of the interesting category
+--            , let allTrees = filter norepeat $ App f <$> sequence argTrees 
 
 
-            , let interestingTrees = if not True then [] else
-                                      [ treesUsingResTree 
-                                       | resTree <- resTrees
-                                       , let treesUsingResTree = filter (isSubtree resTree) allTrees
-                                       , let rtLin = trace (linearize gr resTree) $ linearize gr resTree
-                                        ]
-            ]
---}
+--            , let interestingTrees = if not True then [] else
+--                                      [ treesUsingResTree 
+--                                       | resTree <- resTrees
+--                                       , let treesUsingResTree = filter (isSubtree resTree) allTrees
+--                                       , let rtLin = trace (linearize gr resTree) $ linearize gr resTree
+--                                        ]
+--            ]
+-- }
 
 --------------------------------------------------------------------------------
 
-representativeTrees :: Int -> Grammar -> Cat -> [Tree]
+representativeTrees :: Int -> Grammar -> ConcrCat -> [Tree]
 representativeTrees i gr cat = trace ("repTrees: " ++ show trees) $ concat trees
  where
   trees = [ [ tree | am <- [0..amount-1] 
@@ -102,7 +109,7 @@ collapse :: Tree -> [Symbol]
 collapse (App tp as) = tp : concatMap collapse as
 
 -- All trees of the smallest size
-smallestTrees :: Grammar -> Cat -> [Tree]
+smallestTrees :: Grammar -> ConcrCat -> [Tree]
 smallestTrees gr c = map (featIth gr c size) [0..amount-1]
  where
   (size,amount) = head [ (size,amount) | size <- [1..100]
@@ -110,7 +117,7 @@ smallestTrees gr c = map (featIth gr c size) [0..amount-1]
                                        , amount > 0 ]
 
 -- Just a dummy function for getting a quick input of nextLevel
-defaultTrees :: Grammar -> Cat -> [Tree]
+defaultTrees :: Grammar -> ConcrCat -> [Tree]
 defaultTrees gr c = case nonEmptyCards of
   []   -> []
   x:xs -> [featIth gr c x 0]
@@ -124,9 +131,18 @@ defaultTrees gr c = case nonEmptyCards of
 
 hasArg :: Symbol -> Bool
 hasArg s = case s of
-  Symbol _ ([], _) -> False
-  _                -> True
+  Symbol _ ([], _) _ -> False
+  _                  -> True
 
+testsAsWellAs :: (Eq a, Eq b) => [a] -> [b] -> Bool
+xs `testsAsWellAs` ys = go (xs `zip` ys)
+ where
+  go [] =
+    True
+    
+  go ((x,y):xys) =
+    and [ y' == y | (x',y') <- xys, x == x' ] &&
+    go [ xy | xy@(x',_) <- xys, x /= x' ]
 
 
 --bestExamples :: Grammar -> [Tree] -> [Tree]
@@ -159,4 +175,5 @@ bestExamples gr trees = --map fst $
 
 isSubtree :: Tree -> Tree -> Bool
 isSubtree t1 t2 = t1 `elem` args t2
+
 
