@@ -16,7 +16,7 @@ main = do
 
 --  grName <- getDataFileName "Phrasebook.pgf" 
   gr <- readGrammar grName  
-  mapM_ (print.(\(x,y,z,_) -> (x,y,z))) $ concrCats gr
+--  mapM_ (print.(\(x,y,z,_) -> (x,y,z))) $ concrCats gr
 
 --  mapM_ print (sort $ swapLinFuns gr) -- Not a good idea for languages with 10k+ categories >_>
 --  mapM_ print (productions gr `map` [100..120])
