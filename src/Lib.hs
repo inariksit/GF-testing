@@ -1,9 +1,12 @@
 module Lib
     ( assertLin
     , hasArg
-    , lookupSymbol
+    , lookupSymbols
     , bestExamples
+    , bestContext
     , treesByCCat
+    , defaultTrees
+    , concrFuns
     ) where
 
 import GrammarC
@@ -26,10 +29,9 @@ assertLin gr fun = do
                       putStrLn ""
                       pr (ts,ls)
 
-lookupSymbol :: Grammar -> String -> Symbol
-lookupSymbol gr str = 
-  head funsWithArgs `fromMaybe`
-       lookup (mkName str) (symb2table <$> symbols gr)
+lookupSymbols :: Grammar -> String -> [Symbol]
+lookupSymbols gr str = 
+  lookupAll (symb2table <$> symbols gr) (mkName str)
  where
   symb2table s@(Symbol nm _ _) = (nm,s)
   funsWithArgs = filter hasArg $ symbols gr
@@ -44,34 +46,49 @@ treesByCCat gr = bestTrees gr $ foldl findTrees zeroArgTrees (replicate 10 gr)
 
  where
   zeroArgTrees = bestTrees gr
-    [ (ccat, App symbol []) 
+    [ (ccat, App fun []) 
       | ( ccat@(CC (Just cat) _)     -- Assuming no coercions -- TODO is this correct?
         , (fun,[]) ) <- concrFuns gr -- Match only trees with 0 arguments
-      , let symbol = Symbol fun ([],cat) [([],ccat)] ]
+    ]
 
 findTrees :: [(ConcrCat,Tree)] -> Grammar -> [(ConcrCat,Tree)]
 findTrees nArgTrees gr
-    = nArgTrees ++ [ ( resCcat, App s bestArgs ) 
+    = [ ( resCcat, App s bestArgs) 
          | s@(Symbol f t ccats) <- symbols gr
          , (argCcats,resCcat) <- ccats
-         , let lookup' ccat = [ (cat,tree) | (cat,tree) <- nArgTrees, cat==ccat ]
-         , let argsOfCcat = map lookup' argCcats
-         , all (not.null) argsOfCcat -- if >1 of the argCcats is not in nArgTrees, break
---         , let bestArgs = map (snd.head) argsOfCcat ]
-         , let bestArgs = map (snd.bestTree gr) argsOfCcat ]
+         , let argsByCcat = map (lookupAll nArgTrees) argCcats :: [[Tree]]
+         , all (not.null) argsByCcat -- if ≤1 of the argCcats is not in nArgTrees, break
+         , let bestArgs = map (bestExample gr) argsByCcat
+      ] ++ nArgTrees 
 
-concrFuns :: Grammar -> [(ConcrCat,(Name,[ConcrCat]))]
-concrFuns gr = [ (resCcat,(fun,argCcats))  
-                  | (Symbol fun _args ccats) <- symbols gr
+concrFuns :: Grammar -> [(ConcrCat,(Symbol,[ConcrCat]))]
+concrFuns gr = [ (resCcat,(s,argCcats))  
+                  | s@(Symbol _fun _args ccats) <- symbols gr
                   , (argCcats,resCcat) <- ccats ]
-
 
 bestTrees :: Grammar -> [(ConcrCat,Tree)] -> [(ConcrCat,Tree)]
 bestTrees gr = map (bestTree gr) . groupBy (\(a,_) (b,_) -> a==b) . sort
  
 bestTree :: Grammar -> [(ConcrCat,Tree)] -> (ConcrCat,Tree)
-bestTree gr ccats_trees = (head ccats, head $ bestExamples gr trees)
+bestTree gr ccats_trees = (head ccats, bestExample gr trees)
  where (ccats,trees) = unzip ccats_trees
+
+-- out of (name,[args]) that all return something of the same type.
+-- i.e. group the results of concrFuns
+bestContext :: Grammar -> [(Symbol,[ConcrCat])] -> (Tree,ConcrCat) -> Tree
+bestContext gr funs_args (argtree,argccat) = trace (show trees) $ bestExample gr trees
+ where 
+  c2t :: ConcrCat -> Maybe Tree
+  c2t c | c == argccat = Just argtree
+        | otherwise = case defaultTrees gr c of 
+                       []    -> trace ("bestContext: empty list " ++ show c) $ Nothing 
+                       (t:_) -> Just t
+
+  trees = [ App fun (catMaybes argtrees)
+            | (fun,argcats) <- funs_args 
+            , let argtrees = map c2t argcats
+            , all isJust argtrees ]
+
 
 
 --------------------------------------------------------------------------------
@@ -83,8 +100,8 @@ nextLevel gr origF = concat trees
 
  where
 --  (argCats,resCat) = typ origF -- e.g. ([Adj,CN],CN) for AdjCN
-  (argCats,resCat) = head $ ctyp origF -- e.g. ([Adj,CN],CN) for AdjCN
-
+  (argCats,resCat) = head $ ctyp origF -- e.g. ([Adj_12,CN_535],CN_560) for AdjCN
+                 -- ? TODO
 
   -- gives default tree that uses the function we are testing
   defTree x | x == resCat = App origF <$> sequence (defaultTrees gr <$> argCats)
@@ -99,9 +116,6 @@ nextLevel gr origF = concat trees
               , let argTrees = map defTree argCcats  ]
 
             | f@(Symbol _ (args, _) ccats) <- symbols gr ]
---            , resCat `elem` args
-
-
 
 --------------------------------------------------------------------------------
 
@@ -115,14 +129,17 @@ collapse (App tp as) = tp : concatMap collapse as
 -- Just a dummy function for getting a quick input of nextLevel
 defaultTrees :: Grammar -> ConcrCat -> [Tree]
 defaultTrees gr c = case nonEmptySizes of
-  [] -> []
+  [] -> trace ("defaultTrees: no trees for " ++ show cat) $ []
   cs -> bestExamples gr
-          [ featIth gr c size card 
+          [ featIth gr cat size card 
             | (size,cd) <- cs
             , card <- [0..cd-1] ]
  where
-  nonEmptySizes = [ (size,card) | size <- [1..5]
-                                , let card = featCard gr c size 
+  cat = case lookup c (coercions gr) of
+              Nothing -> c
+              Just c' -> trace (show c ++ " is a coercion to " ++ show c') $ c'
+  nonEmptySizes = [ (size,card) | size <- [1..3]
+                                , let card = featCard gr cat size 
                                 , card > 0 ]
 
 
@@ -133,6 +150,8 @@ hasArg s = case s of
   Symbol _ ([], _) _ -> False
   _                  -> True
 
+lookupAll :: (Eq a) => [(a,b)] -> a -> [b]
+lookupAll kvs key = [ v | (k,v) <- kvs, k==key ]
 
 testsAsWellAs :: (Eq a, Eq b) => [a] -> [b] -> Bool
 xs `testsAsWellAs` ys = go (xs `zip` ys)
@@ -144,6 +163,8 @@ xs `testsAsWellAs` ys = go (xs `zip` ys)
     and [ y' == y | (x',y') <- xys, x == x' ] &&
     go [ xy | xy@(x',_) <- xys, x /= x' ]
 
+bestExample :: Grammar -> [Tree] -> Tree
+bestExample gr ts = head $ bestExamples gr ts
 
 bestExamples :: Grammar -> [Tree] -> [Tree]
 bestExamples gr [] = []
