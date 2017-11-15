@@ -21,7 +21,7 @@ assertLin gr fun = do
   pr (treesUsingFun, map (linearize gr) treesUsingFun)
  where
   pr ([],[]) = putStrLn ""
-  pr (t:ts,l:ls) = do putStrLn (show t ++ " : " ++ concatMap (show.snd) (concrTypes $ top t))
+  pr (t:ts,l:ls) = do putStrLn (show t ++ " : " ++ concatMap (show.snd) (ctyp $ top t))
                       print l 
                       putStrLn ""
                       pr (ts,ls)
@@ -39,13 +39,18 @@ lookupSymbol gr str =
 -- Slow but gives at least some trees for more complicated grammars.
 
 --treesByCCat :: Grammar -> [(ConcrCat,Tree)]
-treesByCCat gr = bestTrees $ foldl findTrees zeroArgTrees (replicate 10 gr)
+treesByCCat gr = bestTrees gr $ foldl findTrees zeroArgTrees (replicate 10 gr)
   --use scanl to find out how many trees you get at each step
 
  where
+  zeroArgTrees = bestTrees gr
+    [ (ccat, App symbol []) 
+      | ( ccat@(CC (Just cat) _)     -- Assuming no coercions -- TODO is this correct?
+        , (fun,[]) ) <- concrFuns gr -- Match only trees with 0 arguments
+      , let symbol = Symbol fun ([],cat) [([],ccat)] ]
 
-  findTrees :: [(ConcrCat,Tree)] -> Grammar -> [(ConcrCat,Tree)]
-  findTrees nArgTrees gr
+findTrees :: [(ConcrCat,Tree)] -> Grammar -> [(ConcrCat,Tree)]
+findTrees nArgTrees gr
     = nArgTrees ++ [ ( resCcat, App s bestArgs ) 
          | s@(Symbol f t ccats) <- symbols gr
          , (argCcats,resCcat) <- ccats
@@ -53,25 +58,20 @@ treesByCCat gr = bestTrees $ foldl findTrees zeroArgTrees (replicate 10 gr)
          , let argsOfCcat = map lookup' argCcats
          , all (not.null) argsOfCcat -- if >1 of the argCcats is not in nArgTrees, break
 --         , let bestArgs = map (snd.head) argsOfCcat ]
-         , let bestArgs = map (snd.bestTree) argsOfCcat ]
+         , let bestArgs = map (snd.bestTree gr) argsOfCcat ]
 
-  concrFuns :: Grammar -> [(ConcrCat,(Name,[ConcrCat]))]
-  concrFuns gr = [ (resCcat,(fun,argCcats))  
+concrFuns :: Grammar -> [(ConcrCat,(Name,[ConcrCat]))]
+concrFuns gr = [ (resCcat,(fun,argCcats))  
                   | (Symbol fun _args ccats) <- symbols gr
                   , (argCcats,resCcat) <- ccats ]
 
-  zeroArgTrees = bestTrees
-    [ (ccat, App symbol []) 
-      | ( ccat@(CC (Just cat) _)     -- Assuming no coercions -- TODO is this correct?
-        , (fun,[]) ) <- concrFuns gr -- Match only trees with 0 arguments
-      , let symbol = Symbol fun ([],cat) [([],ccat)] ]
 
-  bestTrees :: [(ConcrCat,Tree)] -> [(ConcrCat,Tree)]
-  bestTrees = map bestTree . groupBy (\(a,_) (b,_) -> a==b) . sort
-
-  bestTree :: [(ConcrCat,Tree)] -> (ConcrCat,Tree)
-  bestTree ccats_trees = (head ccats, head $ bestExamples gr trees)
-   where (ccats,trees) = unzip ccats_trees
+bestTrees :: Grammar -> [(ConcrCat,Tree)] -> [(ConcrCat,Tree)]
+bestTrees gr = map (bestTree gr) . groupBy (\(a,_) (b,_) -> a==b) . sort
+ 
+bestTree :: Grammar -> [(ConcrCat,Tree)] -> (ConcrCat,Tree)
+bestTree gr ccats_trees = (head ccats, head $ bestExamples gr trees)
+ where (ccats,trees) = unzip ccats_trees
 
 
 --------------------------------------------------------------------------------
@@ -83,7 +83,7 @@ nextLevel gr origF = concat trees
 
  where
 --  (argCats,resCat) = typ origF -- e.g. ([Adj,CN],CN) for AdjCN
-  (argCats,resCat) = head $ concrTypes origF -- e.g. ([Adj,CN],CN) for AdjCN
+  (argCats,resCat) = head $ ctyp origF -- e.g. ([Adj,CN],CN) for AdjCN
 
 
   -- gives default tree that uses the function we are testing
