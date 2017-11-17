@@ -8,25 +8,33 @@ import System.Environment
 import Data.List
 import Data.Maybe
 
---import qualified PGF2
 
 main :: IO ()
 main = do
---  grName <- getDataFileName "TestLang.pgf" 
-  grName <- getDataFileName "Phrasebook.pgf" 
+  grName <- getDataFileName "TestLang.pgf" 
+--  grName <- getDataFileName "Phrasebook.pgf" 
   gr <- readGrammar grName
-
---  mapM_ print (productions gr `map` [100..120])
---  print $ coercions gr
-
-  let trees = treesByCCat gr
-  mapM_ print $ sort trees         -- with foldl
---  mapM_ (mapM_ print.sort) trees   -- with scanl
-  print $ length trees
-
-
-  putStrLn "---"
   args <- getArgs
   case args of 
-    ("all":_) -> mapM_ (assertLin gr) (filter hasArg $ symbols gr)
-    (funNm:_) -> assertLin gr (lookupSymbol gr funNm)
+    ("all":_) -> mapM_ (assertLin gr) (map show $ filter hasArg $ symbols gr)
+    (detCN:_) -> do
+      --mostly just testing output, functions are not working properly
+      assertLin gr detCN
+      putStrLn "---"
+
+      let detCNs = lookupSymbols gr detCN
+      mapM_ print [ (cArgs,res) 
+                    | (args,res)<- map ctyp detCNs
+                    , let cArgs = map (coerce gr) args ]
+      putStrLn "---"
+
+      let trees_cats = treesUsingFun gr detCN
+      mapM_ (putStrLn . 
+            (\(t,c) -> show t ++ " : " ++
+                   show c ++ "\n" ++ 
+                   intercalate ", " (tabularLin gr t))) 
+            trees_cats
+      putStrLn "---"
+      mapM_ print $ foldl nextLevel trees_cats (replicate 3 gr)
+
+    _ -> putStrLn "---"
