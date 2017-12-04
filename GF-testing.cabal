@@ -17,7 +17,7 @@ data-files:    *.pgf, *.txt
 data-dir:      data/
 
 library
-  hs-source-dirs:      src, grammarfeat
+  hs-source-dirs:      src
   exposed-modules:     Lib, GrammarC
   other-modules:       Paths_GF_testing
   build-depends:       base >= 4.7 && < 5

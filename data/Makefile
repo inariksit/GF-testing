@@ -5,6 +5,9 @@ Eus:
 
 Est:
 	gf -make --src -gfo-dir /tmp grammars/TestLangEst.gf
+	
+Eng:
+	gf -make --src -gfo-dir /tmp grammars/TestLangEng.gf
 
 Dut:
 	gf -make --src -gfo-dir /tmp grammars/TestLangDut.gf
