@@ -43,13 +43,13 @@ main = do
 
 
       let trees_cats = treesUsingFun gr detCN
-      --mapM_ (putStrLn . 
-      --      (\(t,c,f) ->  "\n" ++ f ++ "\n" ++
-      --             show t ++ " : " ++
-      --             show c ++ "\n" ++ -- linearize gr t ++
-      --             intercalate "\n" (tabularPrint gr t)))
+      mapM_ (putStrLn . 
+            (\(t,c,f) ->  "\n" ++ f ++ "\n" ++
+                   show t ++ " : " ++
+                   show c ++ "\n" ++ -- linearize gr t ++
+                   intercalate "\n" (tabularPrint gr t)))
 
-      --      trees_cats
+            trees_cats
 
       let cls = [ (map (coerce gr) args, coerce gr res) 
                   | symb <- lookupSymbols gr detCN
