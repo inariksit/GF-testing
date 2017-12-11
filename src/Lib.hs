@@ -7,7 +7,6 @@ module Lib
     , coerce
     , uncoerce
     , concrFuns
-    , bestContexts
     ) where
 
 import GrammarC
@@ -96,15 +95,7 @@ nextLevel trees_cats gr = trees_cats ++ [ undefined | False ] --TODO
      Repeat for trees_cats.
   -}
 
-
-
-
 --------------------------------------------------------------------------------
-
-
--- Just a dummy function for getting a quick input of nextLevel
---defaultTrees :: Grammar -> ConcrCat -> [Tree]
-
 
 bestTrees :: Symbol -> Grammar -> [ConcrCat] -> [[Tree]]
 bestTrees fun gr cs = bestExamples fun gr $ take 10000
@@ -117,17 +108,7 @@ bestTrees fun gr cs = bestExamples fun gr $ take 10000
  where
   cats = map (coerce gr) cs 
 
-
-bestContexts :: Grammar -> ConcrCat -> ConcrCat -> [Tree]
-bestContexts gr cl vp = bestContexts' gr $ take 10000
-  [ featIthCtx gr cl vp size i
-    | size <- [1..10] 
-    , let card = featCardCtx gr cl vp size 
-    , i <- [0..card-1]
-   ]
-
 --------------------------------------------------------------------------------
-
 
 testsAsWellAs :: (Eq a, Eq b) => [a] -> [b] -> Bool
 xs `testsAsWellAs` ys = go (xs `zip` ys)
@@ -165,30 +146,6 @@ bestExamples fun gr vtrees = go [] vtrees_lins
   len1 [x] = True
   len1 _   = False
 
-
-bestContexts' :: Grammar -> [Tree] -> [Tree]
-bestContexts' gr ctxs = go [] ctxs_uses
-
- where
-  ctxs_uses = [ (ctx, (S.unions xs,is))
-                | ctx <- ctxs 
-                , let (xs,is) = uses gr ctx ] 
-
-  go cur []  = map fst cur
-  go cur (cx@(ctx,uses):cxs) 
-    | any (`contextAsGoodAs` uses) (map snd cur) = go cur cxs
-    | otherwise = go' (cx:[ c | c@(_,cUses) <- cur
-                              , not (uses `contextAsGoodAs` cUses) ] )
-                      cxs
-
-  go' cur cxs | enough cur = map fst cur
-              | otherwise  = go cur cxs
-
-  enough :: [(Tree, (S.Set Int,S.Set Int) )] -> Bool
-  enough cur@( (_, (_,is)) :_) = is `S.isSubsetOf` S.unions [ us | (_, (us,_)) <- cur ]
-  enough _          = False 
- 
-  contextAsGoodAs (us1,_) (us2,_) = us2 `S.isSubsetOf` us1
 --------------------------------------------------------------------------------
 
 hasArg :: Symbol -> Bool
