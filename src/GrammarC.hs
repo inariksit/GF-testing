@@ -1,7 +1,7 @@
 module GrammarC where
 
 import Data.List
-import qualified Data.Map as Map
+import qualified Data.Map as M
 import Data.Maybe
 import Data.Char
 import qualified Data.Set as S
@@ -100,6 +100,88 @@ uses gr (App f xs) =
   us = trace (show uxs) $ map fst uxs
   is = snd $ head uxs
 
+contextsFor :: Grammar -> ConcrCat -> ConcrCat -> [Tree -> Tree]
+contextsFor gr top hole =
+  concat
+  [ map (path2context . snd) paths
+  | (c,paths) <- fix improve start
+  , c == top
+  ]
+ where
+  allcats = S.toList $ S.fromList $
+    hole :
+    [ c
+    | f <- symbols gr
+    , let (_,c) = ctyp f
+    ] ++
+    [ c
+    | (_,c) <- coercions gr
+    ]
+
+  arHole =
+    head $
+    [ length (seqs f)
+    | f <- symbols gr
+    , snd (ctyp f) == hole
+    ] ++
+    error ("no symbol found with result type " ++ show hole)
+
+  start =
+    [ (c, if c == hole
+            then [([S.fromList [i] | i <- [0..arHole-1]],[])]
+            else [])
+    | c <- allcats
+    ]
+
+  improve tab =
+    [ (c,paths `imprs`
+           [ (apply (f,i) str, (f,i):fis)
+           | f <- symbols gr
+           , snd (ctyp f) == c
+           , (t,i) <- fst (ctyp f) `zip` [0..]
+           , (c',paths') <- tab
+           , t == c'
+           , (str,fis) <- paths'
+           ])
+    | (c,paths) <- tab
+    ]
+   where
+    apply (f,i) str =
+      [ S.fromList
+        [ s
+        | Right (x,y) <- concrSeqs gr sq
+        , x == i
+        , s <- S.toList (str !! y)
+        ]
+      | sq <- seqs f
+      ]
+
+    paths `imprs` paths' =
+      foldr impr paths (M.toList $ M.fromList $ paths')
+     where
+      (str',path') `impr` paths
+        | any (`covers` str') (map fst paths) =
+          paths
+        
+        | otherwise =
+          (str',path') : filter (not . (str' `covers`) . fst) paths
+
+      str1 `covers` str2 =
+        and [ s2 `S.isSubsetOf` s1 | (s1,s2) <- str1 `zip` str2 ]
+
+  path2context []          x = x
+  path2context ((f,i):fis) x =
+    App f
+    [ if j == i
+        then path2context fis x
+        else head (featAll gr t)
+    | (t,j) <- fst (ctyp f) `zip` [0..]
+    ]
+
+  fix f x | fx == x   = x
+          | otherwise = fix f fx
+         where
+          fx = f x
 
 --------------------------------------------------------------------------------
 -- name
@@ -182,7 +264,7 @@ toGrammar pgf =
   cseq2Either (I.SymCat x y) = Right (x,y)
   cseq2Either x = Left (show x)
 
-  lang = snd $ head $ Map.assocs $ PGF2.languages pgf  
+  lang = snd $ head $ M.assocs $ PGF2.languages pgf  
 
   coerces = [ ( CC Nothing afid
               , CC ccat cfid )
@@ -245,6 +327,10 @@ featCard gr c n = featCardVec gr [c] n
 -- generate the i-th tree of a given size and type
 featIth :: Grammar -> ConcrCat -> Int -> Integer -> Tree
 featIth gr c n i = head (featIthVec gr [c] n i)
+
+-- generate all trees (infinitely many) of a given type
+featAll :: Grammar -> ConcrCat -> [Tree]
+featAll gr c = [ featIth gr c n i | n <- [0..], i <- [0..featCard gr c n] ]
 
 -- compute how many tree-vectors there are of a given size and type-vector
 featCardVec :: Grammar -> [ConcrCat] -> Int -> Integer
