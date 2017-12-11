@@ -330,7 +330,7 @@ featIth gr c n i = head (featIthVec gr [c] n i)
 
 -- generate all trees (infinitely many) of a given type
 featAll :: Grammar -> ConcrCat -> [Tree]
-featAll gr c = [ featIth gr c n i | n <- [0..], i <- [0..featCard gr c n] ]
+featAll gr c = [ featIth gr c n i | n <- [0..], i <- [0..featCard gr c n-1] ]
 
 -- compute how many tree-vectors there are of a given size and type-vector
 featCardVec :: Grammar -> [ConcrCat] -> Int -> Integer
