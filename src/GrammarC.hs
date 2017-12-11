@@ -138,6 +138,7 @@ contextsFor gr top hole =
            [ (apply (f,i) str, (f,i):fis)
            | f <- symbols gr
            , snd (ctyp f) == c
+           , all (\t -> not (null (featAll gr t))) (fst (ctyp f))
            , (t,i) <- fst (ctyp f) `zip` [0..]
            , (c',paths') <- tab
            , t == c'
