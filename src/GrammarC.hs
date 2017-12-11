@@ -46,6 +46,9 @@ data Symbol
   }
  deriving ( Eq, Ord )
 
+arity :: Symbol -> Int
+arity = length . fst . ctyp
+
 hole :: ConcrCat -> Symbol
 hole c = Symbol "()" [] ([], "") ([],c)
 
@@ -173,7 +176,8 @@ contextsFor gr top hole =
       ]
 
     paths `imprs` paths' =
-      foldr impr paths (M.toList $ M.fromList $ paths')
+      foldr impr paths $ M.toList $ M.fromList $ reverse $ map snd $ sort $
+        [ (size p,q) | q@(_,p) <- paths' ]
      where
       (str',path') `impr` paths
         | any (`covers` str') (map fst paths) =
@@ -184,6 +188,8 @@ contextsFor gr top hole =
 
       str1 `covers` str2 =
         and [ s2 `S.isSubsetOf` s1 | (s1,s2) <- str1 `zip` str2 ]
+
+      size = sum . map (\f -> arity f - 1) . map fst
 
   path2context []          x = x
   path2context ((f,i):fis) x =
