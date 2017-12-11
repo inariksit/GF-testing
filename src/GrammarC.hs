@@ -111,13 +111,29 @@ contextsFor gr top hole =
   allcats = S.toList $ S.fromList $
     hole :
     [ c
-    | f <- symbols gr
+    | f <- syms
     , let (_,c) = ctyp f
     ] ++
     [ c
     | (_,c) <- coercions gr
     ]
 
+  nonEmptyCats = S.fromList
+    [ c
+    | c <- S.toList $ S.fromList
+           [ c
+           | f <- symbols gr
+           , c <- fst (ctyp f)
+           ]
+    , any (\n -> featCard gr c n > 0) [0..15] -- arbitrary
+    ]
+
+  syms =
+    [ f
+    | f <- symbols gr
+    , all (\t -> t == hole || t `S.member` nonEmptyCats) (fst (ctyp f))
+    ]
+ 
   arHole =
     head $
     [ length (seqs f)
@@ -136,9 +152,8 @@ contextsFor gr top hole =
   improve tab =
     [ (c,paths `imprs`
            [ (apply (f,i) str, (f,i):fis)
-           | f <- symbols gr
+           | f <- syms
            , snd (ctyp f) == c
-           , all (\t -> not (null (featAll gr t))) (fst (ctyp f))
            , (t,i) <- fst (ctyp f) `zip` [0..]
            , (c',paths') <- tab
            , t == c'
