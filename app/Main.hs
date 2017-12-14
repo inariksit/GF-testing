@@ -10,6 +10,7 @@ import Data.Maybe
 
 import System.IO
 
+
 main :: IO ()
 main = do
   hSetBuffering stdout NoBuffering
@@ -42,22 +43,32 @@ main = do
       putStrLn "---"
 
 
-      let trees_cats = treesUsingFun gr detCN
-      mapM_ (putStrLn . 
-            (\(t,c,f) ->  "\n" ++ f ++ "\n" ++
-                   show t ++ " : " ++
-                   show c ++ "\n" ++ -- linearize gr t ++
-                   intercalate "\n" (tabularPrint gr t)))
+      --let trees_cats = treesUsingFun gr detCN
+      --mapM_ (putStrLn . 
+      --      (\(t,c,f) ->  "\n" ++ f ++ "\n" ++
+      --             show t ++ " : " ++
+      --             show c ++ "\n" ++ -- linearize gr t ++
+      --             intercalate "\n" (tabularPrint gr t)))
 
-            trees_cats
+      --      trees_cats
 
-      let cls = [ (map (coerce gr) args, coerce gr res) 
+      --let cls = [ (map (coerce gr) args, coerce gr res) 
+      --            | symb <- lookupSymbols gr detCN
+      --            , let (args,res) = ctyp symb ]
+
+      let cls = [ ( args, res) 
                   | symb <- lookupSymbols gr detCN
                   , let (args,res) = ctyp symb ]
 
-      let bestCtxs = [ map (bestContexts gr cl) as
-                       | (as,cl) <- cls ] 
-      print bestCtxs
+      let bestCtxs = [ (a, map ($ App (hole a) []) (contextsFor gr cl a) )
+                       | (as,cl) <- cls 
+                       , a <- as ] 
+
+      --let bestCtxs = [ (a, bestContexts gr cl a )
+      --                 | (as,cl) <- cls 
+      --                 , a <- as ] 
+      mapM_ print cls
+--      mapM_ putStrLn [ linearize gr t ++ "\n\t" ++ show t | (_,ts) <- bestCtxs, t <- ts ]
 
 --      putStrLn "---"
 --      mapM_ print $ foldl nextLevel trees_cats (replicate 6 gr)
