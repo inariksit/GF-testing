@@ -56,7 +56,6 @@ isHole :: Symbol -> Bool
 isHole (Symbol "()" _ _ _) = True
 isHole _                   = False
 
-
 -- grammar
 
 data Grammar
@@ -78,65 +77,37 @@ data Grammar
 --------------------------------------------------------------------------------
 -- analyzing contexts
 
-uses :: Grammar -> Tree -> ([S.Set Int],S.Set Int)
-uses gr (App h []) | isHole h =
-  ([ S.singleton i | i <- [0..n-1] ], S.fromList [ i | i <- [0..n-1] ])
- where
-  (_,c) = ctyp h
-  n     = head [ length (seqs f) 
-                 | f <- symbols gr      -- all functions that return a tree 
-                 , let (_,c') = ctyp f  -- of the same type as h
-                 , coerce gr c == coerce gr c' ]
-
-  coerce :: Grammar -> ConcrCat -> ConcrCat
-  coerce gr ccat = fromMaybe ccat (lookup ccat (coercions gr))
-
-uses gr (App f xs) =
-  ([ S.unions
-    [ (us !! i) !! j
-    | Right (i,j) <- concrSeqs gr sid
-    ]
-  | sid <- seqs f
-  ], is)
- where
-  uxs = map (uses gr) xs
-  us = trace (show uxs) $ map fst uxs
-  is = snd $ head uxs
-
 contextsFor :: Grammar -> ConcrCat -> ConcrCat -> [Tree -> Tree]
 contextsFor gr top hole =
   concat
   [ map (path2context . snd) paths
-  | (c,paths) <- fix improve start
+  | (c,paths) <- M.toList $ fix improve start
   , c == top
   ]
  where
-  allcats = S.toList $ S.fromList $
-    hole :
+  -- all non-empty categories
+  goodCats =
     [ c
-    | f <- syms
-    , let (_,c) = ctyp f
-    ] ++
-    [ c
-    | (_,c) <- coercions gr
-    ]
-
-  nonEmptyCats = S.fromList
-    [ c
-    | c <- S.toList $ S.fromList
+    | c <- S.toList $ S.fromList $
+           hole :
            [ c
            | f <- symbols gr
-           , c <- fst (ctyp f)
+           , let (_,c) = ctyp f
+           ] ++
+           [ c
+           | (_,c) <- coercions gr
            ]
-    , any (\n -> featCard gr c n > 0) [0..15] -- arbitrary
+    , any ((>0) . featCard gr c) [0..15] -- 15 is arbitrary
     ]
 
-  syms =
+  -- all symbols with only good arguments
+  goodSyms =
     [ f
     | f <- symbols gr
-    , all (\t -> t == hole || t `S.member` nonEmptyCats) (fst (ctyp f))
+    , all (\t -> t `elem` goodCats) (fst (ctyp f))
     ]
  
+  -- length of string vector for the hole type
   arHole =
     head $
     [ length (seqs f)
@@ -145,24 +116,31 @@ contextsFor gr top hole =
     ] ++
     error ("no symbol found with result type " ++ show hole)
 
+  -- initial table we start our fixpoint iteration with
   start =
+    M.fromList
     [ (c, if c == hole
             then [([S.fromList [i] | i <- [0..arHole-1]],[])]
             else [])
-    | c <- allcats
+    | c <- goodCats
     ]
 
   improve tab =
+    M.fromList
     [ (c,paths `imprs`
-           [ (apply (f,i) str, (f,i):fis)
-           | f <- syms
-           , snd (ctyp f) == c
-           , (t,i) <- fst (ctyp f) `zip` [0..]
-           , (c',paths') <- tab
-           , t == c'
-           , (str,fis) <- paths'
-           ])
-    | (c,paths) <- tab
+           ( [ (apply (f,i) str, (f,i):fis)
+             | f <- goodSyms
+             , snd (ctyp f) == c
+             , (t,i) <- fst (ctyp f) `zip` [0..]
+             , (str,fis) <- tab M.! t
+             ] ++
+             [ (str, fis)
+             | (a,b) <- coercions gr
+             , b == c
+             , (str,fis) <- tab M.! a
+             ]          
+           ))
+    | (c,paths) <- M.toList tab
     ]
    where
     apply (f,i) str =
@@ -340,7 +318,7 @@ readGrammar file =
 
 -- FEAT-style generator magic
 
-type FEAT = [ConcrCat] -> Maybe ConcrCat -> Int -> (Integer, Integer -> [Tree])
+type FEAT = [ConcrCat] -> Int -> (Integer, Integer -> [Tree])
 
 -- compute how many trees there are of a given size and type
 featCard :: Grammar -> ConcrCat -> Int -> Integer
@@ -356,102 +334,65 @@ featAll gr c = [ featIth gr c n i | n <- [0..], i <- [0..featCard gr c n-1] ]
 
 -- compute how many tree-vectors there are of a given size and type-vector
 featCardVec :: Grammar -> [ConcrCat] -> Int -> Integer
-featCardVec gr cs n = fst (feat gr cs Nothing n)
+featCardVec gr cs n = fst (feat gr cs n)
 
 -- generate the i-th tree-vector of a given size and type-vector
 featIthVec :: Grammar -> [ConcrCat] -> Int -> Integer -> [Tree]
-featIthVec gr cs n i = snd (feat gr cs Nothing n) i
-
--- compute how many contexts there are of a given size, type, and hole-type
-featCardCtx :: Grammar -> ConcrCat -> ConcrCat -> Int -> Integer
-featCardCtx gr c hc n = fst (feat gr [c] (Just hc) n)
-
--- generate the i-th context of a given size, type, and hole-type
-featIthCtx :: Grammar -> ConcrCat -> ConcrCat -> Int -> Integer -> Tree
-featIthCtx gr c hc n i = head (snd (feat gr [c] (Just hc) n) i)
+featIthVec gr cs n i = snd (feat gr cs n) i
 
 mkFEAT :: Grammar -> FEAT
 mkFEAT gr = catList
  where
   catList' :: FEAT
-  catList' [] Nothing 0 = (1, \0 -> [])
-  catList' [] _       _ = (0, error "empty")
+  catList' [] 0 = (1, \0 -> [])
+  catList' [] _ = (0, error "indexing in an empty sequence")
 
-  catList' [c] mh s =
+  catList' [c] s =
     parts $ 
           [ (n, \i -> [App f (h i)])
           | s > 0 
           , f <- symbols gr
           , let (xs,y) = ctyp f
           , y == c
-          , let (n,h) = catList xs mh (s-1)
+          , let (n,h) = catList xs (s-1)
           ] ++
-          [ catList [x] mh s -- put (s-1) if it doesn't terminate
+          [ catList [x] s -- put (s-1) if it doesn't terminate
           | s > 0 
           , (x,y) <- coercions gr
           , y == c
-          ] ++
-          [ (1, \0 -> [App (hole c) []])
-          | s == 1 -- holes have size 1
-          , Just c' <- [mh]
-          , c == c'
           ]
 
-  catList' (c:cs) Nothing s =
+  catList' (c:cs) s =
     parts [ (nx*nxs, \i -> hx (i `mod` nx) ++ hxs (i `div` nx))
           | k <- [0..s]
-          , let (nx,hx)   = catList [c] Nothing k
-                (nxs,hxs) = catList cs Nothing (s-k)
+          , let (nx,hx)   = catList [c] k
+                (nxs,hxs) = catList cs (s-k)
           ]
-
-  catList' (c:cs) mh s =
-    parts $ [ (nx*nxs, \i -> hx (i `mod` nx) ++ hxs (i `div` nx))
-          | k <- [0..s]
-          , let (nx,hx)    = catList [c] mh k
-                (nxs',hxs) = catList cs Nothing (s-k)
-                nxs        = if nxs' == 0 then 0 else 1
-          ] ++
-          [ (nx*nxs, \i -> hx (i `mod` nx) ++ hxs (i `div` nx))
-          | k <- [0..s]
-          , let (nx',hx)  = catList [c] Nothing k
-                nx        = if nx' == 0 then 0 else 1
-                (nxs,hxs) = catList cs mh (s-k)
-          ]
-
 
   catList :: FEAT
-  catList =
-    memoList (\cs ->
-      memoMaybe (\mh ->
-        memoNat (catList' cs mh)))
+  catList = memoList (memoNat . catList')
    where
-    cats = nub $ [ x | f <- symbols gr
-                     , let (xs,y) = ctyp f
-                     , x <- y:xs ] ++
-                 [ z | (x,y) <- coercions gr
-                     , z <- [x,y] ] --adds all possible categories in the grammar
+    -- all possible categories of the grammar
+    cats = S.toList $ S.fromList $
+           [ x | f <- symbols gr
+               , let (xs,y) = ctyp f
+               , x <- y:xs ] ++
+           [ z | (x,y) <- coercions gr
+               , z <- [x,y] ]
 
     memoList f = \cs -> case cs of
                     []   -> fNil
                     a:as -> fCons a as
      where
       fNil  = f []
-      fCons = \a -> head [ fc | (c,fc) <- tab, a == c ]
-      tab   = [ (c, memoList (f . (c:))) | c <- cats ]
-
-    memoMaybe f = \mx -> case mx of
-                    Nothing -> fNothing
-                    Just a  -> fJust a
-     where
-      fNothing = f Nothing
-      fJust    = \a -> head [ fc | (c,fc) <- tab, a == c ]
-      tab      = [ (c, f (Just c)) | c <- cats ]
+      fCons = (tab M.!)
+      tab   = M.fromList [ (c, memoList (f . (c:))) | c <- cats ]
 
     memoNat f = (tab!!)
      where
       tab = [ f i | i <- [0..] ]
 
-  parts []          = (0, error "empty parts ")
+  parts []          = (0, error "indexing outside of a sequence")
   parts ((n,h):nhs) = (n+n', \i -> if i < n then h i else h' (i-n))
    where
     (n',h') = parts nhs
