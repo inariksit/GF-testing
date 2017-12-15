@@ -1,16 +1,13 @@
 module Lib
     ( assertLin
-    , nextLevel
-    , hasArg
-    , lookupSymbols
+    , testHole
     , treesUsingFun
-    , coerce
-    , uncoerce
-    , concrFuns
+    , showConcrFun
     ) where
 
 import GrammarC
 import Paths_GF_testing
+import Control.Monad ( when )
 import Data.List
 import Data.Either
 import qualified Data.Set as S
@@ -19,19 +16,45 @@ import Data.Tuple ( swap )
 import Debug.Trace
 
 
-assertLin :: Grammar -> String -> IO ()
-assertLin gr fun = do
-  let trees = [ tree | (tree,_,_) <- treesUsingFun gr fun ]
-  print fun
---  print (length trees)
-  pr (trees, map (linearize gr) trees)
+assertLin :: Bool -> Grammar -> (Tree,ConcrCat,String) -> IO ()
+assertLin debug gr (tree,ccat,funname) = do
+  putStrLn $ "\n" ++ funname 
+  putStrLn $ [ '-' | c <- funname ] ++ "\n"
+  when debug $ do
+    putStrLn $ show tree ++ " : " ++
+               show ccat ++ "\n" ++ -- linearize gr t ++
+               intercalate "\n" (tabularPrint gr tree)
+    putStrLn "--------------------\n"
+  
+  let contexts = [ ($ tree) `map` contextsFor gr st ccat 
+                   | st <- startCCats gr ] :: [[Tree]]
+  
+  putStrLn $ show tree ++ " : " ++ show ccat ++ "\n"
+  mapM_ (mapM_ (putStrLn . linearize gr)) contexts
+              
  where
-  pr ([],[]) = putStrLn ""
-  pr (t:ts,l:ls) = do let typT = snd $ ctyp $ top t
-                      putStrLn (show t ++ " : " ++ show typT)
-                      print l 
-                      putStrLn ""
-                      pr (ts,ls)
+  tabularPrint :: Grammar -> Tree -> [String]
+  tabularPrint gr t = 
+    let cseqs = [ concatMap showCSeq cseq | cseq <- map (concrSeqs gr) (seqs $ top t) ]
+        tablins = tabularLin gr t :: [(String,String)]
+     in [ fieldname ++ ":\t" ++ lin ++ "\t" ++ s | ((fieldname,lin),s) <- zip tablins cseqs ]
+
+  showCSeq (Left tok) = " " ++ show tok ++ " "
+  showCSeq (Right (i,j)) = " <" ++ show i ++ "," ++ show j ++ "> "
+
+
+testHole :: Grammar -> ConcrCat -> IO ()
+testHole gr cn_3 = do
+  putStrLn "---"
+  putStrLn $ show cn_3 ++ "-shaped hole in the start category:"
+      
+  let bestCtxs = [ map ($ App (hole cn_3) []) (contextsFor gr startcat cn_3)
+                   | startcat <- startCCats gr ] 
+
+  mapM_ putStrLn $ 
+       [ show t ++ "\n\t" ++ linearize gr t ++ "\n"
+          | ts <- bestCtxs, t <- ts ]
+
 
 lookupSymbols :: Grammar -> String -> [Symbol]
 lookupSymbols gr str = 
@@ -39,11 +62,14 @@ lookupSymbols gr str =
  where
   symb2table s@(Symbol nm _ _ _) = (nm,s)
 
+ccats :: Grammar -> String -> [ConcrCat]
+ccats gr cl = [ CC (Just cat) fid 
+                 | (cat,start,end,_) <- concrCats gr
+                 , cat == cl
+                 , fid <- [start..end] ]
 
-concrFuns :: Grammar -> [(ConcrCat,(Symbol,[ConcrCat]))]
-concrFuns gr = [ (resCcat,(s,argCcats))  
-                  | s@(Symbol _fun _seqs _args (argCcats,resCcat)) <- symbols gr
-               ]
+startCCats :: Grammar -> [ConcrCat]
+startCCats gr = ccats gr (startCat gr)
 
 
 --------------------------------------------------------------------------------
@@ -54,47 +80,14 @@ treesUsingFun gr funname =
     | detCN <- lookupSymbols gr funname
     , let (dets_cns,np_209) = ctyp detCN -- :: ([ConcrCat],ConcrCat)
     , tree <- App detCN <$> bestTrees detCN gr dets_cns
-    , let concrFunStr = show detCN ++ " : " ++ show (coerce gr <$> dets_cns) ++ " -> " ++ show np_209 ]
-
+    , let concrFunStr = showConcrFun gr detCN ]
   
-
-nextLevel :: [(Tree,ConcrCat)] -> Grammar -> [(Tree,ConcrCat)]
-nextLevel trees_cats gr = trees_cats ++ [ undefined | False ] --TODO
-
- -- [ 
- --   | (tree,np_209) <- trees_cats 
- --   , (resCCat, (symb, argCCats)) <- contexts (tree,np_209) -- :: (ConcrCat,(Symbol,[ConcrCat]))
-
- --    --Replace whatever bestTrees gives by the tree from 
- --   , let argTrees = map (map (replace (tree,np_209)) (bestTrees gr argCCats)
-
- --   , let ... = App symb <$> argTrees 
- -- ]
-
- --where
- -- replace :: (Tree,ConcrCat) -> Tree -> Tree
- -- replace (detCNtree,np_209) tree = 
- --   let (_,ccat) = ctyp $ top tree
- --    in if ccat==np_209 then detCNtree else tree
-
-
- -- contexts (tree,np_209) =
- --    [ (res, (symb, coerce gr <$> argCCats))
- --      | (res,(symb,argCCats)) <- concrFuns gr
- --      , let crcs = np_209 : uncoerce gr np_209
- --      , any (`elem` argCCats) crcs ]
-
- -- argTrees ctx = [ bestTrees gr [] | False ]
-
-
-
-  {- TODO: filter the list of contexts to best ones. Magic functions in PGF2? 
-     Like these things: S3 := <0,0> "är" <1,0>
-     Then, for the contexts we chose, find best argument trees.
-     Insert tree of (tree,np_209) into the slot, and return.
-     Repeat for trees_cats.
-  -}
-
+showConcrFun :: Grammar -> Symbol -> String
+showConcrFun gr detCN = show detCN ++ " : " ++ 
+                        intercalate " → " (map show dets_cns) ++
+--                        show (coerce gr <$> dets_cns) ++
+                        " → " ++ show np_209
+ where (dets_cns,np_209) = ctyp detCN 
 --------------------------------------------------------------------------------
 
 bestTrees :: Symbol -> Grammar -> [ConcrCat] -> [[Tree]]
@@ -106,7 +99,7 @@ bestTrees fun gr cs = bestExamples fun gr $ take 10000
    ]
 
  where
-  cats = map (coerce gr) cs 
+  cats = concatMap (coerce gr) cs 
 
 --------------------------------------------------------------------------------
 
@@ -156,8 +149,10 @@ hasArg s = case s of
 lookupAll :: (Eq a) => [(a,b)] -> a -> [b]
 lookupAll kvs key = [ v | (k,v) <- kvs, k==key ]
 
-coerce :: Grammar -> ConcrCat -> ConcrCat
-coerce gr ccat = fromMaybe ccat (lookup ccat (coercions gr))
+coerce :: Grammar -> ConcrCat -> [ConcrCat]
+coerce gr ccat = case lookupAll (coercions gr) ccat of
+                    [] -> [ccat]
+                    xs -> xs
 
 uncoerce :: Grammar -> ConcrCat -> [ConcrCat]
 uncoerce gr = lookupAll (map swap $ coercions gr)
