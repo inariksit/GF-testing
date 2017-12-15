@@ -137,8 +137,8 @@ contextsFor gr top hole =
              [ (str, fis)
              | (a,b) <- coercions gr
              , b == c
-             , (str,fis) <- tab M.! a
-             ]          
+             , (str,fis) <- tab M.! b
+             ]        
            ))
     | (c,paths) <- M.toList tab
     ]
