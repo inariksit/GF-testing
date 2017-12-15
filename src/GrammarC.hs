@@ -137,7 +137,7 @@ contextsFor gr top hole =
              [ (str, fis)
              | (a,b) <- coercions gr
              , b == c
-             , (str,fis) <- tab M.! b
+             , (str,fis) <- tab M.! b -- look up the category that a coerces to, not the original a
              ]        
            ))
     | (c,paths) <- M.toList tab
