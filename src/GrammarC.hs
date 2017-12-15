@@ -50,7 +50,7 @@ arity :: Symbol -> Int
 arity = length . fst . ctyp
 
 hole :: ConcrCat -> Symbol
-hole c = Symbol "()" [] ([], "") ([],c)
+hole c = Symbol ("(" ++ show c ++ ")") [] ([], "") ([],c)
 
 isHole :: Symbol -> Bool
 isHole (Symbol "()" _ _ _) = True
@@ -95,7 +95,8 @@ contextsFor gr top hole =
            , let (_,c) = ctyp f
            ] ++
            [ c
-           | (_,c) <- coercions gr
+           | (a,b) <- coercions gr
+           , c <- [a,b]
            ]
     , any ((>0) . featCard gr c) [0..15] -- 15 is arbitrary
     ]
@@ -137,8 +138,8 @@ contextsFor gr top hole =
              [ (str, fis)
              | (a,b) <- coercions gr
              , b == c
-             , (str,fis) <- tab M.! b -- look up the category that a coerces to, not the original a
-             ]        
+             , Just fs <- [M.lookup a tab]
+             , (str,fis) <- fs ]        
            ))
     | (c,paths) <- M.toList tab
     ]
