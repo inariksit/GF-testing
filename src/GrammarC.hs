@@ -139,7 +139,8 @@ contextsFor gr top hole =
              | (a,b) <- coercions gr
              , b == c
              , Just fs <- [M.lookup a tab]
-             , (str,fis) <- fs ]        
+             , (str,fis) <- fs
+             ]        
            ))
     | (c,paths) <- M.toList tab
     ]

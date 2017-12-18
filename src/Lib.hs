@@ -1,8 +1,10 @@
 module Lib
     ( assertLin
     , testHole
+    , testWord
     , treesUsingFun
     , showConcrFun
+    , startCCats
     ) where
 
 import GrammarC
@@ -54,6 +56,25 @@ testHole gr cn_3 = do
   mapM_ putStrLn $ 
        [ show t ++ "\n\t" ++ linearize gr t ++ "\n"
           | ts <- bestCtxs, t <- ts ]
+
+testWord :: Grammar -> Symbol -> IO ()
+testWord gr w =
+  do putStrLn ("*** WORD: " ++ showConcrFun gr w ++ " " ++ show (tabularLin gr (App w [])))
+     putStr $ unlines $ concat $
+       [ [ ""
+         , "- "     ++ show (ctx (App (hole c) []))
+         , "  --> " ++ linearize gr (ctx (App (hole c) []))
+         , "  --> " ++ linearize gr (ctx (App w []))
+         ]
+       | ctx <- ctxs
+       ]
+     putStrLn ""
+ where
+  c    = snd (ctyp w)
+  ctxs = concat
+         [ contextsFor gr startcat c
+         | startcat <- startCCats gr
+         ] 
 
 
 lookupSymbols :: Grammar -> String -> [Symbol]

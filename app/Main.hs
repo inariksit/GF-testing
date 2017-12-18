@@ -22,6 +22,11 @@ main = do
   args <- getArgs
   let debug = "d" `elem` args
   let hole = "h" `elem` args
+  sequence_
+    [ putStrLn (show c ++ ": " ++ show ts)
+    | c <- startCCats gr
+    , let ts = take 100 (featAll gr c)
+    ]
   case args of 
 
     (detCN:_) -> do
@@ -34,7 +39,7 @@ main = do
                 sequence_ [ testHole gr c | (_,c,_) <- trees_cats ] 
         else return ()
 
-
+{-
     _ -> sequence_ 
         [ do putStrLn (showConcrFun gr symb)
              sequence_
@@ -42,4 +47,14 @@ main = do
                 | ccat <- nub $ ((\(as,b) -> b:as) . ctyp) symb ]
              putStrLn "\n\n"
           | symb <- symbols gr ]
+-}
+
+    _ -> sequence_ 
+        [ testWord gr symb
+        | c <- wordCats
+        , let symb = head [ f | f <- symbols gr, arity f == 0, snd (ctyp f) == c ]
+        ]
+     where
+      wordCats = nub [ snd (ctyp f) | f <- symbols gr, arity f == 0 ]
+
 
