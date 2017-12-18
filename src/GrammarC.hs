@@ -96,10 +96,10 @@ contextsFor gr top hole =
            , c <- b:as
            ] ++
            [ c
-           | (a,b) <- coercions gr
+           | (b,a) <- coercions gr -- !now flipped
            , c <- [a,b]
            ]
-    , any ((>0) . featCard gr c) [0..15] -- 15 is arbitrary
+    , any ((>0) . featCard gr c) [0..25] -- 15 is arbitrary
     ]
 
   -- all symbols with only good arguments
@@ -137,7 +137,7 @@ contextsFor gr top hole =
              , (str,fis) <- tab M.! t
              ] ++
              [ (str, fis)
-             | (a,b) <- coercions gr
+             | (b,a) <- coercions gr -- !now flipped
              , b == c
              , Just fs <- [M.lookup a tab]
              , (str,fis) <- fs
@@ -361,7 +361,7 @@ mkFEAT gr = catList
           ] ++
           [ catList [x] s -- put (s-1) if it doesn't terminate
           | s > 0 
-          , (x,y) <- coercions gr
+          , (y,x) <- coercions gr -- !now flipped
           , y == c
           ]
 
@@ -380,7 +380,7 @@ mkFEAT gr = catList
            [ x | f <- symbols gr
                , let (xs,y) = ctyp f
                , x <- y:xs ] ++
-           [ z | (x,y) <- coercions gr
+           [ z | (y,x) <- coercions gr -- !now flipped
                , z <- [x,y] ]
 
     memoList f = \cs -> case cs of

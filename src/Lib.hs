@@ -65,17 +65,31 @@ testWord gr w =
          , "- "     ++ show (ctx (App (hole c) []))
          , "  --> " ++ linearize gr (ctx (App (hole c) []))
          , "  --> " ++ linearize gr (ctx (App w []))
-         ]
+         ] 
+         {- ++
+         [ "  " ++ s
+         | f <- nub $ funs (ctx (App w []))
+         , s <- analFun f
+         ] -}
        | ctx <- ctxs
        ]
      putStrLn ""
  where
   c    = snd (ctyp w)
   ctxs = concat
-         [ contextsFor gr startcat c
-         | startcat <- startCCats gr
+         [ contextsFor gr sc c
+         | sc <- starts
          ] 
 
+  starts = ccats gr "S"
+  
+  funs (App f ts) = f : concatMap funs ts
+
+  analFun f =
+    [ showConcrFun gr f' ++ if f == f' then " <=" else "" 
+    | f' <- symbols gr
+    , show f == show f'
+    ]
 
 lookupSymbols :: Grammar -> String -> [Symbol]
 lookupSymbols gr str = 

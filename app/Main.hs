@@ -15,18 +15,14 @@ main :: IO ()
 main = do
   hSetBuffering stdout NoBuffering
 
---  grName <- getDataFileName "TestLang.pgf" 
+  --grName <- getDataFileName "TestLang.pgf" 
   grName <- getDataFileName "MiniLang.pgf" 
 --  grName <- getDataFileName "Test.pgf" 
   gr <- readGrammar grName
   args <- getArgs
   let debug = "d" `elem` args
   let hole = "h" `elem` args
-  sequence_
-    [ putStrLn (show c ++ ": " ++ show ts)
-    | c <- startCCats gr
-    , let ts = take 100 (featAll gr c)
-    ]
+
   case args of 
 
     (detCN:_) -> do
