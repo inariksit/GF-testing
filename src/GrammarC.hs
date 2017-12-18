@@ -92,7 +92,8 @@ contextsFor gr top hole =
            hole :
            [ c
            | f <- symbols gr
-           , let (_,c) = ctyp f
+           , let (as,b) = ctyp f
+           , c <- b:as
            ] ++
            [ c
            | (a,b) <- coercions gr
@@ -140,7 +141,7 @@ contextsFor gr top hole =
              , b == c
              , Just fs <- [M.lookup a tab]
              , (str,fis) <- fs
-             ]        
+             ]     
            ))
     | (c,paths) <- M.toList tab
     ]
