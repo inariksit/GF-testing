@@ -28,20 +28,21 @@ assertLin debug gr (tree,ccat,funname) = do
                intercalate "\n" (tabularPrint gr tree)
     putStrLn "--------------------\n"
   
-  let contexts = [ ($ tree) `map` contextsFor gr st ccat 
-                   | st <- ccats gr "S" ] :: [[Tree]]
+  let ctxs = concat [ contextsFor gr st ccat 
+                     | st <- ccats gr "S" ] :: [Tree -> Tree]
 
-  let holes = [ ($ App (hole ccat) []) `map` contextsFor gr st ccat 
-                   | st <- ccats gr "S" ] :: [[Tree]]
+  let trees = map ($ tree) ctxs
+
+  let holes = map ($ (App (hole ccat) [])) ctxs
   
   putStrLn $ show tree ++ " : " ++ show ccat ++ "\n"
   print $ tabularLin gr tree
 
   putStrLn "\nNow showing that tree in context:"
 
-  mapM_ (mapM_ (putStrLn . linearize gr)) holes
-  mapM_ (mapM_ (putStrLn . linearize gr)) contexts
-              
+  sequence_ [ do putStrLn (linearize gr hole)
+                 putStrLn (linearize gr tree)
+              | (tree,hole) <- zip trees holes ]  
  where
   tabularPrint :: Grammar -> Tree -> [String]
   tabularPrint gr t = 
