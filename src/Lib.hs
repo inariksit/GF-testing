@@ -23,9 +23,7 @@ assertLin debug gr (tree,ccat,funname) = do
   putStrLn $ "\n" ++ funname 
   putStrLn $ [ '-' | c <- funname ] ++ "\n"
   when debug $ do
-    putStrLn $ show tree ++ " : " ++
-               show ccat ++ "\n" ++ -- linearize gr t ++
-               intercalate "\n" (tabularPrint gr tree)
+    putStrLn $ intercalate "\n" (tabularPrint gr tree)
     putStrLn "--------------------\n"
   
   let ctxs = concat [ contextsFor gr st ccat 
@@ -35,8 +33,8 @@ assertLin debug gr (tree,ccat,funname) = do
 
   let holes = map ($ (App (hole ccat) [])) ctxs
   
-  putStrLn $ show tree ++ " : " ++ show ccat ++ "\n"
-  print $ tabularLin gr tree
+  putStrLn $ show tree ++ " : " ++ show ccat
+  putStrLn $ linearize gr tree
 
   putStrLn "\nNow showing that tree in context:"
 
