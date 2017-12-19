@@ -29,9 +29,17 @@ assertLin debug gr (tree,ccat,funname) = do
     putStrLn "--------------------\n"
   
   let contexts = [ ($ tree) `map` contextsFor gr st ccat 
-                   | st <- startCCats gr ] :: [[Tree]]
+                   | st <- ccats gr "S" ] :: [[Tree]]
+
+  let holes = [ ($ App (hole ccat) []) `map` contextsFor gr st ccat 
+                   | st <- ccats gr "S" ] :: [[Tree]]
   
   putStrLn $ show tree ++ " : " ++ show ccat ++ "\n"
+  print $ tabularLin gr tree
+
+  putStrLn "\nNow showing that tree in context:"
+
+  mapM_ (mapM_ (putStrLn . linearize gr)) holes
   mapM_ (mapM_ (putStrLn . linearize gr)) contexts
               
  where
@@ -126,15 +134,13 @@ showConcrFun gr detCN = show detCN ++ " : " ++
 --------------------------------------------------------------------------------
 
 bestTrees :: Symbol -> Grammar -> [ConcrCat] -> [[Tree]]
-bestTrees fun gr cs = bestExamples fun gr $ take 10000
+bestTrees fun gr cats = bestExamples fun gr $ take 10000
   [ featIthVec gr cats size i
     | size <- [1..5] 
     , let card = featCardVec gr cats size 
     , i <- [0..card-1]
    ]
 
- where
-  cats = concatMap (coerce gr) cs 
 
 --------------------------------------------------------------------------------
 
