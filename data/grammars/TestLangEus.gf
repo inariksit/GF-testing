@@ -1,1 +1,0 @@
-concrete TestLangEus of TestLang = GrammarEus, LexiconEus ;

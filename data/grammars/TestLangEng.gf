@@ -1,1 +1,0 @@
-concrete TestLangEng of TestLang = GrammarEng, LexiconEng ;

@@ -1,1 +1,0 @@
-concrete TestLangIce of TestLang =  GrammarIce, LexiconIce ;
