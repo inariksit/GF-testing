@@ -15,9 +15,9 @@ main :: IO ()
 main = do
   hSetBuffering stdout NoBuffering
 
-  --grName <- getDataFileName "TestLang.pgf" 
-  grName <- getDataFileName "MiniLang.pgf" 
---  grName <- getDataFileName "Test.pgf" 
+  grName <- getDataFileName "TestLang.pgf" 
+--  grName <- getDataFileName "MiniLang.pgf" 
+--  grName <- getDataFileName "Phrasebook.pgf" 
   gr <- readGrammar grName
   args <- getArgs
   let debug = "d" `elem` args
@@ -27,30 +27,34 @@ main = do
 
     (detCN:_) -> do
       let trees_cats = treesUsingFun gr detCN
+      --mapM_ print trees_cats
 
       mapM_ (assertLin debug gr) trees_cats
 
-      if hole
-        then do putStrLn ""
-                sequence_ [ testHole gr c | (_,c,_) <- trees_cats ] 
-        else return ()
+      --sequence_ 
+      --  [ testWord gr symb
+      --  | symb <- lookupSymbols gr detCN
+      --  ]
 
-{-
-    _ -> sequence_ 
-        [ do putStrLn (showConcrFun gr symb)
-             sequence_
-              [ testHole gr ccat 
-                | ccat <- nub $ ((\(as,b) -> b:as) . ctyp) symb ]
-             putStrLn "\n\n"
-          | symb <- symbols gr ]
--}
-
-    _ -> sequence_ 
-        [ testWord gr symb
-        | c <- wordCats
-        , let symb = head [ f | f <- symbols gr, arity f == 0, snd (ctyp f) == c ]
-        ]
      where
       wordCats = nub [ snd (ctyp f) | f <- symbols gr, arity f == 0 ]
+
+
+    _ -> sequence_ 
+        [ do putStrLn (showConcrFun gr symb)
+             --sequence_
+             -- [ testHole gr ccat 
+             --   | ccat <- nub $ ((\(as,b) -> b:as) . ctyp) symb ]
+--             putStrLn "\n\n"
+          | symb <- symbols gr ]
+
+
+    --_ -> sequence_ 
+    --    [ testWord gr symb
+    --    | c <- wordCats
+    --    , let symb = head [ f | f <- symbols gr, arity f == 0, snd (ctyp f) == c ]
+    --    ]
+    -- where
+    --  wordCats = nub [ snd (ctyp f) | f <- symbols gr, arity f == 0 ]
 
 

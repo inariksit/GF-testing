@@ -1,4 +1,4 @@
-all: Eus Dut Est
+all: Eus Dut Est Hin
 
 Eus:
 	gf -make --src -gfo-dir /tmp grammars/TestLangEus.gf
@@ -11,3 +11,6 @@ Eng:
 
 Dut:
 	gf -make --src -gfo-dir /tmp grammars/TestLangDut.gf
+
+Hin:
+	gf -make --src -gfo-dir /tmp grammars/TestLangIce.gf

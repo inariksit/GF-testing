@@ -5,6 +5,7 @@ module Lib
     , treesUsingFun
     , showConcrFun
     , startCCats
+    , lookupSymbols
     ) where
 
 import GrammarC
@@ -36,11 +37,12 @@ assertLin debug gr (tree,ccat,funname) = do
   putStrLn $ show tree ++ " : " ++ show ccat
   putStrLn $ linearize gr tree
 
-  putStrLn "\nNow showing that tree in context:"
+  --putStrLn "\nNow showing that tree in context:"
 
-  sequence_ [ do putStrLn (linearize gr hole)
-                 putStrLn (linearize gr tree)
-              | (tree,hole) <- zip trees holes ]  
+  --sequence_ [ do putStrLn $ show hole
+  --               putStrLn (linearize gr hole)
+  --               putStrLn (linearize gr tree)
+  --            | (tree,hole) <- zip trees holes ]  
  where
   tabularPrint :: Grammar -> Tree -> [String]
   tabularPrint gr t = 
