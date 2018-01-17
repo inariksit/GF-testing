@@ -18,12 +18,13 @@ data-dir:      data/
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Lib, GrammarC
+  exposed-modules:     Lib, GrammarC, Mu
   other-modules:       Paths_GF_testing
   build-depends:       base >= 4.7 && < 5
                      , containers
                      , gf
                      , pgf2
+                     , mtl
   default-language:    Haskell2010
 
 executable GF-testing-exe

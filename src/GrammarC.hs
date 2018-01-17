@@ -84,7 +84,7 @@ contextsFor gr top hole =
   let [paths] = Mu.mu0 [] defs [top] in
     map (path2context . snd) paths
  where
-  -- all non-empty categories
+  -- all categories
   allCats = S.toList $ S.fromList $
     hole :
     [ c
@@ -97,13 +97,6 @@ contextsFor gr top hole =
     , c <- [a,b]
     ]
 
-  -- all symbols with at least one argument, and only good arguments
-  allFuns =
-    [ f
-    | f <- symbols gr
-    , arity f >= 1
-    ]
- 
   -- length of string vector for the hole type
   arHole =
     head $
@@ -119,7 +112,7 @@ contextsFor gr top hole =
         then (c, [], \_ -> [([S.fromList [i] | i <- [0..arHole-1]],[])])
         else (c, ys, h)
     | c <- allCats
-    , let fs = [ Right f | f <- allFuns, snd (ctyp f) == c ] ++
+    , let fs = [ Right f | f <- symbols gr, arity f >= 1, snd (ctyp f) == c ] ++
                [ Left b | (a,b) <- coercions gr, a == c ]
           ys = S.toList $ S.fromList [ a | f <- fs, a <- case f of
                                                            Right f -> fst (ctyp f)

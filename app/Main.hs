@@ -14,48 +14,31 @@ import System.IO
 main :: IO ()
 main = do
   hSetBuffering stdout NoBuffering
+  args <- getArgs
+
+  let debug = "d" `elem` args
+  let compareWithOld = "cwo" `elem` args
 
   grName <- getDataFileName "TestLang.pgf" 
-  oldGrammarName <- getDataFileName "TestLangOld.pgf"
---  grName <- getDataFileName "MiniLang.pgf" 
---  grName <- getDataFileName "Phrasebook.pgf" 
   gr <- readGrammar grName
-  grOld <- readGrammar oldGrammarName
-  args <- getArgs
-  let debug = "d" `elem` args
-  let hole = "h" `elem` args
-  let compareWithOld = "cwo" `elem` args
+  grOld <- if compareWithOld
+             then readGrammar =<< getDataFileName "TestLangOld.pgf"
+             else return gr
+
 
 
   case args of 
 
-    ("all":_) -> do
-      let defaults = words "DetNP"
-      let trees_cats = map (treesUsingFun gr) defaults
-      mapM_ (mapM_ (assertLin debug gr)) trees_cats
+    ("all":_) -> sequence_ $ take 5
+      [ testFun debug gr (show symb)
+         | symb <- symbols gr ]
 
 
 
-    (detCN:_) -> do
-      let trees_cats = treesUsingFun gr detCN
-      --mapM_ print trees_cats
-
-      mapM_ (assertLin debug gr) trees_cats
-
-      sequence_ 
-        [ testWord gr symb
-        | symb <- lookupSymbols gr detCN
-        ]
-
-
-
+    (detCN:_) -> testFun debug gr detCN
 
     _ -> sequence_ 
         [ do putStrLn (showConcrFun gr symb)
-             --sequence_
-             -- [ testHole gr ccat 
-             --   | ccat <- nub $ ((\(as,b) -> b:as) . ctyp) symb ]
---             putStrLn "\n\n"
           | symb <- symbols gr ]
 
   if compareWithOld
@@ -73,13 +56,5 @@ main = do
 
                     | (acat, [nOld,nNew], labelsOld, labelsNew) <- diffCats grOld gr ]
      else return ()
-
-    --_ -> sequence_ 
-    --    [ testWord gr symb
-    --    | c <- wordCats
-    --    , let symb = head [ f | f <- symbols gr, arity f == 0, snd (ctyp f) == c ]
-    --    ]
-    -- where
-    --  wordCats = nub [ snd (ctyp f) | f <- symbols gr, arity f == 0 ]
 
 
