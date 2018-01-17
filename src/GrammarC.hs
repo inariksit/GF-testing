@@ -5,6 +5,7 @@ import qualified Data.Map as M
 import Data.Maybe
 import Data.Char
 import qualified Data.Set as S
+import qualified Mu
 
 import Debug.Trace
 
@@ -80,72 +81,27 @@ data Grammar
 
 contextsFor :: Grammar -> ConcrCat -> ConcrCat -> [Tree -> Tree]
 contextsFor gr top hole =
-  concat
-  [ map (path2context . snd) paths
-  | (c,paths) <- M.toList $ fix improve start
-  , c == top
-  ]
+  let [paths] = Mu.mu0 [] defs [top] in
+    map (path2context . snd) paths
  where
   -- all non-empty categories
-  goodCats =
+  allCats = S.toList $ S.fromList $
+    hole :
     [ c
-    | c <- S.toList $ S.fromList $
-           hole :
-           [ c
-           | f <- symbols gr
-           , let (as,b) = ctyp f
-           , c <- b:as
-           ] ++
-           [ c
-           | (b,a) <- coercions gr -- !now flipped
-           , c <- [a,b]
-           ]
-    , any ((>0) . featCard gr c) [0..25] -- 15 is arbitrary
+    | f <- symbols gr
+    , let (as,b) = ctyp f
+    , c <- b:as
+    ] ++
+    [ c
+    | (b,a) <- coercions gr -- !now flipped
+    , c <- [a,b]
     ]
 
-  -- all cats reachable from top
-  reachTop = go S.empty [top]
-   where
-    go seen []     = seen
-    go seen (c:cs)
-      | c `S.member` seen = go seen cs
-      | otherwise         = go (S.insert c seen) $
-                            [ a
-                            | f <- goodSyms
-                            , let (as,b) = ctyp f
-                            , b == c
-                            , a <- as
-                            ] ++
-                            [ a
-                            | (b,a) <- coercions gr
-                            , b == c
-                            ] ++
-                            cs
-
-  -- all cats that can reach hole
-  reachHole = go S.empty [hole]
-   where
-    go seen []     = seen
-    go seen (c:cs)
-      | c `S.member` seen = go seen cs
-      | otherwise         = go (S.insert c seen) $
-                            [ b
-                            | f <- goodSyms
-                            , let (as,b) = ctyp f
-                            , c `elem` as
-                            ] ++
-                            [ b
-                            | (b,a) <- coercions gr
-                            , a == c
-                            ] ++
-                            cs
-
   -- all symbols with at least one argument, and only good arguments
-  goodSyms =
+  allFuns =
     [ f
     | f <- symbols gr
     , arity f >= 1
-    , all (\t -> t `elem` goodCats) (fst (ctyp f))
     ]
  
   -- length of string vector for the hole type
@@ -157,28 +113,31 @@ contextsFor gr top hole =
     ] ++
     error ("no symbol found with result type " ++ show hole)
 
-  -- initial table we start our fixpoint iteration with
-  start =
-    M.fromList
-    [ (c, if hole `isCoercableTo` c
-            then [([S.fromList [i] | i <- [0..arHole-1]],[])]
-            else [])
-    | c <- S.toList (reachTop `S.intersection` reachHole)
-    ]
+  -- definitions table for fixpoint iteration
+  defs =
+    [ if hole `isCoercableTo` c
+        then (c, [], \_ -> [([S.fromList [i] | i <- [0..arHole-1]],[])])
+        else (c, ys, h)
+    | c <- allCats
+    , let fs = [ Right f | f <- allFuns, snd (ctyp f) == c ] ++
+               [ Left b | (a,b) <- coercions gr, a == c ]
+          ys = S.toList $ S.fromList [ a | f <- fs, a <- case f of
+                                                           Right f -> fst (ctyp f)
+                                                           Left b  -> [b] ]
 
-  improve tab =
-    M.fromList
-    [ (c,paths `imprs`
-           ( [ (apply (f,i) str, (f,i):fis)
-             | f <- goodSyms
-             , snd (ctyp f) `isCoercableTo` c
-             , (t,i) <- fst (ctyp f) `zip` [0..]
-             , (str,fis) <- case M.lookup t tab of
-                              Just q  -> q
-                              Nothing -> []
-             ] 
-           ))
-    | (c,paths) <- M.toList tab
+          h ps =
+            best $
+            [ (apply (f,i) str, (f,i):fis)
+            | Right f <- fs
+            , (t,i) <- fst (ctyp f) `zip` [0..]
+            , (str,fis) <- args M.! t
+            ] ++
+            [ q
+            | Left b <- fs
+            , q <- args M.! b
+            ]
+           where
+            args = M.fromList (ys `zip` ps)
     ]
    where
     apply (f,i) str =
@@ -191,9 +150,9 @@ contextsFor gr top hole =
       | sq <- seqs f
       ]
 
-    paths `imprs` paths' =
-      foldr impr paths $ M.toList $ M.fromList $ reverse $ map snd $ sort $
-        [ (size p,q) | q@(_,p) <- paths' ]
+    best paths =
+      sort $ foldr impr [] $ M.toList $ M.fromList $ reverse $ map snd $ sort $
+        [ (size p,q) | q@(_,p) <- paths ]
      where
       (str',path') `impr` paths
         | any (`covers` str') (map fst paths) =
@@ -217,11 +176,6 @@ contextsFor gr top hole =
         else head (featAll gr t)
     | (t,j) <- fst (ctyp f) `zip` [0..]
     ]
-
-  fix f x | fx == x   = x
-          | otherwise = fix f fx
-         where
-          fx = f x
 
 --------------------------------------------------------------------------------
 -- name
