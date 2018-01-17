@@ -1,10 +1,8 @@
 module Lib
-    ( assertLin
-    , testHole
-    , testWord
+    ( testTree
+    , testFun
     , treesUsingFun
     , showConcrFun
-    , startCCats
     , lookupSymbols
     ) where
 
@@ -18,72 +16,32 @@ import Data.Maybe
 import Data.Tuple ( swap )
 import Debug.Trace
 
-
-assertLin :: Bool -> Grammar -> (Tree,ConcrCat,String) -> IO ()
-assertLin debug gr (tree,ccat,funname) = do
-  putStrLn $ "\n" ++ funname 
-  putStrLn $ [ '-' | c <- funname ] ++ "\n"
-  when debug $ do
-    putStrLn $ intercalate "\n" (tabularPrint gr tree)
-    putStrLn "--------------------\n"
-  
-  let ctxs = concat [ contextsFor gr st ccat 
-                     | st <- ccats gr "S" ] :: [Tree -> Tree]
-
-  let trees = map ($ tree) ctxs
-
-  let holes = map ($ (App (hole ccat) [])) ctxs
-  
-  putStrLn $ show tree ++ " : " ++ show ccat
-  putStrLn $ linearize gr tree
-
-  --putStrLn "\nNow showing that tree in context:"
-
-  --sequence_ [ do putStrLn $ show hole
-  --               putStrLn (linearize gr hole)
-  --               putStrLn (linearize gr tree)
-  --            | (tree,hole) <- zip trees holes ]  
- where
-  tabularPrint :: Grammar -> Tree -> [String]
-  tabularPrint gr t = 
-    let cseqs = [ concatMap showCSeq cseq | cseq <- map (concrSeqs gr) (seqs $ top t) ]
-        tablins = tabularLin gr t :: [(String,String)]
-     in [ fieldname ++ ":\t" ++ lin ++ "\t" ++ s | ((fieldname,lin),s) <- zip tablins cseqs ]
-
-  showCSeq (Left tok) = " " ++ show tok ++ " "
-  showCSeq (Right (i,j)) = " <" ++ show i ++ "," ++ show j ++ "> "
+testFun :: Bool -> Grammar -> String -> IO ()
+testFun debug gr funname = sequence_
+  [ testTree debug gr tree
+    | tree <- treesUsingFun gr funname]
 
 
-testHole :: Grammar -> ConcrCat -> IO ()
-testHole gr cn_3 = do
-  putStrLn "---"
-  putStrLn $ show cn_3 ++ "-shaped hole in the start category:"
-      
-  let bestCtxs = [ map ($ App (hole cn_3) []) (contextsFor gr startcat cn_3)
-                   | startcat <- startCCats gr ] 
-
-  mapM_ putStrLn $ 
-       [ show t ++ "\n\t" ++ linearize gr t ++ "\n"
-          | ts <- bestCtxs, t <- ts ]
-
-testWord :: Grammar -> Symbol -> IO ()
-testWord gr w =
-  do putStrLn ("*** WORD: " ++ showConcrFun gr w ++ " " ++ show (tabularLin gr (App w [])))
+testTree :: Bool -> Grammar -> Tree -> IO ()
+testTree debug gr t =
+  do putStrLn ("### " ++ showConcrFun gr w) 
+     when debug $ putStrLn (intercalate "\n" (tabularPrint gr t))
      putStr $ unlines $ concat $
        [ [ ""
          , "- "     ++ show (ctx (App (hole c) []))
          , "  --> " ++ linearize gr (ctx (App (hole c) []))
-         , "  --> " ++ linearize gr (ctx (App w []))
+         , "  --> " ++ linearize gr (ctx t)
          ] 
          {- ++
          [ "  " ++ s
-         | f <- nub $ funs (ctx (App w []))
+         | f <- nub $ funs (ctx t) --(App w []))
          , s <- analFun f
          ] -}
        | ctx <- ctxs
        ]
      putStrLn ""
  where
+  w    = top t
   c    = snd (ctyp w)
   ctxs = concat
          [ contextsFor gr sc c
@@ -91,14 +49,16 @@ testWord gr w =
          ] 
 
   starts = ccats gr "S"
-  
-  funs (App f ts) = f : concatMap funs ts
 
-  analFun f =
-    [ showConcrFun gr f' ++ if f == f' then " <=" else "" 
-    | f' <- symbols gr
-    , show f == show f'
-    ]
+  --funs (App f ts) = f : concatMap funs ts
+
+  --analFun f =
+  --  [ showConcrFun gr f' ++ if f == f' then " <=" else "" 
+  --  | f' <- symbols gr
+  --  , show f == show f'
+  --  ]
+
+--------------------------------------------------------------------------------
 
 lookupSymbols :: Grammar -> String -> [Symbol]
 lookupSymbols gr str = 
@@ -112,26 +72,17 @@ ccats gr cl = [ CC (Just cat) fid
                  , cat == cl
                  , fid <- [start..end] ]
 
-startCCats :: Grammar -> [ConcrCat]
-startCCats gr = ccats gr (startCat gr)
-
-
---------------------------------------------------------------------------------
-
-treesUsingFun :: Grammar -> String -> [(Tree,ConcrCat,String)] --last 2 for debug
+treesUsingFun :: Grammar -> String -> [Tree] 
 treesUsingFun gr funname = 
-  [ (tree,np_209,concrFunStr)
+  [ tree
     | detCN <- lookupSymbols gr funname
     , let (dets_cns,np_209) = ctyp detCN -- :: ([ConcrCat],ConcrCat)
-    , tree <- App detCN <$> bestTrees detCN gr dets_cns
-    , let concrFunStr = showConcrFun gr detCN ]
+    , let bestArgs = case dets_cns of
+                      [] -> [[]] 
+                      xs -> bestTrees detCN gr dets_cns 
+    , tree <- App detCN <$> bestArgs ]
   
-showConcrFun :: Grammar -> Symbol -> String
-showConcrFun gr detCN = show detCN ++ " : " ++ 
-                        intercalate " → " (map show dets_cns) ++
---                        show (coerce gr <$> dets_cns) ++
-                        " → " ++ show np_209
- where (dets_cns,np_209) = ctyp detCN 
+
 --------------------------------------------------------------------------------
 
 bestTrees :: Symbol -> Grammar -> [ConcrCat] -> [[Tree]]
@@ -183,29 +134,20 @@ bestExamples fun gr vtrees = go [] vtrees_lins
 
 --------------------------------------------------------------------------------
 
-hasArg :: Symbol -> Bool
-hasArg s = case s of
-  Symbol _ _ ([], _) _ -> False
-  _                  -> True
+tabularPrint :: Grammar -> Tree -> [String]
+tabularPrint gr t = 
+    let cseqs = [ concatMap showCSeq cseq | cseq <- map (concrSeqs gr) (seqs $ top t) ]
+        tablins = tabularLin gr t :: [(String,String)]
+     in [ fieldname ++ ":\t" ++ lin ++ "\t" ++ s | ((fieldname,lin),s) <- zip tablins cseqs ]
+ where
+  showCSeq (Left tok) = " " ++ show tok ++ " "
+  showCSeq (Right (i,j)) = " <" ++ show i ++ "," ++ show j ++ "> "
+
+showConcrFun :: Grammar -> Symbol -> String
+showConcrFun gr detCN = show detCN ++ " : " ++ 
+                        concatMap (\x -> show x ++ " → ") dets_cns ++
+                        show np_209
+ where (dets_cns,np_209) = ctyp detCN 
 
 lookupAll :: (Eq a) => [(a,b)] -> a -> [b]
 lookupAll kvs key = [ v | (k,v) <- kvs, k==key ]
-
-coerce :: Grammar -> ConcrCat -> [ConcrCat]
-coerce gr ccat = case lookupAll (coercions gr) ccat of
-                    [] -> [ccat]
-                    xs -> xs
-
-uncoerce :: Grammar -> ConcrCat -> [ConcrCat]
-uncoerce gr = lookupAll (map swap $ coercions gr)
-
-isSubtree :: Tree -> Tree -> Bool
-isSubtree t1 t2 = t1 `elem` args t2
-
-norepeat :: Tree -> Bool
-norepeat t = let tops = collapse t in nub tops == tops
-
-collapse :: Tree -> [Symbol]
-collapse (App tp as) = tp : concatMap collapse as
-
-
