@@ -68,6 +68,7 @@ data Grammar
   , concrCats    :: [(PGF2.Cat,I.FId,I.FId,[String])]
 --  , productions  :: I.FId -> [I.Production] --just for debugging
   , coercions    :: [(ConcrCat,ConcrCat)]
+  , coercionTab  :: S.Set (ConcrCat,ConcrCat)
   , startCat     :: Cat
   , symbols      :: [Symbol]
   , concrSeqs    :: SeqId -> [Either String (Int,Int)] 
@@ -102,10 +103,48 @@ contextsFor gr top hole =
     , any ((>0) . featCard gr c) [0..25] -- 15 is arbitrary
     ]
 
-  -- all symbols with only good arguments
+  -- all cats reachable from top
+  reachTop = go S.empty [top]
+   where
+    go seen []     = seen
+    go seen (c:cs)
+      | c `S.member` seen = go seen cs
+      | otherwise         = go (S.insert c seen) $
+                            [ a
+                            | f <- goodSyms
+                            , let (as,b) = ctyp f
+                            , b == c
+                            , a <- as
+                            ] ++
+                            [ a
+                            | (b,a) <- coercions gr
+                            , b == c
+                            ] ++
+                            cs
+
+  -- all cats that can reach hole
+  reachHole = go S.empty [hole]
+   where
+    go seen []     = seen
+    go seen (c:cs)
+      | c `S.member` seen = go seen cs
+      | otherwise         = go (S.insert c seen) $
+                            [ b
+                            | f <- goodSyms
+                            , let (as,b) = ctyp f
+                            , c `elem` as
+                            ] ++
+                            [ b
+                            | (b,a) <- coercions gr
+                            , a == c
+                            ] ++
+                            cs
+
+  -- all symbols with at least one argument, and only good arguments
   goodSyms =
     [ f
     | f <- symbols gr
+    , arity f >= 1
     , all (\t -> t `elem` goodCats) (fst (ctyp f))
     ]
  
@@ -121,10 +160,10 @@ contextsFor gr top hole =
   -- initial table we start our fixpoint iteration with
   start =
     M.fromList
-    [ (c, if c == hole
+    [ (c, if hole `isCoercableTo` c
             then [([S.fromList [i] | i <- [0..arHole-1]],[])]
             else [])
-    | c <- goodCats
+    | c <- S.toList (reachTop `S.intersection` reachHole)
     ]
 
   improve tab =
@@ -132,16 +171,12 @@ contextsFor gr top hole =
     [ (c,paths `imprs`
            ( [ (apply (f,i) str, (f,i):fis)
              | f <- goodSyms
-             , snd (ctyp f) == c
+             , snd (ctyp f) `isCoercableTo` c
              , (t,i) <- fst (ctyp f) `zip` [0..]
-             , (str,fis) <- tab M.! t
-             ] ++
-             [ (str, fis)
-             | (b,a) <- coercions gr -- !now flipped
-             , b == c
-             , Just fs <- [M.lookup a tab]
-             , (str,fis) <- fs
-             ]     
+             , (str,fis) <- case M.lookup t tab of
+                              Just q  -> q
+                              Nothing -> []
+             ] 
            ))
     | (c,paths) <- M.toList tab
     ]
@@ -170,8 +205,10 @@ contextsFor gr top hole =
       str1 `covers` str2 =
         and [ s2 `S.isSubsetOf` s1 | (s1,s2) <- str1 `zip` str2 ]
 
-      size = sum . map (\f -> arity f - 1) . map fst
+      size = sum . map (\f -> arity f) . map fst
 
+  a `isCoercableTo` b = a==b || ((a,b) `S.member` coercionTab gr)
+  
   path2context []          x = x
   path2context ((f,i):fis) x =
     App f
@@ -255,6 +292,21 @@ toGrammar pgf =
 
         , coercions = coerces
 
+        , coercionTab =
+            let go tab []         = tab
+                go tab ((a,b):cs) = new (S.insert (a,b) tab)
+                                        ( [ (x,b) | (x,y) <- S.toList tab, y == a ]
+                                       ++ [ (a,y) | (x,y) <- S.toList tab, x == b ]
+                                        )
+                                        cs
+                
+                new tab (ab:ds) cs
+                  | ab `S.member` tab = new tab ds cs
+                  | otherwise         = new tab ds (ab:cs)
+                new tab [] cs         = go tab cs
+
+             in go S.empty [ (a,b) | (b,a) <- coerces ]
+              
         , concrSeqs = map cseq2Either . I.concrSequence lang
 
         , feat =
