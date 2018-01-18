@@ -81,22 +81,71 @@ data Grammar
 
 contextsFor :: Grammar -> ConcrCat -> ConcrCat -> [Tree -> Tree]
 contextsFor gr top hole =
-  let [paths] = Mu.mu0 [] defs [top] in
+  let [paths] = Mu.mu [] defs [top] in
     map (path2context . snd) paths
  where
-  -- all categories
-  allCats = S.toList $ S.fromList $
-    hole :
+  -- all non-empty categories
+  goodCats =
     [ c
-    | f <- symbols gr
-    , let (as,b) = ctyp f
-    , c <- b:as
-    ] ++
-    [ c
-    | (b,a) <- coercions gr -- !now flipped
-    , c <- [a,b]
+    | c <- S.toList $ S.fromList $
+           hole :
+           [ c
+           | f <- symbols gr
+           , let (as,b) = ctyp f
+           , c <- b:as
+           ] ++
+           [ c
+           | (b,a) <- coercions gr -- !now flipped
+           , c <- [a,b]
+           ]
+    , any ((>0) . featCard gr c) [0..25] -- 15 is arbitrary
     ]
 
+  -- all cats reachable from top
+  reachTop = go S.empty [top]
+   where
+    go seen []     = seen
+    go seen (c:cs)
+      | c `S.member` seen = go seen cs
+      | otherwise         = go (S.insert c seen) $
+                            [ a
+                            | f <- goodSyms
+                            , let (as,b) = ctyp f
+                            , b == c
+                            , a <- as
+                            ] ++
+                            [ a
+                            | (b,a) <- coercions gr
+                            , b == c
+                            ] ++
+                            cs
+
+  -- all cats that can reach hole
+  reachHole = go S.empty [hole]
+   where
+    go seen []     = seen
+    go seen (c:cs)
+      | c `S.member` seen = go seen cs
+      | otherwise         = go (S.insert c seen) $
+                            [ b
+                            | f <- goodSyms
+                            , let (as,b) = ctyp f
+                            , c `elem` as
+                            ] ++
+                            [ b
+                            | (b,a) <- coercions gr
+                            , a == c
+                            ] ++
+                            cs
+
+  -- all symbols with at least one argument, and only good arguments
+  goodSyms =
+    [ f
+    | f <- symbols gr
+    , arity f >= 1
+    , all (\t -> t `elem` goodCats) (fst (ctyp f))
+    ]
+ 
   -- length of string vector for the hole type
   arHole =
     head $
@@ -106,23 +155,26 @@ contextsFor gr top hole =
     ] ++
     error ("no symbol found with result type " ++ show hole)
 
+  reachCats = reachTop `S.intersection` reachHole
+
   -- definitions table for fixpoint iteration
   defs =
     [ if hole `isCoercableTo` c
         then (c, [], \_ -> [([S.fromList [i] | i <- [0..arHole-1]],[])])
         else (c, ys, h)
-    | c <- allCats
-    , let fs = [ Right f | f <- symbols gr, arity f >= 1, snd (ctyp f) == c ] ++
-               [ Left b | (a,b) <- coercions gr, a == c ]
+    | c <- S.toList reachCats
+    , let fs = [ Right f | f <- goodSyms, arity f >= 1, snd (ctyp f) == c ] ++
+               [ Left b | (a,b) <- coercions gr, a == c, b `S.member` reachCats ]
           ys = S.toList $ S.fromList [ a | f <- fs, a <- case f of
                                                            Right f -> fst (ctyp f)
-                                                           Left b  -> [b] ]
+                                                           Left b  -> [b], a `S.member` reachCats ]
 
           h ps =
             best $
             [ (apply (f,i) str, (f,i):fis)
             | Right f <- fs
             , (t,i) <- fst (ctyp f) `zip` [0..]
+            , t `S.member` reachCats
             , (str,fis) <- args M.! t
             ] ++
             [ q
