@@ -4,6 +4,7 @@ module Lib
     , treesUsingFun
     , showConcrFun
     , lookupSymbol
+    , tabularPrint
     ) where
 
 import GrammarC
@@ -13,24 +14,24 @@ import Data.List
 import Data.Either
 import qualified Data.Set as S
 import Data.Maybe
-import Data.Tuple ( swap )
 import Debug.Trace
 
-testFun :: Bool -> Grammar -> String -> IO ()
-testFun debug gr funname = sequence_
-  [ testTree debug gr tree
+testFun :: Bool -> Grammar -> [Grammar] -> String -> IO ()
+testFun debug gr trans funname = sequence_
+  [ testTree debug gr trans tree
     | tree <- treesUsingFun gr funname]
 
 
-testTree :: Bool -> Grammar -> Tree -> IO ()
-testTree debug gr t =
+testTree :: Bool -> Grammar -> [Grammar] -> Tree -> IO ()
+testTree debug gr grs t =
   do putStrLn ("### " ++ showConcrFun gr w) 
-     when debug $ putStrLn (intercalate "\n" (tabularPrint gr t))
+     when debug $ mapM_ putStrLn (tabularPrint gr t)
      putStr $ unlines $ concat $
        [ [ ""
          , "- "     ++ show (ctx (App (hole c) []))
          , "  --> " ++ linearize gr (ctx (App (hole c) []))
          , "  --> " ++ linearize gr (ctx t)
+         , "  --> " ++ linearize transGrammar (ctx t)
          ] 
          {- ++
          [ "  " ++ s
@@ -38,6 +39,7 @@ testTree debug gr t =
          , s <- analFun f
          ] -}
        | ctx <- ctxs
+       , transGrammar <- grs
        ]
      putStrLn ""
  where

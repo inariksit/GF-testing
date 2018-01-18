@@ -19,10 +19,10 @@ import qualified PGF2.Internal as I
 -- name
 
 type Name = String
-type Cat  = PGF2.Cat -- i.e. String
-type SeqId = Int
 
 -- concrete category
+
+type Cat  = PGF2.Cat -- i.e. String
 
 data ConcrCat = CC (Maybe Cat) I.FId -- i.e. Int
   deriving ( Ord, Eq )
@@ -40,8 +40,9 @@ data Tree
 data AmbTree -- only used as an intermediate structure for parsing
   = AmbApp { atop :: [Symbol], aargs :: [AmbTree] } 
 
-
 -- symbol
+
+type SeqId = Int
 
 data Symbol
   = Symbol
@@ -63,16 +64,19 @@ hole c = Symbol (show c) [] ([], "") ([],c)
 
 -- grammar
 
-data Grammar
+type Lang = String
+
+data Grammar 
   = Grammar
   {
-    parse        :: String -> [Tree]
+    concLang     :: PGF2.Concr
+  , parse        :: String -> [Tree]
   , readTree     :: String -> Tree
   , linearize    :: Tree -> String
-  , tabularLin   :: Tree -> [(String,String)]
+  , tabularLin   :: Tree ->  [(String,String)]
   , concrCats    :: [(PGF2.Cat,I.FId,I.FId,[String])]
-  , coercions    :: [(ConcrCat,ConcrCat)]
-  , coercionTab :: S.Set (ConcrCat,ConcrCat)
+  , coercions    :: [(ConcrCat,ConcrCat)] -- M.Map ConcrCat ConcrCat 
+  , coercionTab  :: S.Set (ConcrCat,ConcrCat)
   , startCat     :: Cat
   , symbols      :: [Symbol]
   , lookupSymbol :: String -> [Symbol]
@@ -104,18 +108,20 @@ catOf (App f _) = snd (typ f)
 
 -- grammar
 
-readGrammar :: FilePath -> IO Grammar
-readGrammar file =
+readGrammar :: Lang -> FilePath -> IO Grammar
+readGrammar lang file =
   do pgf <- PGF2.readPGF file
-     return (toGrammar pgf)
+     return (toGrammar pgf lang)
 
 
-toGrammar :: PGF2.PGF -> Grammar
-toGrammar pgf =
+toGrammar :: PGF2.PGF -> Lang -> Grammar
+toGrammar pgf langName =
   let gr =
         Grammar
         {
-         parse = \s ->
+          concLang = lang
+
+        , parse = \s ->
             case PGF2.parse lang (PGF2.startCat pgf) s of 
               PGF2.ParseOk es_fs -> map (mkTree.fst) es_fs
               PGF2.ParseFailed i s -> error s
@@ -138,11 +144,9 @@ toGrammar pgf =
         , concrCats = 
             I.concrCategories lang
 
-        , symbols = 
-            symbs
+        , symbols = symbs
 
-        , lookupSymbol =
-            lookupSymbs
+        , lookupSymbol =lookupSymbs
 
         , coercions = coerces
 
@@ -170,6 +174,12 @@ toGrammar pgf =
    in gr
  where
 
+  -- language
+  lang = case M.lookup langName (PGF2.languages pgf) of
+           Just la -> la
+           Nothing -> trace ("no grammar found with name " ++ langName) $ 
+                        head $ M.elems $ PGF2.languages pgf 
+
   -- categories and coercions
 
   mkCat tp = cat where (_, cat, _) = PGF2.unType tp
@@ -189,17 +199,14 @@ toGrammar pgf =
                   xs -> Just $ the xs
 
 
-
   coerces = [ ( CC Nothing afid, mkCC cfid )
               | afid <- [0..I.concrTotalCats lang]
-              , I.PCoerce cfid  <- I.concrProductions lang afid ]
+              , I.PCoerce cfid <- I.concrProductions lang afid ]
 
   coerce c = case lookupAll coerces c of
                [] -> [c]
                cs -> cs
 
-  -- language
-  lang = snd $ head $ M.assocs $ PGF2.languages pgf  
 
 
   -- symbols
