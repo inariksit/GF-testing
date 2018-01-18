@@ -3,7 +3,7 @@ module Lib
     , testFun
     , treesUsingFun
     , showConcrFun
-    , lookupSymbols
+    , lookupSymbol
     ) where
 
 import GrammarC
@@ -60,12 +60,6 @@ testTree debug gr t =
 
 --------------------------------------------------------------------------------
 
-lookupSymbols :: Grammar -> String -> [Symbol]
-lookupSymbols gr str = 
-  lookupAll (symb2table <$> symbols gr) (mkName str)
- where
-  symb2table s@(Symbol nm _ _ _) = (nm,s)
-
 ccats :: Grammar -> String -> [ConcrCat]
 ccats gr cl = [ CC (Just cat) fid 
                  | (cat,start,end,_) <- concrCats gr
@@ -75,7 +69,7 @@ ccats gr cl = [ CC (Just cat) fid
 treesUsingFun :: Grammar -> String -> [Tree] 
 treesUsingFun gr funname = 
   [ tree
-    | detCN <- lookupSymbols gr funname
+    | detCN <- lookupSymbol gr funname
     , let (dets_cns,np_209) = ctyp detCN -- :: ([ConcrCat],ConcrCat)
     , let bestArgs = case dets_cns of
                       [] -> [[]] 

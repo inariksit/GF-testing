@@ -7,6 +7,7 @@ import Data.Char
 import qualified Data.Set as S
 import qualified Mu
 
+import GHC.Exts ( the )
 import Debug.Trace
 
 import qualified PGF2
@@ -28,13 +29,17 @@ data ConcrCat = CC (Maybe Cat) I.FId -- i.e. Int
 
 instance Show ConcrCat where
   show (CC (Just cat) fid) = cat ++ "_" ++ show fid 
-  show (CC Nothing fid)    = "_" ++ show fid 
+  show (CC Nothing    fid) = "_" ++ show fid 
 
 -- tree
 
 data Tree
-  = App{ top :: Symbol, args :: [Tree] }
+  = App { top :: Symbol, args :: [Tree] }
  deriving ( Eq, Ord )
+
+data AmbTree -- only used as an intermediate structure for parsing
+  = AmbApp { atop :: [Symbol], aargs :: [AmbTree] } 
+
 
 -- symbol
 
@@ -47,34 +52,222 @@ data Symbol
   }
  deriving ( Eq, Ord )
 
+instance Show Symbol where
+  show = name
+
 arity :: Symbol -> Int
 arity = length . fst . ctyp
 
 hole :: ConcrCat -> Symbol
-hole c = Symbol ("(" ++ show c ++ ")") [] ([], "") ([],c)
-
-isHole :: Symbol -> Bool
-isHole (Symbol "()" _ _ _) = True
-isHole _                   = False
+hole c = Symbol (show c) [] ([], "") ([],c)
 
 -- grammar
 
 data Grammar
   = Grammar
   {
-  -- parse        :: String -> [Tree]
-    linearize    :: Tree -> String
-  , linearizeAll :: Tree -> [String]
+    parse        :: String -> [Tree]
+  , readTree     :: String -> Tree
+  , linearize    :: Tree -> String
   , tabularLin   :: Tree -> [(String,String)]
   , concrCats    :: [(PGF2.Cat,I.FId,I.FId,[String])]
---  , productions  :: I.FId -> [I.Production] --just for debugging
   , coercions    :: [(ConcrCat,ConcrCat)]
-  , coercionTab  :: S.Set (ConcrCat,ConcrCat)
+  , coercionTab :: S.Set (ConcrCat,ConcrCat)
   , startCat     :: Cat
   , symbols      :: [Symbol]
+  , lookupSymbol :: String -> [Symbol]
   , concrSeqs    :: SeqId -> [Either String (Int,Int)] 
   , feat         :: FEAT
   }
+
+
+--------------------------------------------------------------------------------
+-- name
+
+mkName, mkCat :: String -> Name
+mkName = id
+mkCat  = id
+
+-- tree
+
+instance Show Tree where
+  show = showTree
+
+showTree :: Tree -> String
+showTree (App a []) = show a
+showTree (App f xs) = unwords (show f : map showTreeArg xs)
+  where showTreeArg (App a []) = show a
+        showTreeArg t = "(" ++ showTree t ++ ")"
+
+catOf :: Tree -> Cat
+catOf (App f _) = snd (typ f)
+
+-- grammar
+
+readGrammar :: FilePath -> IO Grammar
+readGrammar file =
+  do pgf <- PGF2.readPGF file
+     return (toGrammar pgf)
+
+
+toGrammar :: PGF2.PGF -> Grammar
+toGrammar pgf =
+  let gr =
+        Grammar
+        {
+         parse = \s ->
+            case PGF2.parse lang (PGF2.startCat pgf) s of 
+              PGF2.ParseOk es_fs -> map (mkTree.fst) es_fs
+              PGF2.ParseFailed i s -> error s
+              PGF2.ParseIncomplete -> error "Incomplete parse"
+
+        , readTree = \s ->
+            case PGF2.readExpr s of
+              Just t  -> mkTree t
+              Nothing -> error "readTree: no parse"
+
+        , linearize = \t ->
+            PGF2.linearize lang (mkExpr t)
+
+        , tabularLin = \t ->
+            PGF2.tabularLinearize lang (mkExpr t)
+
+        , startCat =
+            mkCat (PGF2.startCat pgf)
+
+        , concrCats = 
+            I.concrCategories lang
+
+        , symbols = 
+            symbs
+
+        , lookupSymbol =
+            lookupSymbs
+
+        , coercions = coerces
+
+        , coercionTab =
+            let go tab []         = tab
+                go tab ((a,b):cs) = new (S.insert (a,b) tab)
+                                        ( [ (x,b) | (x,y) <- S.toList tab, y == a ]
+                                       ++ [ (a,y) | (x,y) <- S.toList tab, x == b ]
+                                        )
+                                        cs
+                
+                new tab (ab:ds) cs
+                  | ab `S.member` tab = new tab ds cs
+                  | otherwise         = new tab ds (ab:cs)
+                new tab [] cs         = go tab cs
+
+             in go S.empty [ (a,b) | (b,a) <- coerces ]
+              
+        , concrSeqs = 
+            map cseq2Either . I.concrSequence lang
+
+        , feat =
+            mkFEAT gr
+        }
+   in gr
+ where
+
+  -- categories and coercions
+
+  mkCat tp = cat where (_, cat, _) = PGF2.unType tp
+
+  mkExpr (App n []) | not (null s) && all isDigit s =
+    PGF2.mkInt (read s)
+   where
+    s = show n
+
+  mkExpr (App f xs) =
+    PGF2.mkApp (name f) [ mkExpr x | x <- xs ] 
+     
+  mkCC fid = CC ccat fid 
+   where ccat = case [ cat | (cat,bg,end,_) <- I.concrCategories lang
+                           , fid `elem` [bg..end] ] of 
+                  [] -> Nothing -- means it's coercion
+                  xs -> Just $ the xs
+
+
+
+  coerces = [ ( CC Nothing afid, mkCC cfid )
+              | afid <- [0..I.concrTotalCats lang]
+              , I.PCoerce cfid  <- I.concrProductions lang afid ]
+
+  coerce c = case lookupAll coerces c of
+               [] -> [c]
+               cs -> cs
+
+  -- language
+  lang = snd $ head $ M.assocs $ PGF2.languages pgf  
+
+
+  -- symbols
+  symbs = [ Symbol { 
+              name = nm,
+              seqs = sqs,
+              ctyp = (argsCC, resCC),
+              typ = (map coerceAbsCat argsCC, rescat)
+            }
+            | (rescat,bg,end,_) <- I.concrCategories lang
+            , resfid <- [bg..end] 
+            , I.PApply funId pargs <- I.concrProductions lang resfid
+            , let resCC  = CC (Just rescat) resfid 
+            , let argsCC = [ mkCC argfid | I.PArg _ argfid <- pargs ]
+            , let (nm,sqs) = I.concrFunction lang funId ]
+   where
+    coerceAbsCat c = case c of
+      CC (Just cat) _ -> cat
+      CC Nothing    _ -> the [ coerceAbsCat x | x <- coerce c ]
+
+
+  lookupSymbs = lookupAll (map symb2table symbs)
+   where symb2table s@(Symbol nm _ _ _) = (nm,s)
+
+
+  -- parsing and reading trees
+
+  mkTree :: PGF2.Expr -> Tree
+  mkTree = at2tree . mkAmbTree
+
+  mkAmbTree t = -- :: PGF2.Expr -> AmbTree
+    case PGF2.unApp t of
+      Just (f,xs) -> AmbApp (lookupSymbs f) [ mkAmbTree x | x <- xs ]
+      _           -> error (PGF2.showExpr [] t)
+
+  at2tree at =  -- :: AmbTree -> Tree
+    case iterate reduce at !! 10 of --TODO: some more legit fixpoint computation here?
+      AmbApp [x]   ts -> App x [ at2tree t | t <- ts ]
+      AmbApp []   _ts -> error "mkTree: empty tree"
+      AmbApp (x:_) ts -> error "mkTree: ambiguous tree"
+       {- trace ("\n*** mkTree: ambiguous tree " ++ show x ++ " ***\n") $
+                        App x [ at2tree t | t <- ts ] -}
+ 
+   where 
+    reduce at = AmbApp (reduceSymbol at) [ reduce t | t <- aargs at ]
+
+    reduceSymbol (AmbApp fs as) = case all (singleton . atop) as of
+      True  -> let red = [ symbol
+                           | symbol <- fs
+                           , let argTypes = map coerce ( fst $ ctyp symbol )
+                           , let resTypes = map coerce [ snd $ ctyp s 
+                                                        | (AmbApp [s] _) <- as ] 
+                           , and [ intersect a r /= [] -- TODO: can this lead to ambiguous trees?
+                                 | (a,r) <- zip argTypes resTypes ] ]
+                in case red of
+                    [x] -> [x]
+                    _   -> fs
+      False -> fs
+
+  -- misc
+  lookupAll kvs key = [ v | (k,v) <- kvs, k==key ]  
+
+  singleton [x] = True
+  singleton xs  = False
+
+  cseq2Either (I.SymKS tok)  = Left tok
+  cseq2Either (I.SymCat x y) = Right (x,y)
+  cseq2Either x              = Left (show x)
 
 --------------------------------------------------------------------------------
 -- analyzing contexts
@@ -223,153 +416,6 @@ contextsFor gr top hole =
     ]
 
 --------------------------------------------------------------------------------
--- name
-
-mkName, mkCat :: String -> Name
-mkName = id
-mkCat  = id
-
--- tree
-
-instance Show Tree where
-  show = showTree
-
-showTree :: Tree -> String
-showTree (App a []) = show a
-showTree (App f xs) = unwords (show f : map showTreeArg xs)
-  where showTreeArg (App a []) = show a
-        showTreeArg t = "(" ++ showTree t ++ ")"
-
-catOf :: Tree -> Cat
-catOf (App f _) = snd (typ f)
-
--- symbol
-
-instance Show Symbol where
-  show f = name f --CId is just a String in PGF2
-
--- grammar
-
-toGrammar :: PGF2.PGF -> Grammar
-toGrammar pgf =
-  let gr =
-        Grammar
-        {
-         --parse = \s ->
-         --   case PGF2.parse lang (PGF2.startCat pgf) s of 
-         --     PGF2.ParseOk es_fs -> map (mkTree.fst) es_fs
-         --     PGF2.ParseFailed i s -> error s
-         --     PGF2.ParseIncomplete -> error "Incomplete parse"
-
-          linearize = \t ->
-            PGF2.linearize lang (mkExpr t)
-
-        , linearizeAll = \t -> 
-            PGF2.linearizeAll lang (mkExpr t)
-
-        , tabularLin = \t ->
-            PGF2.tabularLinearize lang (mkExpr t)
-
-        , startCat =
-            mkCat (PGF2.startCat pgf)
-
-        , concrCats = I.concrCategories lang
-
-        , symbols = 
-           [ Symbol { 
-               name = nm,
-               seqs = sqs,
-               ctyp = (cArgTypes, cResType),
-               typ = (map abstrCat cArgTypes, abstrCat cResType) } --this takes care of coercions
-
-             | (cat,bg,end,_) <- concrCats gr 
-             , resFid <- [bg..end] 
-             , I.PApply funId pargs <- I.concrProductions lang resFid
-             , let cArgTypes = [ CC (getGFCat fid) fid | I.PArg _ fid <- pargs ]
-             , let cResType = CC (getGFCat resFid) resFid 
-             , let (nm,sqs) = I.concrFunction lang funId ]
-
-        , coercions = coerces
-
-        , coercionTab =
-            let go tab []         = tab
-                go tab ((a,b):cs) = new (S.insert (a,b) tab)
-                                        ( [ (x,b) | (x,y) <- S.toList tab, y == a ]
-                                       ++ [ (a,y) | (x,y) <- S.toList tab, x == b ]
-                                        )
-                                        cs
-                
-                new tab (ab:ds) cs
-                  | ab `S.member` tab = new tab ds cs
-                  | otherwise         = new tab ds (ab:cs)
-                new tab [] cs         = go tab cs
-
-             in go S.empty [ (a,b) | (b,a) <- coerces ]
-              
-        , concrSeqs = map cseq2Either . I.concrSequence lang
-
-        , feat =
-            mkFEAT gr
-        }
-   in gr
- where
-
-  cseq2Either (I.SymKS tok) = Left tok
-  cseq2Either (I.SymCat x y) = Right (x,y)
-  cseq2Either x = Left (show x)
-
-  lang = snd $ head $ M.assocs $ PGF2.languages pgf  
-
-  coerces = [ ( CC Nothing afid
-              , CC ccat cfid )
-              | afid <- [0..I.concrTotalCats lang]
-              , I.PCoerce cfid  <- I.concrProductions lang afid 
-              , let ccat = getGFCat cfid ] --can there be multiple coercionss, like X -> Y -> Z?
-
-
-  abstrCat :: ConcrCat -> Cat
-  abstrCat c@(CC Nothing _)  = let Just ccat = lookup c coerces 
-                                in abstrCat ccat
-  abstrCat (CC (Just cat) _) = cat
-  
-  getGFCat :: I.FId -> Maybe Cat
-  getGFCat fid = 
-      let cats = nub [ cat | (cat,bg,end,xs) <- I.concrCategories lang
-                         , fid `elem` [bg..end] ]
-     in case cats of 
-          [] -> --trace ("getGFCat: no values for fID " ++ show fid) $ 
-                Nothing -- means it's coercion
-          (x:xs) -> Just x
-
--- Only needed for parse. If we need it, find out what to put in ctyp of Symbol.
-{-
-  mkSymbol f = Symbol f ([mkCat x | (_,_,x) <- xs],y) [????]
-   where
-    Just ft    = PGF2.functionType pgf f -- functionType :: PGF -> Fun -> Maybe Type
-    (xs, y, _) = PGF2.unType ft
-
-   
-  mkTree t =
-   case PGF2.unApp t of
-     Just (f,xs) -> App (mkSymbol f) [ mkTree x | x <- xs ]
-     _           -> error (PGF2.showExpr [] t)
--}  
-  mkExpr (App n []) | not (null s) && all isDigit s =
-    PGF2.mkInt (read s)
-   where
-    s = show n
-
-  mkExpr (App f xs) =
-    PGF2.mkApp (name f) [ mkExpr x | x <- xs ]
-  
-  mkCat  tp  = cat where (_, cat, _) = PGF2.unType tp
-  mkType cat = PGF2.mkType [] cat []
-
-readGrammar :: FilePath -> IO Grammar
-readGrammar file =
-  do pgf <- PGF2.readPGF file
-     return (toGrammar pgf)
-
 -- FEAT-style generator magic
 
 type FEAT = [ConcrCat] -> Int -> (Integer, Integer -> [Tree])
