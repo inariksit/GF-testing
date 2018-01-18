@@ -4,7 +4,6 @@ import Data.Map( Map, (!) )
 import qualified Data.Map as M
 import Data.Set( Set )
 import qualified Data.Set as S
-import qualified Control.Monad.State as SM
 
 --------------------------------------------------------------------------------
 
@@ -22,41 +21,6 @@ mu0 bot defs zs = [ done!z | z <- zs ]
     as' = [ f [ tab!y | y <- ys ]
           | (_,(_, ys, f)) <- as `zip` defs
           ]
-
---------------------------------------------------------------------------------
-
-{-
-mu :: (Ord x, Eq a) => (a->a->a) -> a -> [(x, [x], [a] -> a)] -> [x] -> [a]
-mu (\/) bot defs zs = [ done!z | z <- zs ]
- where
-  xs    = [ x | (x, _, _) <- defs ]
-  deps  = M.fromList [ (x,ys) | (x,ys,_) <- defs ]
-  qSet  = break 0 S.empty [ (z,0) | z <- zs ]
-  qs    = S.toList qSet
-  done  = iter [ tab0!q | q <- qs ] tab0
-  tab0  = step (M.fromList [ (x,bot) | x <- xs ])
-
-  break l seen [] =
-    S.empty
-  
-  break l seen ((x,i):xs) =
-
-  iter vs tab
-    | vs == vs' = tab
-    | otherwise = iter vs' tab'
-   where
-    vs'  = [ tab'!q | q <- qs ]
-    tab' = step tab
-
-  step tab = tab'
-   where
-    tab' = M.fromList
-           [ (x, (tab'!x) \/ f [ if y `S.member` qSet
-                                   then tab!y
-                                   else tab'!y | y <- ys ])
-           | (x, ys, f) <- defs
-           ]
--}
 
 --------------------------------------------------------------------------------
 
@@ -100,74 +64,127 @@ simulate defs (state, upds) = (state', changed')
 
 --------------------------------------------------------------------------------
 
-data SCCState x
-  = SCCState
-  { index    :: Int
-  , mindex   :: Map x Int
-  , mlowlink :: Map x Int
-  }
-
-scc :: Ord x => Map x [x] -> [x] -> [[x]]
-scc graph starts =
-    reverse
-  . map snd
-  . M.toList
-  . M.fromListWith (++)
-  $ [ (i,[x])
-    | (x,i) <- M.toList (mlowlink s)
-    ]
+mu :: (Ord x, Eq a) => a -> [(x, [x], [a] -> a)] -> [x] -> [a]
+mu bot defs zs = compute bot ftab (dft graph zs)
  where
-   s =
-     SM.execState (sccM graph starts) $ SCCState 0 M.empty M.empty
+  ftab  = M.fromList [ (x,f)  | (x,_, f) <- defs ]
+  graph = M.fromList [ (x,xs) | (x,xs,_) <- defs ]
 
-sccM :: Ord x => Map x [x] -> [x] -> SM.State (SCCState x) ()
-sccM graph starts =
-  sequence_
-    [ do mi <- getIndexOf x
-         case mi of
-           Nothing -> sccNode graph x
-           _       -> return ()
-    | x <- starts
-    ]
+-- depth-first trees
 
-sccNode :: Ord x => Map x [x] -> x -> SM.State (SCCState x) ()
-sccNode graph x =
-  do i <- getIndex
-     setIndexOf x i
-     setLowlinkOf x i
-     setIndex (i+1)
-     sequence_
-       [ do mj <- getIndexOf y
-            case mj of
-              Nothing ->
-                do sccNode graph y
-                   i <- getLowlinkOf x
-                   j <- getLowlinkOf y
-                   setLowlinkOf x (i `min` j)
-               
-              Just j ->
-                do i <- getLowlinkOf x
-                   setLowlinkOf x (i `min` j)
-       | y <- graph ! x
-       ]
+data DFTree a
+  = Node a [DFTree a]
+  | Up   a
+  | Side a
+ deriving ( Eq, Ord, Show )
 
-getIndex :: SM.State (SCCState x) Int
-getIndex = SM.gets index
+dft :: Ord x => Map x [x] -> [x] -> [DFTree x]
+dft graph starts = go S.empty [ (S.empty,x) | x <- starts ]
+ where
+  go seen []            = []
+  go seen ((ups,x):xs)
+    | x `S.member` ups  = Up x   : go seen xs
+    | x `S.member` seen = Side x : go seen xs
+    | otherwise         = Node x (take n ts) : drop n ts
+   where
+    seen' = S.insert x seen
+    ups'  = S.insert x ups
+    ys    = graph!x
+    n     = length ys
+    ts    = go seen' ([(ups',y) | y <- ys] ++ xs)
 
-getIndexOf :: Ord x => x -> SM.State (SCCState x) (Maybe Int)
-getIndexOf x = SM.gets (M.lookup x . mindex)
+-- a monad for evaluation
 
-getLowlinkOf :: Ord x => x -> SM.State (SCCState x) Int
-getLowlinkOf x = SM.gets ((! x) . mlowlink)
+newtype M x b a = M (b -> Map x b -> (a, Map x b))
 
-setIndex :: Int -> SM.State (SCCState x) ()
-setIndex i = SM.modify $ \s -> s{ index = i }
+instance Functor (M x b) where
+  f `fmap` M h = M (\b s -> let (x,s') = h b s in (f x, s'))
 
-setIndexOf :: Ord x => x -> Int -> SM.State (SCCState x) ()
-setIndexOf x i = SM.modify $ \s -> s{ mindex = M.insert x i (mindex s) }
+instance Applicative (M x b) where
+  pure x        = M (\b s -> (x,s))
+  M mf <*> M mx = M (\b s -> let (f,s') = mf b s; (x,s'') = mx b s' in (f x, s''))
 
-setLowlinkOf :: Ord x => x -> Int -> SM.State (SCCState x) ()
-setLowlinkOf x i = SM.modify $ \s -> s{ mlowlink = M.insert x i (mlowlink s) }
+instance Monad (M x b) where
+  return x   = M (\b s -> (x,s))
+  M mx >>= k = M (\b s -> let (x,s') = mx b s; M h = k x in h b s')
+
+get :: Ord x => x -> M x a a
+get x = M (\b s -> case M.lookup x s of
+                     Just a -> (a, s)
+                     Nothing -> (b, s))
+
+(=:) :: Ord x => x -> a -> M x a ()
+x =: a = M (\b s -> ((), M.insert x a s))
+
+run :: M x b a -> b -> a
+run (M h) b = let (x, _) = h b M.empty in x
+
+-- computing over a depth-first tree
+
+data C x b a
+  = Done a
+  | Open (Set x) (Set x) (M x b a)
+
+compute :: (Ord x, Eq a) => a -> Map x ([a]->a) -> [DFTree x] -> [a]
+compute bot ftab ts = run (sequence [ top t | t <- ts ]) bot
+ where
+  top t =
+    do c <- go t
+       case c of
+         Done a     -> return a
+         Open _ _ m -> m
+ 
+  go (Side x) =
+    do return (Open S.empty S.empty (get x))
+
+  go (Up x) =
+    do return (Open (S.singleton x) S.empty (get x))
+
+  go (Node x ts) =
+    do cs <- sequence [ go t | t <- ts ]
+       c  <- calc x cs
+       case c of
+         Open wait args m | x `S.member` wait ->
+           if S.null wait' then
+             let xs = S.toList args'
+             
+                 fix as =
+                   do a   <- m
+                      as' <- sequence [ get x | x <- xs ]
+                      if as' == as
+                        then return (Done a)
+                        else fix as'
+              
+              in sequence [ get x | x <- xs ] >>= fix
+           else
+             do return (Open wait' args' m)
+          where
+           wait' = S.delete x wait
+           args' = S.insert x args
+         
+         _ ->
+           do return c
+             
+  calc x cs =
+    case foldr (-:) (Done []) cs of
+      Done as ->
+        do let a = f as
+           x =: a
+           return (Done a)
+     
+      Open wait args m ->
+        do return (Open wait args (do as <- m
+                                      let a = f as
+                                      x =: a
+                                      return a))
+   where
+    f = ftab!x
+ 
+    Done x       -: Done xs      = Done (x:xs)
+    Done x       -: Open ws zs n = Open ws zs ((x:)  `fmap` n)
+    Open vs ys m -: Done xs      = Open vs ys ((:xs) `fmap` m)
+    Open vs ys m -: Open ws zs n =
+      Open (vs `S.union` ws) (ys `S.union` zs) ((:) <$> m <*> n)
 
 --------------------------------------------------------------------------------
 
