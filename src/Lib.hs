@@ -19,7 +19,7 @@ import Debug.Trace
 testFun :: Bool -> Grammar -> [Grammar] -> String -> IO ()
 testFun debug gr trans funname = sequence_
   [ testTree debug gr trans tree
-    | tree <- treesUsingFun gr funname]
+    | tree <- treesUsingFun gr (lookupSymbol gr funname) ]
 
 
 testTree :: Bool -> Grammar -> [Grammar] -> Tree -> IO ()
@@ -68,10 +68,10 @@ ccats gr cl = [ CC (Just cat) fid
                  , cat == cl
                  , fid <- [start..end] ]
 
-treesUsingFun :: Grammar -> String -> [Tree] 
-treesUsingFun gr funname = 
+treesUsingFun :: Grammar -> [Symbol] -> [Tree] 
+treesUsingFun gr detCNs = 
   [ tree
-    | detCN <- lookupSymbol gr funname
+    | detCN <- detCNs
     , let (dets_cns,np_209) = ctyp detCN -- :: ([ConcrCat],ConcrCat)
     , let bestArgs = case dets_cns of
                       [] -> [[]] 
@@ -84,7 +84,7 @@ treesUsingFun gr funname =
 bestTrees :: Symbol -> Grammar -> [ConcrCat] -> [[Tree]]
 bestTrees fun gr cats = bestExamples fun gr $ take 10000
   [ featIthVec gr cats size i
-    | size <- [1..5] 
+    | size <- [1..2] 
     , let card = featCardVec gr cats size 
     , i <- [0..card-1]
    ]

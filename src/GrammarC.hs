@@ -80,6 +80,7 @@ data Grammar
   , startCat     :: Cat
   , symbols      :: [Symbol]
   , lookupSymbol :: String -> [Symbol]
+  , functionsByCat :: Cat -> [Symbol]
   , concrSeqs    :: SeqId -> [Either String (Int,Int)] 
   , feat         :: FEAT
   }
@@ -146,7 +147,10 @@ toGrammar pgf langName =
 
         , symbols = symbs
 
-        , lookupSymbol =lookupSymbs
+        , lookupSymbol = lookupSymbs
+
+        , functionsByCat = \c ->
+            S.toList $ S.fromList [ symb | symb <- symbs, snd (typ symb) == c ]
 
         , coercions = coerces
 

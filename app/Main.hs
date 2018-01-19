@@ -14,13 +14,13 @@ import System.IO
 main :: IO ()
 main = do
   hSetBuffering stdout NoBuffering
-  args <- getArgs
+  (langName:args) <- getArgs
 
   let debug = "d" `elem` args
   let compareWithOld = "cwo" `elem` args
   let useTreebank = "tb" `elem` args
 
-  let concName = "TestLangDut" --TODO: user input
+  let concName = "TestLang" ++ langName --TODO: user input
   let concTrans = "TestLangEng" 
 
   grName <- getDataFileName "TestLang.pgf" 
@@ -46,14 +46,17 @@ main = do
 -- secondary operations: read trees from treebank, compare with old grammar
 
   when useTreebank $ do 
-    treebank <- lines `fmap` (readFile =<< getDataFileName "treebank.txt")
+    treebank <- readFile =<< getDataFileName "treebank.txt"
     sequence_ [ do let tree = readTree gr str
+                   let (_args,ty) = ctyp (top tree)
+                   putStrLn $ unlines [ "", show tree ++ " : " ++ show ty]
                    mapM_ putStrLn $ tabularPrint gr tree
-                | str <- treebank ]
+                | str <- lines treebank ]
 
 
   when compareWithOld $ do
     grOld <- readGrammar concName =<< getDataFileName "TestLangOld.pgf"
+    let difCats = diffCats grOld gr
     sequence_
         [ putStrLn $ unlines $ 
            [ "### " ++ acat
@@ -61,6 +64,12 @@ main = do
            , (show nNew) ++ " concrete categories in the new grammar.  "
            , "* Labels only in old: " ++ intercalate ", " labelsOld
            , "* Labels only in new: " ++ intercalate ", " labelsNew ]
-        | (acat, [nOld,nNew], labelsOld, labelsNew) <- diffCats grOld gr ]
+        | (acat, [nOld,nNew], labelsOld, labelsNew) <- difCats ]
+
+    let changedFuns = take 5 [ (cat,functionsByCat gr cat) | (cat,_,_,_) <- difCats ]
+    sequence_ [ do putStrLn $ "Testing functions that produce a " ++ cat
+                   sequence_ [ testTree debug gr [] t | t <- treesUsingFun gr funs ]
+                | (cat,funs) <- changedFuns ]
+
 
 
