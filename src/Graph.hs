@@ -5,7 +5,9 @@ import Data.Map( Map, (!) )
 import qualified Data.Set as S
 import Data.Set( Set )
 import Data.List( nub, sort, (\\) )
-import Test.QuickCheck hiding ( generate )
+--import Test.QuickCheck hiding ( generate )
+
+-- == almost everything in this module is inspired by King & Launchbury ==
 
 --------------------------------------------------------------------------------
 -- depth-first trees
@@ -20,16 +22,16 @@ type Forest a
 
 -- pruning a possibly infinite forest
 prune :: Ord a => Forest a -> Forest a
-prune ts = go ts S.empty
+prune ts = go S.empty ts
  where
-  go []             seen = []
-  go (Cut x    :ts) seen = Cut x : go ts seen
-  go (Node x vs:ts) seen
-    | x `S.member` seen  = Cut x : go ts seen
+  go seen []             = []
+  go seen (Cut x    :ts) = Cut x : go seen ts
+  go seen (Node x vs:ts)
+    | x `S.member` seen  = Cut x : go seen ts
     | otherwise          = Node x (take n ws) : drop n ws
    where
     n  = length vs
-    ws = go (vs ++ ts) (S.insert x seen)
+    ws = go (S.insert x seen) (vs ++ ts)
 
 -- pre- and post-order traversals
 preorder :: Tree a -> [a]
@@ -51,6 +53,13 @@ postorderF ts = go ts []
   go []               xs = xs
   go (Cut x     : ts) xs = go ts xs
   go (Node x vs : ts) xs = go vs (x : go ts xs)
+
+-- computing back-arrows
+backs :: Ord a => Tree a -> Set a
+backs t = S.fromList (go S.empty t)
+ where
+  go ups (Node x ts) = concatMap (go (S.insert x ups)) ts
+  go ups (Cut x)     = [x | x `S.member` ups ]
 
 --------------------------------------------------------------------------------
 -- graphs
@@ -76,6 +85,9 @@ generate g x = Node x (map (generate g) (g!x))
 dfs :: Ord a => Graph a -> [a] -> Forest a
 dfs g xs = prune (map (generate g) xs)
 
+reach :: Ord a => Graph a -> [a] -> Graph a
+reach g xs = M.fromList [ (x,g!x) | x <- preorderF (dfs g xs) ]
+
 dff :: Ord a => Graph a -> Forest a
 dff g = dfs g (vertices g)
 
@@ -100,6 +112,7 @@ sccs = map preorder . scc
 --------------------------------------------------------------------------------
 -- testing correctness
 
+{-
 newtype G = G (Graph Int) deriving ( Show )
 
 set :: (Ord a, Num a, Arbitrary a) => Gen [a]
@@ -170,6 +183,7 @@ prop_Scc_NotConnected (G g) =
     go seen (x:xs)
       | x `S.member` seen = go seen xs
       | otherwise         = go (S.insert x seen) ((g!x) ++ xs)
+-}
 
 --------------------------------------------------------------------------------
 
