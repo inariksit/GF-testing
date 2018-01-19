@@ -134,8 +134,7 @@ prop_Mu p@(P _ xs) =
       old = mu0 [] ds xs
       
       report =
-        do print (dft gr xs)
-           putStrLn ("mu0: " ++ show old)
+        do putStrLn ("mu0: " ++ show old)
            putStrLn ("mu:  " ++ show new)
            
    in within 5000000 $ whenFail report (new == old)
