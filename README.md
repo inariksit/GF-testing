@@ -108,6 +108,10 @@ Koen's on it!
   * time of looking at examples
 * Effect
   * compare against other methods -- what methods?
+  
+For application grammars, if you're writing them from scratch, it is actually pretty feasible to just `gt` the hell out of it as you write. But this doesn't work for bigger grammars.
+
+Morphology can be tested efficiently againts any existing morphological analyser. I've used Apertium for Dutch and Basque.
 
 ### Include trees from corpus
 
@@ -119,4 +123,8 @@ Possibly use corpus to find thematic groups of words (or NPs/APs/...), to make m
 ### Include a gold standard & filter
 
 Add a database of `[(AST,[lin])]` for trees and linearisations that the user has deemed correct. When running the tests again, only show trees that are not in the database, or whose linearisations are different from those in the db.
+
+If testing an application grammar, or for some other reason the abstract syntax should change, this shouldn't be a big deal -- just update the treebank; remove trees that aren't in the grammar anymore.
+
+
 
