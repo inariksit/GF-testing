@@ -279,10 +279,15 @@ toGrammar pgf langName =
 --------------------------------------------------------------------------------
 -- analyzing contexts
 
+data Pair a b = Pair{ pfst :: a, psnd :: b } deriving ( Ord, Show )
+
+instance Eq a => Eq (Pair a b) where
+  Pair x _ == Pair y _ = x == y
+
 contextsFor :: Grammar -> ConcrCat -> ConcrCat -> [Tree -> Tree]
 contextsFor gr top hole =
   let [paths] = Mu.mu [] defs [top] in
-    map (path2context . snd) paths
+    map (path2context . psnd) paths
  where
   -- all non-empty categories
   goodCats =
@@ -360,7 +365,7 @@ contextsFor gr top hole =
   -- definitions table for fixpoint iteration
   defs =
     [ if hole `isCoercableTo` c
-        then (c, [], \_ -> [([S.fromList [i] | i <- [0..arHole-1]],[])])
+        then (c, [], \_ -> [Pair [S.fromList [i] | i <- [0..arHole-1]] []])
         else (c, ys, h)
     | c <- S.toList reachCats
     , let fs = [ Right f | f <- goodSyms, arity f >= 1, snd (ctyp f) == c ] ++
@@ -371,11 +376,11 @@ contextsFor gr top hole =
 
           h ps =
             best $
-            [ (apply (f,i) str, (f,i):fis)
+            [ Pair (apply (f,i) str) ((f,i):fis)
             | Right f <- fs
             , (t,i) <- fst (ctyp f) `zip` [0..]
             , t `S.member` reachCats
-            , (str,fis) <- args M.! t
+            , Pair str fis <- args M.! t
             ] ++
             [ q
             | Left b <- fs
@@ -399,12 +404,12 @@ contextsFor gr top hole =
       sort $ foldr impr [] $ M.toList $ M.fromList $ reverse $ map snd $ sort $
         [ (size p,q) | q@(_,p) <- paths ]
      where
-      (str',path') `impr` paths
-        | any (`covers` str') (map fst paths) =
+      Pair str' path' `impr` paths
+        | any (`covers` str') (map pfst paths) =
           paths
         
         | otherwise =
-          (str',path') : filter (not . (str' `covers`) . fst) paths
+          Pair str' path' : filter (not . (str' `covers`) . pfst) paths
 
       str1 `covers` str2 =
         and [ s2 `S.isSubsetOf` s1 | (s1,s2) <- str1 `zip` str2 ]
