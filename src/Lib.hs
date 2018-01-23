@@ -18,28 +18,24 @@ import Debug.Trace
 
 testFun :: Bool -> Grammar -> [Grammar] -> String -> IO ()
 testFun debug gr trans funname = sequence_
-  [ testTree debug gr trans tree
+  [ do print tree
+       testTree debug gr trans tree
     | tree <- treesUsingFun gr (lookupSymbol gr funname) ]
 
 
 testTree :: Bool -> Grammar -> [Grammar] -> Tree -> IO ()
-testTree debug gr grs t =
+testTree debug gr tgrs t =
   do putStrLn ("### " ++ showConcrFun gr w) 
      when debug $ mapM_ putStrLn (tabularPrint gr t)
      putStr $ unlines $ concat 
        [ [ ""
          , "- "     ++ show (ctx (App (hole c) []))
          , "  --> " ++ linearize gr (ctx (App (hole c) []))
-         , "  --> " ++ linearize gr (ctx t)
-         , "  --> " ++ linearize transGrammar (ctx t)
-         ] 
-         {- ++
-         [ "  " ++ s
-         | f <- nub $ funs (ctx t) --(App w []))
-         , s <- analFun f
-         ] -}
+         , "  --> " ++ linearize gr (ctx t) 
+         ] ++
+         [ "  --> " ++ linearize tgr (ctx t) 
+         | tgr <- tgrs ]
        | ctx <- ctxs
-       , transGrammar <- grs
        ]
      putStrLn ""
  where
@@ -51,14 +47,6 @@ testTree debug gr grs t =
          ] 
 
   starts = ccats gr "S"
-
-  --funs (App f ts) = f : concatMap funs ts
-
-  --analFun f =
-  --  [ showConcrFun gr f' ++ if f == f' then " <=" else "" 
-  --  | f' <- symbols gr
-  --  , show f == show f'
-  --  ]
 
 --------------------------------------------------------------------------------
 
