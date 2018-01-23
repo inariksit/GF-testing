@@ -3,12 +3,12 @@ module Main where
 import GrammarC
 import Lib
 import Paths_GF_testing
-import System.Environment
 
 import Control.Monad ( when )
 import Data.List ( intercalate )
 
-import System.IO
+import System.Environment ( getArgs )
+import System.IO ( stdout, hSetBuffering, BufferMode(..) )
 
 
 main :: IO ()
@@ -20,7 +20,7 @@ main = do
   let compareWithOld = "cwo" `elem` args
   let useTreebank = "tb" `elem` args
 
-  let concName = "TestLang" ++ langName --TODO: user input
+  let concName = "TestLang" ++ langName
   let concTrans = "TestLangEng" 
 
   grName <- getDataFileName "TestLang.pgf" 
@@ -39,7 +39,7 @@ main = do
     (detCN:_) -> testFun debug gr [grTrans] detCN
 
     _ -> sequence_ 
-        [ do putStrLn (showConcrFun gr symb)
+        [ putStrLn (showConcrFun gr symb)
           | symb <- symbols gr ]
 
 -------------------------------------------------------------------------------
@@ -58,10 +58,10 @@ main = do
     grOld <- readGrammar concName =<< getDataFileName "TestLangOld.pgf"
     let difCats = diffCats grOld gr
     sequence_
-        [ putStrLn $ unlines $ 
+        [ putStrLn $ unlines
            [ "### " ++ acat
-           , (show nOld) ++ " concrete categories in the old grammar, "
-           , (show nNew) ++ " concrete categories in the new grammar.  "
+           , show nOld ++ " concrete categories in the old grammar, "
+           , show nNew ++ " concrete categories in the new grammar.  "
            , "* Labels only in old: " ++ intercalate ", " labelsOld
            , "* Labels only in new: " ++ intercalate ", " labelsNew ]
         | (acat, [nOld,nNew], labelsOld, labelsNew) <- difCats ]

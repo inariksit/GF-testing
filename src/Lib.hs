@@ -26,7 +26,7 @@ testTree :: Bool -> Grammar -> [Grammar] -> Tree -> IO ()
 testTree debug gr grs t =
   do putStrLn ("### " ++ showConcrFun gr w) 
      when debug $ mapM_ putStrLn (tabularPrint gr t)
-     putStr $ unlines $ concat $
+     putStr $ unlines $ concat 
        [ [ ""
          , "- "     ++ show (ctx (App (hole c) []))
          , "  --> " ++ linearize gr (ctx (App (hole c) []))

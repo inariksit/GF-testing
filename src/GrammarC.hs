@@ -69,8 +69,7 @@ type Lang = String
 data Grammar 
   = Grammar
   {
-    concLang     :: PGF2.Concr
-  , parse        :: String -> [Tree]
+    parse        :: String -> [Tree]
   , readTree     :: String -> Tree
   , linearize    :: Tree -> String
   , tabularLin   :: Tree ->  [(String,String)]
@@ -120,9 +119,9 @@ toGrammar pgf langName =
   let gr =
         Grammar
         {
-          concLang = lang
 
-        , parse = \s ->
+
+         parse = \s ->
             case PGF2.parse lang (PGF2.startCat pgf) s of 
               PGF2.ParseOk es_fs -> map (mkTree.fst) es_fs
               PGF2.ParseFailed i s -> error s
@@ -233,7 +232,7 @@ toGrammar pgf langName =
 
 
   lookupSymbs = lookupAll (map symb2table symbs)
-   where symb2table s@(Symbol nm _ _ _) = (nm,s)
+   where symb2table s = (name s, s)
 
 
   -- parsing and reading trees
@@ -514,8 +513,8 @@ mkFEAT gr = catList
 diffCats :: Grammar -> Grammar -> [(Cat,[Int],[String],[String])]
 diffCats gr1 gr2 = 
   [ (acat1,[difFid c1, difFid c2],labels1  \\ labels2,labels2 \\ labels1)
-    | c1@(acat1,sfid1,efid1,labels1) <- concrCats gr1
-    , c2@(acat2,sfid2,efid2,labels2) <- concrCats gr2
+    | c1@(acat1,_i1,_j2,labels1) <- concrCats gr1
+    , c2@(acat2,_i2,_j2,labels2) <- concrCats gr2
     , difFid c1 /= difFid c2 -- different amount of concrete categories
       || labels1 /= labels2 -- or the labels are different
     , acat1==acat2 ]
