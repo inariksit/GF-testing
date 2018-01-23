@@ -180,8 +180,10 @@ toGrammar pgf langName =
   -- language
   lang = case M.lookup langName (PGF2.languages pgf) of
            Just la -> la
-           Nothing -> trace ("no grammar found with name " ++ langName) $ 
-                        head $ M.elems $ PGF2.languages pgf 
+           Nothing -> let (defName,defGr) = head $ M.assocs $ PGF2.languages pgf
+                          msg = "no grammar found with name " ++ langName ++ 
+                                ", using " ++ defName
+                      in trace msg defGr
 
   -- categories and coercions
 
