@@ -34,13 +34,14 @@ mu bot defs zs = [ vtab?z | z <- zs ]
   graph = reach (M.fromList [ (x,xs) | (x,xs,_) <- defs ]) zs
   vtab  = foldl compute M.empty (scc graph)
 
-  compute vtab t = fix vtab (map (vtab ?) xs)
+  compute vtab t = fix (-1) vtab (map (vtab ?) xs)
    where
     xs = S.toList (backs t)
 
-    fix vtab as
+    fix 0 vtab _ = vtab
+    fix n vtab as
       | as' == as = vtab'
-      | otherwise = fix vtab' as'
+      | otherwise = fix (n-1) vtab' as'
      where
       (_,vtab') = eval t vtab
       as'       = map (vtab' ?) xs
