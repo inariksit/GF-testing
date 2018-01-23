@@ -401,8 +401,7 @@ contextsFor gr top hole =
       ]
 
     best paths =
-      sort $ foldr impr [] $ M.toList $ M.fromList $ reverse $ map snd $ sort $
-        [ (size p,q) | q@(_,p) <- paths ]
+      sort $ foldr impr [] $ map snd $ reverse $ sort [ (size p, p) | p <- paths ]
      where
       Pair str' path' `impr` paths
         | any (`covers` str') (map pfst paths) =
@@ -414,7 +413,12 @@ contextsFor gr top hole =
       str1 `covers` str2 =
         and [ s2 `S.isSubsetOf` s1 | (s1,s2) <- str1 `zip` str2 ]
 
-      size = sum . map (\f -> arity f) . map fst
+      size (Pair _ p) =
+        sum [ if i == j then 1 else smallest gr t
+            | (f,i) <- p
+            , let (ts,_) = ctyp f
+            , (t,j) <- ts `zip` [0..]
+            ]
 
   a `isCoercableTo` b = a==b || ((a,b) `S.member` coercionTab gr)
   
@@ -431,6 +435,9 @@ contextsFor gr top hole =
 -- FEAT-style generator magic
 
 type FEAT = [ConcrCat] -> Int -> (Integer, Integer -> [Tree])
+
+smallest :: Grammar -> ConcrCat -> Int
+smallest gr c = head [ n | n <- [0..], featCard gr c n > 0 ]
 
 -- compute how many trees there are of a given size and type
 featCard :: Grammar -> ConcrCat -> Int -> Integer
