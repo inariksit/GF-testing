@@ -94,3 +94,37 @@ Changes that create more concrete categories:
 * add a new param field -- e.g. `lincat Foo = {s : Str}` into `lincat Foo = {s : Str ; isPre : Bool}` multiplies the number of concrete categories for each value of the param. In this case the original was one concrete cat `Foo`, and it becomes two: `Foo_true` and `Foo_false`.
 * Adding new string fields doesn't create new concrete categories.
 
+___
+
+## TODO (2018-01-22)
+
+### Make context generation faster
+Koen's on it!
+
+### Evaluation
+
+* Cost
+  * time of generating examples
+  * time of looking at examples
+* Effect
+  * compare against other methods -- what methods?
+  
+For application grammars, if you're writing them from scratch, it is actually pretty feasible to just `gt` the hell out of it as you write. But this doesn't work for bigger grammars.
+
+Morphology can be tested efficiently againts any existing morphological analyser. I've used Apertium for Dutch and Basque.
+
+### Include trees from corpus
+
+1. Example generation needs particular kinds of trees, with the right kind of concrete categories and string pattern properties. 
+1. Context generation needs a particular path from the top category to the tree generated in step 1; so some functions in that context tree are fixed, but many subtrees are completely free (as long as they are in the right category). These could come from a corpus.
+
+Possibly use corpus to find thematic groups of words (or NPs/APs/...), to make more coherent sentences? But this can lead to "the car drives John" rather than "John drives the car".
+
+### Include a gold standard & filter
+
+Add a database of `[(AST,[lin])]` for trees and linearisations that the user has deemed correct. When running the tests again, only show trees that are not in the database, or whose linearisations are different from those in the db.
+
+If testing an application grammar, or for some other reason the abstract syntax should change, this shouldn't be a big deal -- just update the treebank; remove trees that aren't in the grammar anymore.
+
+
+
