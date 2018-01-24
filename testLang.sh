@@ -26,7 +26,7 @@ cd data
 ./mkConcrete.sh $ISO
 cp TestLang.pgf TestLangOld.pgf # keep the old version for later comparison!
 cd -
-cabal build && cabal run GF-testing-exe all > /tmp/$LANG.lins.old
+cabal build && cabal run GF-testing-exe -- -s $ISO -f all > /tmp/$LANG.lins.old
 
 # 2) Recompile everything in the GF RGL dev directory and put .gfos to $GF_LIB_PATH
 cd $GPATH
@@ -39,13 +39,12 @@ cd data
 cd -
 
 # 4) Run 
-cabal build && cabal run GF-testing-exe all > /tmp/$LANG.lins
+cabal build && cabal run GF-testing-exe -- -s $ISO -f all -o TestLangOld.gf > /tmp/$LANG.lins
 echo "New results stored in /tmp/$LANG.lins"
 echo "Comparing with old results, before recompiling $LANGISO"
 diff -u /tmp/$LANG.lins.old /tmp/$LANG.lins
 
 echo "Comparing if concrete categories have changed since last time"
-cabal run GF-testing-exe cwo > /tmp/$LANG-ccat-changes.md
-echo "Results found in  /tmp/$LANG-ccat-changes.md"
+echo "Results found in  $LANG-ccat-changes.md"
 
 
