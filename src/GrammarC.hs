@@ -375,9 +375,9 @@ contextsFor gr top hole =
     | c <- S.toList reachCats
     , let fs = [ Right f | f <- goodSyms, arity f >= 1, snd (ctyp f) == c ] ++
                [ Left b | (a,b) <- coercions gr, a == c, b `S.member` reachCats ]
-          ys = S.toList $ S.fromList [ a | f <- fs, a <- case f of
-                                                           Right f -> fst (ctyp f)
-                                                           Left b  -> [b], a `S.member` reachCats ]
+          ys = S.toList $ S.fromList (c : [ a | f <- fs, a <- case f of
+                                                                Right f -> fst (ctyp f)
+                                                                Left b  -> [b], a `S.member` reachCats ])
 
           h ps =
             best $
@@ -390,7 +390,8 @@ contextsFor gr top hole =
             [ q
             | Left b <- fs
             , q <- args M.! b
-            ]
+            ] ++
+            (args M.! c)
            where
             args = M.fromList (ys `zip` ps)
     ]
@@ -405,15 +406,15 @@ contextsFor gr top hole =
       | sq <- seqs f
       ]
 
-    best paths =
-      sort $ foldr impr [] $ map snd $ reverse $ sort [ (size p, p) | p <- paths ]
+    best paths = go [] (map snd $ sort [ (size p, p) | p <- paths ])
      where
-      Pair str' path' `impr` paths
-        | any (`covers` str') (map pfst paths) =
-          paths
+      go result [] = result
+      go result (p@(Pair str _) : paths)
+        | any (`covers` str) (map pfst result) =
+          go result paths
         
         | otherwise =
-          Pair str' path' : filter (not . (str' `covers`) . pfst) paths
+          go (insert p (filter (not . (str `covers`) . pfst) result)) paths
 
       str1 `covers` str2 =
         and [ s2 `S.isSubsetOf` s1 | (s1,s2) <- str1 `zip` str2 ]
