@@ -20,6 +20,10 @@ data Tree a
 type Forest a
   = [Tree a]
 
+top :: Tree a -> a
+top (Node x _) = x
+top (Cut x)    = x
+
 -- pruning a possibly infinite forest
 prune :: Ord a => Forest a -> Forest a
 prune ts = go S.empty ts

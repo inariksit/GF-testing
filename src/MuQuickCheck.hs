@@ -54,7 +54,7 @@ arbMono k c n =
   [ (2, Arg   <$> choose (0,k-1))
   , (1, This  <$> arbSet c)
   , (n, Union <$> arbMono k c n2 <*> arbMono k c n2)
-  , (n, Inter <$> arbMono k c n2 <*> arbMono k c n2)
+  -- , (n, Inter <$> arbMono k c n2 <*> arbMono k c n2)
   , (n, Map   <$> arbFun c <*> arbSet c <*> arbMono k c n2)
   ]
  where
@@ -73,7 +73,7 @@ arbMono k c n =
 
 instance Arbitrary Problem where
   arbitrary =
-    do v <- choose (1,100)
+    do v <- choose (1,26)
        c <- choose (1,10)
        arbProblem v c
   
@@ -126,6 +126,12 @@ defs (P ents _) =
   | (x,xs,f) <- ents
   ]
 
+defs' :: Problem -> [(Char,[Char],[([Int],[Int])]-> [Int])]
+defs' (P ents _) =
+  [ (x,xs,eval f . map fst)
+  | (x,xs,f) <- ents
+  ]
+
 prop_Mu :: Problem -> Property
 prop_Mu p@(P _ xs) =
   let ds  = defs p
@@ -138,4 +144,20 @@ prop_Mu p@(P _ xs) =
            putStrLn ("mu:  " ++ show new)
            
    in within 5000000 $ whenFail report (new == old)
+
+prop_MuDiff :: Problem -> Property
+prop_MuDiff p@(P _ xs) =
+  let ds  = defs p
+      gr  = M.fromList [ (x,xs) | (x,xs,_) <- ds ]
+      new = muDiff [] [] null id difference union' (defs' p) xs
+      old = mu0 [] ds xs
+      
+      report =
+        do putStrLn ("mu0: " ++ show old)
+           putStrLn ("mu:  " ++ show new)
+           
+   in within 5000000 $ whenFail report (new == old)
+
+union'     xs ys = L.nub $ L.sort $ L.union xs ys
+difference xs ys = L.nub $ L.sort $ filter (`notElem` ys) xs
 

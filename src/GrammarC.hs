@@ -285,17 +285,10 @@ toGrammar pgf langName =
 --------------------------------------------------------------------------------
 -- analyzing contexts
 
--- helper datatypes
-data Pair a b = Pair{ pfst :: a, psnd :: b }
-  deriving ( Ord, Show )
-
-instance Eq a => Eq (Pair a b) where
-  Pair x _ == Pair y _ = x == y
-
 contextsFor :: Grammar -> ConcrCat -> ConcrCat -> [Tree -> Tree]
 contextsFor gr top hole =
-  let [paths] = Mu.mu [] defs [top] in
-    map (path2context . psnd) paths
+  let [paths] = Mu.muDiff F.Nil [] null F.contents dif ins defs [top] in
+    map (path2context . snd) (F.contents paths)
  where
   -- all non-empty categories
   goodCats =
@@ -311,7 +304,7 @@ contextsFor gr top hole =
            | (b,a) <- coercions gr -- !now flipped
            , c <- [a,b]
            ]
-    , any ((>0) . featCard gr c) [0..25] -- 15 is arbitrary
+    , any ((>0) . featCard gr c) [0..25] -- 25 is arbitrary
     ]
 
   -- all cats reachable from top
@@ -371,64 +364,69 @@ contextsFor gr top hole =
   reachCats = reachTop `S.intersection` reachHole
 
   -- definitions table for fixpoint iteration
+  ds `dif` fm =
+    F.contents ([ d | d@(xs,_) <- ds, not (fm `F.covers` xs) ] `ins` F.Nil)
+  
+  paths `ins` fm =
+       foldl collect fm
+     . map snd
+     . sort
+     $ [ (size p, p) | p <- paths ]
+   where
+    collect fm (str,p)
+      | fm `F.covers` str = fm
+      | otherwise         = F.add str p fm
+
+    size (_,p) =
+      sum [ if i == j then 1 else smallest gr t
+          | (f,i) <- p
+          , let (ts,_) = ctyp f
+          , (t,j) <- ts `zip` [0..]
+          ]
+
   defs =
     [ if hole `isCoercableTo` c
-        then (c, [], \_ -> [Pair [S.fromList [i] | i <- [0..arHole-1]] []])
+        then (c, [], \_ -> [([(i,i) | i <- [0..arHole-1]],[])])
         else (c, ys, h)
     | c <- S.toList reachCats
     , let fs = [ Right f | f <- goodSyms, arity f >= 1, snd (ctyp f) == c ] ++
                [ Left b | (a,b) <- coercions gr, a == c, b `S.member` reachCats ]
-          ys = S.toList $ S.fromList (c : [ a | f <- fs, a <- case f of
-                                                                Right f -> fst (ctyp f)
-                                                                Left b  -> [b], a `S.member` reachCats ])
+          ys = S.toList $ S.fromList $
+               [ a
+               | f <- fs
+               , a <- case f of
+                        Right f -> fst (ctyp f)
+                        Left b  -> [b]
+               , a `S.member` reachCats
+               ]
 
-          h ps =
-            best $
-            [ Pair (apply (f,i) str) ((f,i):fis)
+          h dps =
+            [ (apply (f,i) str, (f,i):fis)
             | Right f <- fs
             , (t,i) <- fst (ctyp f) `zip` [0..]
             , t `S.member` reachCats
-            , Pair str fis <- args M.! t
+            , (str,fis) <- args M.! t
             ] ++
             [ q
             | Left b <- fs
             , q <- args M.! b
-            ] ++
-            (args M.! c)
+            ]
            where
-            args = M.fromList (ys `zip` ps)
+            args = M.fromList (ys `zip` map fst dps)
     ]
    where
-    apply (f,i) str =
-      [ S.fromList
-        [ s
-        | Right (x,y) <- concrSeqs gr sq
-        , x == i
-        , s <- S.toList (str !! y)
-        ]
-      | sq <- seqs f
+    apply (f,k) ijs =
+      S.toList $ S.fromList $
+      [ (i,j)
+      | (sq,i) <- seqs f `zip` [0..]
+      , Right (x,y) <- concrSeqs gr sq
+      , x == k
+      , j <- case M.lookup y tab of
+               Nothing -> []
+               Just js -> js
       ]
-
-    best paths =
-         map snd
-       . F.contents
-       . foldl collect F.Nil
-       . map snd
-       . sort
-       $ [ (size p, p) | p <- paths ]
      where
-      collect fm p@(Pair str _)
-        | fm `F.covers` str' = fm
-        | otherwise          = F.add str' p fm
-       where
-        str' = [ (i::Int,j) | (js,i) <- str `zip` [0..], j <- S.toList js ]
-
-      size (Pair _ p) =
-        sum [ if i == j then 1 else smallest gr t
-            | (f,i) <- p
-            , let (ts,_) = ctyp f
-            , (t,j) <- ts `zip` [0..]
-            ]
+      tab = M.fromListWith (++) [ (i,[j]) | (i,j) <- ijs ]
 
   a `isCoercableTo` b = a==b || ((a,b) `S.member` coercionTab gr)
   
