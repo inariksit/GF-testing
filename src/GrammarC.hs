@@ -6,6 +6,7 @@ import Data.Maybe
 import Data.Char
 import qualified Data.Set as S
 import qualified Mu
+import qualified FMap as F
 
 import GHC.Exts ( the )
 import Debug.Trace
@@ -284,7 +285,9 @@ toGrammar pgf langName =
 --------------------------------------------------------------------------------
 -- analyzing contexts
 
-data Pair a b = Pair{ pfst :: a, psnd :: b } deriving ( Ord, Show )
+-- helper datatypes
+data Pair a b = Pair{ pfst :: a, psnd :: b }
+  deriving ( Ord, Show )
 
 instance Eq a => Eq (Pair a b) where
   Pair x _ == Pair y _ = x == y
@@ -406,18 +409,19 @@ contextsFor gr top hole =
       | sq <- seqs f
       ]
 
-    best paths = go [] (map snd $ sort [ (size p, p) | p <- paths ])
+    best paths =
+         map snd
+       . F.contents
+       . foldl collect F.Nil
+       . map snd
+       . sort
+       $ [ (size p, p) | p <- paths ]
      where
-      go result [] = result
-      go result (p@(Pair str _) : paths)
-        | any (`covers` str) (map pfst result) =
-          go result paths
-        
-        | otherwise =
-          go (insert p (filter (not . (str `covers`) . pfst) result)) paths
-
-      str1 `covers` str2 =
-        and [ s2 `S.isSubsetOf` s1 | (s1,s2) <- str1 `zip` str2 ]
+      collect fm p@(Pair str _)
+        | fm `F.covers` str' = fm
+        | otherwise          = F.add str' p fm
+       where
+        str' = [ (i::Int,j) | (js,i) <- str `zip` [0..], j <- S.toList js ]
 
       size (Pair _ p) =
         sum [ if i == j then 1 else smallest gr t
