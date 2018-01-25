@@ -21,5 +21,4 @@ for FUN in `cat $DIRTYWORDS`;
 done
 echo " dummy_N ]"  >> $GRFILE  #hack
 
-
-#gf -make --src -gfo-dir /tmp grammars/*.gf
+gf -make --src -gfo-dir /tmp grammars/*.gf
