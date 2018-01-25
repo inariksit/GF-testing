@@ -70,7 +70,8 @@ treesUsingFun gr detCNs =
 --------------------------------------------------------------------------------
 
 bestTrees :: Symbol -> Grammar -> [ConcrCat] -> [[Tree]]
-bestTrees fun gr cats = bestExamples fun gr $ take 200
+bestTrees fun gr cats =
+  bestExamples fun gr $ take 200 -- change this to something else if too slow
   [ featIthVec gr cats size i
   | all (`S.member` nonEmptyCats gr) cats -- so we dare to have no bound on size!
   , size <- [0..] 
