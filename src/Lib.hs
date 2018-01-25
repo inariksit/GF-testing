@@ -74,7 +74,7 @@ bestTrees fun gr cats =
   bestExamples fun gr $ take 200 -- change this to something else if too slow
   [ featIthVec gr cats size i
   | all (`S.member` nonEmptyCats gr) cats -- so we dare to have no bound on size!
-  , size <- [0..] 
+  , size <- [0..]                         -- look, Ma, no bound!
   , let card = featCardVec gr cats size 
   , i <- [0..card-1]
   ]
@@ -136,3 +136,4 @@ showConcrFun gr detCN = show detCN ++ " : " ++
 
 lookupAll :: (Eq a) => [(a,b)] -> a -> [b]
 lookupAll kvs key = [ v | (k,v) <- kvs, k==key ]
+
