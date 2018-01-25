@@ -6,10 +6,23 @@ module FMap where
 data FMap a b = Ask a (FMap a b) (FMap a b) | Nil | Answer b
   deriving ( Eq, Ord, Show )
 
-contents :: FMap a b -> [([a],b)]
-contents (Ask x yes no) = [ (x:xs,z) | (xs,z) <- contents yes ] ++ contents no
-contents Nil            = []
-contents (Answer z)     = [([],z)]
+toList :: FMap a b -> [([a],b)]
+toList t = go [([],t)]
+ where
+  go []                      = []
+  go ((xs,Ask x yes no):xts) = go ((x:xs,yes):(xs,no):xts)
+  go ((_ ,Nil)         :xts) = go xts
+  go ((xs,Answer z)    :xts) = (reverse xs,z) : go xts
+
+isNil :: FMap a b -> Bool
+isNil = null . toList
+
+nil :: FMap a b
+nil = Nil
+
+unit :: [a] -> b -> FMap a b
+unit []     y = Answer y
+unit (x:xs) y = Ask x (unit xs y) Nil
 
 covers :: Ord a => FMap a b -> [a] -> Bool
 Nil          `covers` _         = False

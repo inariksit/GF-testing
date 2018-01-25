@@ -10,7 +10,7 @@ import Test.QuickCheck.All
 -- spec
 
 spec :: FMap a b -> [([a],b)]
-spec = contents
+spec = toList
 
 inv :: Ord a => FMap a b -> Bool
 inv Nil            = True
