@@ -1,1 +1,1 @@
-abstract TestLang = Grammar, Lexicon - [ vomit_V ];
+abstract TestLang = Grammar, Lexicon ;
