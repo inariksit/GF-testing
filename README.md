@@ -131,3 +131,10 @@ Given a word (like "de" in Swedish), generate all possible ways in which this wo
 1. find all functions that have the word syncategormatically
 1. for each of these functions, find all ways in which that part of the record will make it to the top (using `contextsFor`)
 1. possibly add arguments to the function (if it has any)
+
+We can also use the context stuff to generate the following information about each category:
+* which fields MUST be used together
+* which fields CAN be used together but not always
+* which fields can NEVER be used together
+
+For example, different inflections of one word are never used together in the same sentence
