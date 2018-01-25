@@ -84,6 +84,7 @@ data Grammar
   , functionsByCat :: Cat -> [Symbol]
   , concrSeqs    :: SeqId -> [Either String (Int,Int)] 
   , feat         :: FEAT
+  , nonEmptyCats :: S.Set ConcrCat
   }
 
 
@@ -181,6 +182,50 @@ toGrammar pgf langName =
 
         , feat =
             mkFEAT gr
+        
+        , nonEmptyCats =
+            S.fromList
+            [ c
+            | let -- all functions, organized by result type
+                  funs = M.fromListWith (++) $
+                    [ (b,[Right f])
+                    | f <- symbols gr
+                    , let (_,b) = ctyp f
+                    ] ++
+                    [ (b,[Left a])
+                    | (b,a) <- coercions gr
+                    ]
+            
+                  -- all categories, with their dependencies
+                  defs =
+                    [ if or [ arity f == 0 | Right f <- fs ]
+                        then (c, [], \_ -> True) -- has a word
+                        else (c, ys, h)          -- no word
+                    | c <- allCats
+                    , let -- relevant functions for c
+                          fs = case M.lookup c funs of
+                                 Nothing -> []
+                                 Just fs -> fs
+                    
+                          -- categories we depend on
+                          ys = S.toList $ S.fromList $
+                               [ a | Right f <- fs, a <- fst (ctyp f) ] ++
+                               [ a | Left a <- fs ]
+                    
+                          -- compute if we're empty, given the emptiness of others
+                          h bs = or $
+                            [ and [ tab M.! a | a <- as ]
+                            | Right f <- fs
+                            , let (as,_) = ctyp f
+                            ] ++
+                            [ tab M.! a
+                            | Left a <- fs
+                            ]
+                           where
+                            tab = M.fromList (ys `zip` bs)
+                    ]
+            , (c,True) <- allCats `zip` Mu.mu False defs allCats
+            ]
         }
    in gr
  where
@@ -315,51 +360,17 @@ contexts gr top =
   ]
  where
   pathss = Mu.muDiff F.nil F.isNil dif uni defs cs
-  cs     = S.toList reachTop
+  cs     = S.toList (nonEmptyCats gr)
   
-  -- all non-empty categories
-  goodCats =
-    [ c
-    | c <- S.toList $ S.fromList $
-           [ c
-           | f <- symbols gr
-           , let (as,b) = ctyp f
-           , c <- b:as
-           ] ++
-           [ c
-           | (b,a) <- coercions gr -- !now flipped
-           , c <- [a,b]
-           ]
-    , any ((>0) . featCard gr c) [0..10] -- 10 is arbitrary
-    ]
-
   -- all symbols with at least one argument, and only good arguments
   goodSyms =
     [ f
     | f <- symbols gr
     , arity f >= 1
-    , all (\t -> t `elem` goodCats) (fst (ctyp f))
+    , snd (ctyp f) `S.member` nonEmptyCats gr
+    , all (`S.member` nonEmptyCats gr) (fst (ctyp f))
     ]
  
-  -- all cats reachable from top
-  reachTop = go S.empty [top]
-   where
-    go seen []     = seen
-    go seen (c:cs)
-      | c `S.member` seen = go seen cs
-      | otherwise         = go (S.insert c seen) $
-                            [ a
-                            | f <- goodSyms
-                            , let (as,b) = ctyp f
-                            , b == c
-                            , a <- as
-                            ] ++
-                            [ a
-                            | (b,a) <- coercions gr
-                            , b == c
-                            ] ++
-                            cs
-
   -- definitions table for fixpoint iteration
   fm1 `dif` fm2 =
     [ d | d@(xs,_) <- F.toList fm1, not (fm2 `F.covers` xs) ] `ins` F.nil
@@ -388,18 +399,18 @@ contexts gr top =
     [ if c `isCoercableTo` top
         then (c, [], \_ -> F.unit [0] [])
         else (c, ys, h)
-    | c <- S.toList reachTop
+    | c <- cs
     , let fs = [ Right (f,k)
                | f <- goodSyms
-               , snd (ctyp f) `S.member` reachTop
                , (t,k) <- fst (ctyp f) `zip` [0..]
                , t == c
                ] ++
                [ Left a
                | (a,b) <- coercions gr
                , b == c
-               , a `S.member` reachTop
+               , a `S.member` nonEmptyCats gr
                ]
+          
           ys = S.toList $ S.fromList $
                [ case f of
                    Right (f,_) -> snd (ctyp f)
