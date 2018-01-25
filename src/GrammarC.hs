@@ -287,9 +287,11 @@ toGrammar pgf langName =
 
 contextsFor :: Grammar -> ConcrCat -> ConcrCat -> [Tree -> Tree]
 contextsFor gr top hole =
-  let [paths] = Mu.muDiff F.nil F.isNil dif uni defs [top] in
-    map (path2context . snd) (F.toList paths)
+  map (path2context . reverse . snd) (F.toList paths)
  where
+  --[paths] = Mu.mu F.nil defs [hole]
+  [paths] = Mu.muDiff F.nil F.isNil dif uni defs [hole]
+  
   -- all non-empty categories
   goodCats =
     [ c
@@ -304,7 +306,7 @@ contextsFor gr top hole =
            | (b,a) <- coercions gr -- !now flipped
            , c <- [a,b]
            ]
-    , any ((>0) . featCard gr c) [0..25] -- 25 is arbitrary
+    , any ((>0) . featCard gr c) [0..10] -- 10 is arbitrary
     ]
 
   -- all cats reachable from top
@@ -352,15 +354,6 @@ contextsFor gr top hole =
     , all (\t -> t `elem` goodCats) (fst (ctyp f))
     ]
  
-  -- length of string vector for the hole type
-  arHole =
-    head $
-    [ length (seqs f)
-    | f <- symbols gr
-    , snd (ctyp f) == hole
-    ] ++
-    error ("no symbol found with result type " ++ show hole)
-
   reachCats = reachTop `S.intersection` reachHole
 
   -- definitions table for fixpoint iteration
@@ -388,48 +381,50 @@ contextsFor gr top hole =
           ]
 
   defs =
-    [ if hole `isCoercableTo` c
-        then (c, [], \_ -> F.unit [(i,i) | i <- [0..arHole-1]] [])
+    [ if c `isCoercableTo` top
+        then (c, [], \_ -> F.unit [0] [])
         else (c, ys, h)
     | c <- S.toList reachCats
-    , let fs = [ Right f | f <- goodSyms, arity f >= 1, snd (ctyp f) == c ] ++
-               [ Left b | (a,b) <- coercions gr, a == c, b `S.member` reachCats ]
-          ys = S.toList $ S.fromList $
-               [ a
-               | f <- fs
-               , a <- case f of
-                        Right f -> fst (ctyp f)
-                        Left b  -> [b]
+    , let fs = [ Right (f,k)
+               | f <- goodSyms
+               , snd (ctyp f) `S.member` reachCats
+               , (t,k) <- fst (ctyp f) `zip` [0..]
+               , t == c
+               ] ++
+               [ Left a
+               | (a,b) <- coercions gr
+               , b == c
                , a `S.member` reachCats
                ]
+          ys = S.toList $ S.fromList $
+               c :
+               [ case f of
+                   Right (f,_) -> snd (ctyp f)
+                   Left a      -> a
+               | f <- fs
+               ]
 
-          h dps =
-            ([ (apply (f,i) str, (f,i):fis)
-             | Right f <- fs
-             , (t,i) <- fst (ctyp f) `zip` [0..]
-             , t `S.member` reachCats
-             , (str,fis) <- args M.! t
-             ] ++
-             [ q
-             | Left b <- fs
-             , q <- args M.! b
-             ]) `ins` F.nil
+          h ps = ([ (apply (f,k) str, (f,k):fis)
+                  | Right (f,k) <- fs
+                  , (str,fis) <- args M.! snd (ctyp f)
+                  ] ++
+                  [ q
+                  | Left a <- fs
+                  , q <- args M.! a
+                  ] ++
+                  (args M.! c)) `ins` F.nil
            where
-            args = M.fromList (ys `zip` map F.toList dps)
+            args = M.fromList (ys `zip` map F.toList ps)
     ]
    where
-    apply (f,k) ijs =
+    apply (f,k) is =
       S.toList $ S.fromList $
-      [ (i,j)
+      [ y
       | (sq,i) <- seqs f `zip` [0..]
+      , i `elem` is
       , Right (x,y) <- concrSeqs gr sq
       , x == k
-      , j <- case M.lookup y tab of
-               Nothing -> []
-               Just js -> js
       ]
-     where
-      tab = M.fromListWith (++) [ (i,[j]) | (i,j) <- ijs ]
 
   a `isCoercableTo` b = a==b || ((a,b) `S.member` coercionTab gr)
   
@@ -441,6 +436,8 @@ contextsFor gr top hole =
         else head (featAll gr t)
     | (t,j) <- fst (ctyp f) `zip` [0..]
     ]
+
+--traceLength s xs = trace (s ++ ":" ++ show (length xs)) xs
 
 --------------------------------------------------------------------------------
 -- FEAT-style generator magic
