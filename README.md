@@ -99,7 +99,7 @@ ___
 ## TODO (2018-01-22)
 
 ### Make context generation faster
-Koen's on it!
+~~Koen's on it!~~ 2018-01-25 it's super fast ^_^ \o/
 
 ### Evaluation
 
@@ -107,11 +107,9 @@ Koen's on it!
   * time of generating examples
   * time of looking at examples
 * Effect
-  * compare against other methods -- what methods?
-  
-For application grammars, if you're writing them from scratch, it is actually pretty feasible to just `gt` the hell out of it as you write. But this doesn't work for bigger grammars.
-
-Morphology can be tested efficiently againts any existing morphological analyser. I've used Apertium for Dutch and Basque.
+  * compare against other methods -- what methods? 
+  * For application grammars, if you're writing them from scratch, it is actually pretty feasible to just `gt` the hell out of it as you write. But this doesn't work for bigger grammars.
+  * Morphology can be tested efficiently againts any existing morphological analyser. I've used Apertium for Dutch and Basque.
 
 ### Include trees from corpus
 
@@ -127,4 +125,16 @@ Add a database of `[(AST,[lin])]` for trees and linearisations that the user has
 If testing an application grammar, or for some other reason the abstract syntax should change, this shouldn't be a big deal -- just update the treebank; remove trees that aren't in the grammar anymore.
 
 
+### Other information for the grammar writer
 
+Given a word (like "de" in Swedish), generate all possible ways in which this word can appear in a sentence
+1. find all functions that have the word syncategormatically
+1. for each of these functions, find all ways in which that part of the record will make it to the top (using `contextsFor`)
+1. possibly add arguments to the function (if it has any)
+
+We can also use the context stuff to generate the following information about each category:
+* which fields MUST be used together
+* which fields CAN be used together but not always
+* which fields can NEVER be used together
+
+For example, different inflections of one word are never used together in the same sentence
