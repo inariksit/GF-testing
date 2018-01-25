@@ -1,0 +1,13 @@
+vomit_V
+UttAP
+UttAdv
+UttCN
+UttCard
+UttIAdv
+UttIP
+UttInterj
+UttNP
+UttVP
+language_title_Utt
+no_Utt
+yes_Utt
