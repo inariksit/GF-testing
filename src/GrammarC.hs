@@ -287,8 +287,8 @@ toGrammar pgf langName =
 
 contextsFor :: Grammar -> ConcrCat -> ConcrCat -> [Tree -> Tree]
 contextsFor gr top hole =
-  let [paths] = Mu.muDiff F.Nil [] null F.contents dif ins defs [top] in
-    map (path2context . snd) (F.contents paths)
+  let [paths] = Mu.muDiff F.nil F.isNil dif uni defs [top] in
+    map (path2context . snd) (F.toList paths)
  where
   -- all non-empty categories
   goodCats =
@@ -364,8 +364,11 @@ contextsFor gr top hole =
   reachCats = reachTop `S.intersection` reachHole
 
   -- definitions table for fixpoint iteration
-  ds `dif` fm =
-    F.contents ([ d | d@(xs,_) <- ds, not (fm `F.covers` xs) ] `ins` F.Nil)
+  fm1 `dif` fm2 =
+    [ d | d@(xs,_) <- F.toList fm1, not (fm2 `F.covers` xs) ] `ins` F.nil
+  
+  fm1 `uni` fm2 =
+    F.toList fm1 `ins` fm2
   
   paths `ins` fm =
        foldl collect fm
@@ -386,7 +389,7 @@ contextsFor gr top hole =
 
   defs =
     [ if hole `isCoercableTo` c
-        then (c, [], \_ -> [([(i,i) | i <- [0..arHole-1]],[])])
+        then (c, [], \_ -> F.unit [(i,i) | i <- [0..arHole-1]] [])
         else (c, ys, h)
     | c <- S.toList reachCats
     , let fs = [ Right f | f <- goodSyms, arity f >= 1, snd (ctyp f) == c ] ++
@@ -401,18 +404,18 @@ contextsFor gr top hole =
                ]
 
           h dps =
-            [ (apply (f,i) str, (f,i):fis)
-            | Right f <- fs
-            , (t,i) <- fst (ctyp f) `zip` [0..]
-            , t `S.member` reachCats
-            , (str,fis) <- args M.! t
-            ] ++
-            [ q
-            | Left b <- fs
-            , q <- args M.! b
-            ]
+            ([ (apply (f,i) str, (f,i):fis)
+             | Right f <- fs
+             , (t,i) <- fst (ctyp f) `zip` [0..]
+             , t `S.member` reachCats
+             , (str,fis) <- args M.! t
+             ] ++
+             [ q
+             | Left b <- fs
+             , q <- args M.! b
+             ]) `ins` F.nil
            where
-            args = M.fromList (ys `zip` map fst dps)
+            args = M.fromList (ys `zip` map F.toList dps)
     ]
    where
     apply (f,k) ijs =

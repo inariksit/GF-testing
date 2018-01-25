@@ -126,12 +126,6 @@ defs (P ents _) =
   | (x,xs,f) <- ents
   ]
 
-defs' :: Problem -> [(Char,[Char],[([Int],[Int])]-> [Int])]
-defs' (P ents _) =
-  [ (x,xs,eval f . map fst)
-  | (x,xs,f) <- ents
-  ]
-
 prop_Mu :: Problem -> Property
 prop_Mu p@(P _ xs) =
   let ds  = defs p
@@ -149,7 +143,7 @@ prop_MuDiff :: Problem -> Property
 prop_MuDiff p@(P _ xs) =
   let ds  = defs p
       gr  = M.fromList [ (x,xs) | (x,xs,_) <- ds ]
-      new = muDiff [] [] null id difference union' (defs' p) xs
+      new = muDiff [] null difference union' (defs p) xs
       old = mu0 [] ds xs
       
       report =
