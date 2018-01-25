@@ -70,13 +70,13 @@ treesUsingFun gr detCNs =
 --------------------------------------------------------------------------------
 
 bestTrees :: Symbol -> Grammar -> [ConcrCat] -> [[Tree]]
-bestTrees fun gr cats = bestExamples fun gr $ take 10000
+bestTrees fun gr cats = bestExamples fun gr $ take 200
   [ featIthVec gr cats size i
-    | size <- [1..2] 
-    , let card = featCardVec gr cats size 
-    , i <- [0..card-1]
-   ]
-
+  | all (`S.member` nonEmptyCats gr) cats -- so we dare to have no bound on size!
+  , size <- [0..] 
+  , let card = featCardVec gr cats size 
+  , i <- [0..card-1]
+  ]
 
 --------------------------------------------------------------------------------
 
