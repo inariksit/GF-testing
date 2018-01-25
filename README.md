@@ -137,4 +137,13 @@ We can also use the context stuff to generate the following information about ea
 * which fields CAN be used together but not always
 * which fields can NEVER be used together
 
-For example, different inflections of one word are never used together in the same sentence
+For example, different inflections of one word are never used together in the same sentence.
+
+Another use case: I'm reading a grammar, and something in the documentation seems suspicious, I would like to see if the utterance they claim to produce is actually produced by any function in the grammar! And I may not even know which function to start looking at, because the example is inside some oper that is used in many functions.
+(Also this makes me realise how I can be a better grammar writer: if I write an example, I should also provide an AST that linearises to the thing I claim)
+
+### Find redundant parameters in a grammar
+
+I generated test cases for `PredVP` in Dutch, and it printed out 30k lines. Then I made a rather crude change into the Dutch grammar, removing a parameter from VP, generated test cases for `PredVP` again, and this time it only printed out 20k lines.
+And when I `sort -u`'d the old and the new file, there was no difference.
+This is a rather strong hint that the parameter didn't make any difference -- but is "nothing changed in linearisations" sufficient to prove that?
