@@ -15,6 +15,8 @@ How to fix?
 
 ***
 
+### Weirdness with VPSlashPrep
+
 New grammar: 
 
 ```
@@ -41,7 +43,17 @@ UseCl … (AdvVP (AdVVP always_AdV UseCopula) (PrepNP without_Prep (UsePron it_P
 
 and no parses for "ik ben zonder het altijd niet".
 
-TODO: should make sure that VPSlash created by VPSlashPrep doesn't try to put things in n0 or n2 fields.
+TODO: should make sure that VPSlash created by VPSlashPrep doesn't try to put things in n0 or n2 fields?
+
+```
+- UseCl (TTAnt TFut ASimul) PNeg (PredVP (UsePron i_Pron) VP_399)
+ new> ik zal ermee niet draaien
+ old> ik zal niet ermee draaien
+
+- UseCl (TTAnt TPres ASimul) PNeg (PredVP (UsePron i_Pron) VP_399)
+ new> ik draai ermee niet
+ new> ik draai niet ermee
+```
 
 ***
 
