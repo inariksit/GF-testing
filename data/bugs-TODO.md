@@ -49,6 +49,14 @@ This has bugs in both old and new version:
 
 ```
 - UseCl (TTAnt TPres AAnter) PNeg (PredVP (ConjNP either7or_DConj (BaseNP something_NP (UsePron i_Pron))) (ComplSlash (Slash2V3 add_V3 something_NP) (UsePron it_Pron)))
-  --> ofwel iets of ik hebben eraan iets niet toe toegevoegd
-  ==> ofwel iets of ik hebben niet eraan iets toe toegevoegd
+  new> ofwel iets of ik hebben eraan iets niet toe toegevoegd
+  old> ofwel iets of ik hebben niet eraan iets toe toegevoegd
   ```
+
+Which one is correct, or are both wrong?
+
+```
+- UseCl (TTAnt TFut ASimul) PPos (PredVP (DetNP somePl_Det) VP_401)
+  new> sommigen zullen zichzelf zonder me af vragen wie er is
+  old> sommigen zullen zonder me zich af vragen wie er is
+```
