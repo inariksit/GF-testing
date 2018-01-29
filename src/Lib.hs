@@ -16,28 +16,30 @@ import qualified Data.Set as S
 import Data.Maybe
 import Debug.Trace
 
-testFun :: Bool -> Grammar -> [Grammar] -> String -> IO ()
-testFun debug gr trans funname = sequence_
-  [ do print tree
-       testTree debug gr trans tree
-    | tree <- treesUsingFun gr (lookupSymbol gr funname) ]
+type Result = String
+
+testFun :: Bool -> Grammar -> [Grammar] -> Name -> Result
+testFun debug gr trans funname = unlines  
+  [ testTree debug gr trans tree
+  | tree <- treesUsingFun gr (lookupSymbol gr funname) ]
 
 
-testTree :: Bool -> Grammar -> [Grammar] -> Tree -> IO ()
-testTree debug gr tgrs t =
-  do putStrLn ("### " ++ showConcrFun gr w) 
-     when debug $ mapM_ putStrLn (tabularPrint gr t)
-     putStr $ unlines $ concat 
+testTree :: Bool -> Grammar -> [Grammar] -> Tree -> Result
+testTree debug gr tgrs t = unlines 
+  [ ("### " ++ showConcrFun gr w) 
+  , show t
+  , if debug then unlines $ tabularPrint gr t else ""
+  , unlines $ concat 
        [ [ ""
          , "- "     ++ show (ctx (App (hole c) []))
          , "  --> " ++ linearize gr (ctx (App (hole c) []))
          , "  --> " ++ linearize gr (ctx t) 
          ] ++
-         [ "  --> " ++ linearize tgr (ctx t) 
+         [ "  ==> " ++ linearize tgr (ctx t) 
          | tgr <- tgrs ]
        | ctx <- ctxs
        ]
-     putStrLn ""
+  , "" ]
  where
   w    = top t
   c    = snd (ctyp w)

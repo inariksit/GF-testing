@@ -1,5 +1,6 @@
 module GrammarC where
 
+import Data.Either ( lefts )
 import Data.List
 import qualified Data.Map as M
 import Data.Maybe
@@ -26,11 +27,14 @@ type Name = String
 type Cat  = PGF2.Cat -- i.e. String
 
 data ConcrCat = CC (Maybe Cat) I.FId -- i.e. Int
-  deriving ( Ord, Eq )
+  deriving ( Eq )
 
 instance Show ConcrCat where
   show (CC (Just cat) fid) = cat ++ "_" ++ show fid 
   show (CC Nothing    fid) = "_" ++ show fid 
+
+instance Ord ConcrCat where
+  (CC _ fid1) `compare` (CC _ fid2) = fid1 `compare` fid2
 
 -- tree
 
@@ -552,4 +556,13 @@ diffCats gr1 gr2 =
  where
   difFid (_,i,j,_) = 1 + (j-i)
 
+--------------------------------------------------------------------------------
+-- return a list of symbols that have a specified string, e.g. "it" in English
+-- grammar appears in functions CleftAdv, CleftNP, ImpersCl, DefArt, it_Pron
+
+hasConcrString :: Grammar -> String -> [Symbol]
+hasConcrString gr str =
+  [ symb
+  | symb <- symbols gr 
+  , str `elem` concatMap (lefts . concrSeqs gr) (seqs symb) ]
 
