@@ -6,12 +6,13 @@ import GrammarC
 import Lib
 import Paths_GF_testing
 
-import Data.List ( intercalate, groupBy )
+import Data.List ( intercalate, groupBy, sortBy )
+import qualified Data.Set as S
+
 
 import System.Console.CmdArgs hiding ( name )
 import qualified System.Console.CmdArgs as A
 import System.IO ( stdout, hSetBuffering, BufferMode(..) )
-
 
 data GfTest 
   = GfTest 
@@ -52,16 +53,10 @@ main = do
   -- Testing a function
   case function args of
     []    -> return ()
-    "all" -> do let randomlyCuratedFuns = 
-                            [ head funs | funs <- groupBy (\x y -> name x == name y) (symbols gr) ]
-                print (length randomlyCuratedFuns)
-                let concrcats = sum
-                     [ sum [ 1 | x <- [st..end] ]
-                       | (cat,st,end,_) <- concrCats gr ]
-                print concrcats
-                sequence_ [ testTree False gr [] t 
-                           | t <- treesUsingFun gr randomlyCuratedFuns ]
-    fname -> testFun (debug args) gr grTrans fname
+--    ('s':'c':' ':str) -> mapM_ print $ hasConcrString gr str
+    "all" -> mapM_ putStrLn [ testTree False gr [] t 
+                            | t <- treesUsingFun gr (symbols gr) ]
+    fname -> putStrLn $ testFun (debug args) gr grTrans fname
 
 -------------------------------------------------------------------------------
 -- secondary operations: read trees from treebank, compare with old grammar
@@ -82,22 +77,71 @@ main = do
     Nothing -> return ()
     Just fp -> do
       ogr <- readGrammar langName =<< getDataFileName fp
-      let difcats = diffCats ogr gr
+      let difcats = diffCats ogr gr -- (acat, [#o, #n], olabels, nlabels)
 
-      -- print out tests for all functions in the changed cats
-      let changedFuns = [ (cat,functionsByCat gr cat) | (cat,_,_,_) <- difcats ]
-      sequence_ [ do putStrLn $ "Testing functions that produce a " ++ cat
-                     sequence_ [ testTree False gr [] t | t <- treesUsingFun gr funs ]
-                | (cat,funs) <- changedFuns ]
+      ---------------------------------------------------------------------------
+      -- Print statistics about the functions: e.g., in the old grammar,
+      -- all these 5 functions used to be in the same category:
+      -- [DefArt,PossPron,no_Quant,this_Quant,that_Quant]
+      -- but in the new grammar, they are split into two:
+      -- [DefArt,PossPron,no_Quant] and [this_Quant,that_Quant].
+      let groupFuns grammar = -- :: Grammar -> [[Symbol]]
+            concat [ (groupBy sameCCat $ sortBy compareCCat existingFuns)
+                   | (cat,_,_,_) <- difcats
+                   , let funs = functionsByCat grammar cat
+                   , let existingFuns = filter (\s -> snd (ctyp s) `S.member` nonEmptyCats grammar) funs ]
 
-      -- generate statistics of the changes into a file 
-      let resultFile = langName ++ "-ccat-changes.md"
+
+      let sortByName = sortBy (\s t -> name s `compare` name t)
+      let writeFunFile groupedFuns file grammar = do
+           writeFile file ""
+           sequence_ [ do appendFile file "---\n"
+                          appendFile file $ unlines
+                            [ showConcrFun gr fun
+                            | fun <- sortByName funs ]
+                      | funs <- groupedFuns ]
+
+      writeFunFile (groupFuns ogr) (langName ++ "-old-funs.md") ogr
+      writeFunFile (groupFuns gr)  (langName ++ "-new-funs.md") gr
+
+      putStrLn $ "Created files " ++ langName ++ "-(old|new)-funs.md"
+ 
+      --------------------------------------------------------------------------
+      -- generate statistics of the changes in the concrete categories
+      let ccatChangeFile = langName ++ "-ccat-changes.md"
+      writeFile ccatChangeFile ""
       sequence_
-        [ appendFile resultFile $ unlines
+        [ appendFile ccatChangeFile $ unlines
            [ "### " ++ acat
            , show o ++ " concrete categories in the old grammar, "
            , show n ++ " concrete categories in the new grammar.  "
            , "* Labels only in old: " ++ intercalate ", " ol
-           , "* Labels only in new: " ++ intercalate ", " nl ]
-        | (acat, [o,n], ol, nl) <- difcats ]
+           , " (" ++ show (length ol) ++ ")"
+           , "* Labels only in new: " ++ intercalate ", " nl 
+           , " (" ++ show (length nl) ++ ")" ]
+        | (acat, [o,n], ol, nl) <- difcats ] 
+      putStrLn $ "Created file " ++ ccatChangeFile
+
+      --------------------------------------------------------------------------
+      -- print out tests for all functions in the changed cats
+      let changedFuns = [ (cat,functionsByCat gr cat) | (cat,_,_,_) <- difcats ]
+      let writeLinFile file grammar otherGrammar = do
+           writeFile file ""
+           sequence_ [ do appendFile file $ unlines
+                           [ testTree False grammar [otherGrammar] t 
+                           | t <- treesUsingFun grammar funs ]
+                     | (cat,funs) <- changedFuns ]
+
+      writeLinFile (langName ++ "-new-lins.md") gr ogr
+      writeLinFile (langName ++ "-old-lins.md") ogr gr
+
+
+
+
+ where
+  sameCCat :: Symbol -> Symbol -> Bool
+  sameCCat s1 s2 = snd (ctyp s1) == snd (ctyp s2)
+
+  compareCCat :: Symbol -> Symbol -> Ordering
+  compareCCat s1 s2 = snd (ctyp s1) `compare` snd (ctyp s2)
 
