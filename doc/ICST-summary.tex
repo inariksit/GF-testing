@@ -1,0 +1,612 @@
+
+%% bare_conf.tex
+%% V1.4b
+%% 2015/08/26
+%% by Michael Shell
+%% See:
+%% http://www.michaelshell.org/
+%% for current contact information.
+%%
+%% This is a skeleton file demonstrating the use of IEEEtran.cls
+%% (requires IEEEtran.cls version 1.8b or later) with an IEEE
+%% conference paper.
+%%
+%% Support sites:
+%% http://www.michaelshell.org/tex/ieeetran/
+%% http://www.ctan.org/pkg/ieeetran
+%% and
+%% http://www.ieee.org/
+
+%%*************************************************************************
+%% Legal Notice:
+%% This code is offered as-is without any warranty either expressed or
+%% implied; without even the implied warranty of MERCHANTABILITY or
+%% FITNESS FOR A PARTICULAR PURPOSE! 
+%% User assumes all risk.
+%% In no event shall the IEEE or any contributor to this code be liable for
+%% any damages or losses, including, but not limited to, incidental,
+%% consequential, or any other damages, resulting from the use or misuse
+%% of any information contained here.
+%%
+%% All comments are the opinions of their respective authors and are not
+%% necessarily endorsed by the IEEE.
+%%
+%% This work is distributed under the LaTeX Project Public License (LPPL)
+%% ( http://www.latex-project.org/ ) version 1.3, and may be freely used,
+%% distributed and modified. A copy of the LPPL, version 1.3, is included
+%% in the base LaTeX documentation of all distributions of LaTeX released
+%% 2003/12/01 or later.
+%% Retain all contribution notices and credits.
+%% ** Modified files should be clearly indicated as such, including  **
+%% ** renaming them and changing author support contact information. **
+%%*************************************************************************
+
+
+% *** Authors should verify (and, if needed, correct) their LaTeX system  ***
+% *** with the testflow diagnostic prior to trusting their LaTeX platform ***
+% *** with production work. The IEEE's font choices and paper sizes can   ***
+% *** trigger bugs that do not appear when using other class files.       ***                          ***
+% The testflow support page is at:
+% http://www.michaelshell.org/tex/testflow/
+
+
+
+\documentclass[conference]{IEEEtran}
+% Some Computer Society conferences also require the compsoc mode option,
+% but others use the standard conference format.
+%
+% If IEEEtran.cls has not been installed into the LaTeX system files,
+% manually specify the path to it like:
+% \documentclass[conference]{../sty/IEEEtran}
+
+
+
+
+
+% Some very useful LaTeX packages include:
+% (uncomment the ones you want to load)
+
+
+% *** MISC UTILITY PACKAGES ***
+%
+%\usepackage{ifpdf}
+% Heiko Oberdiek's ifpdf.sty is very useful if you need conditional
+% compilation based on whether the output is pdf or dvi.
+% usage:
+% \ifpdf
+%   % pdf code
+% \else
+%   % dvi code
+% \fi
+% The latest version of ifpdf.sty can be obtained from:
+% http://www.ctan.org/pkg/ifpdf
+% Also, note that IEEEtran.cls V1.7 and later provides a builtin
+% \ifCLASSINFOpdf conditional that works the same way.
+% When switching from latex to pdflatex and vice-versa, the compiler may
+% have to be run twice to clear warning/error messages.
+
+
+
+
+
+
+% *** CITATION PACKAGES ***
+%
+%\usepackage{cite}
+% cite.sty was written by Donald Arseneau
+% V1.6 and later of IEEEtran pre-defines the format of the cite.sty package
+% \cite{} output to follow that of the IEEE. Loading the cite package will
+% result in citation numbers being automatically sorted and properly
+% "compressed/ranged". e.g., [1], [9], [2], [7], [5], [6] without using
+% cite.sty will become [1], [2], [5]--[7], [9] using cite.sty. cite.sty's
+% \cite will automatically add leading space, if needed. Use cite.sty's
+% noadjust option (cite.sty V3.8 and later) if you want to turn this off
+% such as if a citation ever needs to be enclosed in parenthesis.
+% cite.sty is already installed on most LaTeX systems. Be sure and use
+% version 5.0 (2009-03-20) and later if using hyperref.sty.
+% The latest version can be obtained at:
+% http://www.ctan.org/pkg/cite
+% The documentation is contained in the cite.sty file itself.
+
+
+
+
+
+
+% *** GRAPHICS RELATED PACKAGES ***
+%
+\ifCLASSINFOpdf
+  % \usepackage[pdftex]{graphicx}
+  % declare the path(s) where your graphic files are
+  % \graphicspath{{../pdf/}{../jpeg/}}
+  % and their extensions so you won't have to specify these with
+  % every instance of \includegraphics
+  % \DeclareGraphicsExtensions{.pdf,.jpeg,.png}
+\else
+  % or other class option (dvipsone, dvipdf, if not using dvips). graphicx
+  % will default to the driver specified in the system graphics.cfg if no
+  % driver is specified.
+  % \usepackage[dvips]{graphicx}
+  % declare the path(s) where your graphic files are
+  % \graphicspath{{../eps/}}
+  % and their extensions so you won't have to specify these with
+  % every instance of \includegraphics
+  % \DeclareGraphicsExtensions{.eps}
+\fi
+% graphicx was written by David Carlisle and Sebastian Rahtz. It is
+% required if you want graphics, photos, etc. graphicx.sty is already
+% installed on most LaTeX systems. The latest version and documentation
+% can be obtained at: 
+% http://www.ctan.org/pkg/graphicx
+% Another good source of documentation is "Using Imported Graphics in
+% LaTeX2e" by Keith Reckdahl which can be found at:
+% http://www.ctan.org/pkg/epslatex
+%
+% latex, and pdflatex in dvi mode, support graphics in encapsulated
+% postscript (.eps) format. pdflatex in pdf mode supports graphics
+% in .pdf, .jpeg, .png and .mps (metapost) formats. Users should ensure
+% that all non-photo figures use a vector format (.eps, .pdf, .mps) and
+% not a bitmapped formats (.jpeg, .png). The IEEE frowns on bitmapped formats
+% which can result in "jaggedy"/blurry rendering of lines and letters as
+% well as large increases in file sizes.
+%
+% You can find documentation about the pdfTeX application at:
+% http://www.tug.org/applications/pdftex
+
+
+
+
+
+% *** MATH PACKAGES ***
+%
+%\usepackage{amsmath}
+% A popular package from the American Mathematical Society that provides
+% many useful and powerful commands for dealing with mathematics.
+%
+% Note that the amsmath package sets \interdisplaylinepenalty to 10000
+% thus preventing page breaks from occurring within multiline equations. Use:
+%\interdisplaylinepenalty=2500
+% after loading amsmath to restore such page breaks as IEEEtran.cls normally
+% does. amsmath.sty is already installed on most LaTeX systems. The latest
+% version and documentation can be obtained at:
+% http://www.ctan.org/pkg/amsmath
+
+
+
+
+
+% *** SPECIALIZED LIST PACKAGES ***
+%
+%\usepackage{algorithmic}
+% algorithmic.sty was written by Peter Williams and Rogerio Brito.
+% This package provides an algorithmic environment fo describing algorithms.
+% You can use the algorithmic environment in-text or within a figure
+% environment to provide for a floating algorithm. Do NOT use the algorithm
+% floating environment provided by algorithm.sty (by the same authors) or
+% algorithm2e.sty (by Christophe Fiorio) as the IEEE does not use dedicated
+% algorithm float types and packages that provide these will not provide
+% correct IEEE style captions. The latest version and documentation of
+% algorithmic.sty can be obtained at:
+% http://www.ctan.org/pkg/algorithms
+% Also of interest may be the (relatively newer and more customizable)
+% algorithmicx.sty package by Szasz Janos:
+% http://www.ctan.org/pkg/algorithmicx
+
+
+
+
+% *** ALIGNMENT PACKAGES ***
+%
+%\usepackage{array}
+% Frank Mittelbach's and David Carlisle's array.sty patches and improves
+% the standard LaTeX2e array and tabular environments to provide better
+% appearance and additional user controls. As the default LaTeX2e table
+% generation code is lacking to the point of almost being broken with
+% respect to the quality of the end results, all users are strongly
+% advised to use an enhanced (at the very least that provided by array.sty)
+% set of table tools. array.sty is already installed on most systems. The
+% latest version and documentation can be obtained at:
+% http://www.ctan.org/pkg/array
+
+
+% IEEEtran contains the IEEEeqnarray family of commands that can be used to
+% generate multiline equations as well as matrices, tables, etc., of high
+% quality.
+
+
+
+
+% *** SUBFIGURE PACKAGES ***
+%\ifCLASSOPTIONcompsoc
+%  \usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
+%\else
+%  \usepackage[caption=false,font=footnotesize]{subfig}
+%\fi
+% subfig.sty, written by Steven Douglas Cochran, is the modern replacement
+% for subfigure.sty, the latter of which is no longer maintained and is
+% incompatible with some LaTeX packages including fixltx2e. However,
+% subfig.sty requires and automatically loads Axel Sommerfeldt's caption.sty
+% which will override IEEEtran.cls' handling of captions and this will result
+% in non-IEEE style figure/table captions. To prevent this problem, be sure
+% and invoke subfig.sty's "caption=false" package option (available since
+% subfig.sty version 1.3, 2005/06/28) as this is will preserve IEEEtran.cls
+% handling of captions.
+% Note that the Computer Society format requires a larger sans serif font
+% than the serif footnote size font used in traditional IEEE formatting
+% and thus the need to invoke different subfig.sty package options depending
+% on whether compsoc mode has been enabled.
+%
+% The latest version and documentation of subfig.sty can be obtained at:
+% http://www.ctan.org/pkg/subfig
+
+
+
+
+% *** FLOAT PACKAGES ***
+%
+%\usepackage{fixltx2e}
+% fixltx2e, the successor to the earlier fix2col.sty, was written by
+% Frank Mittelbach and David Carlisle. This package corrects a few problems
+% in the LaTeX2e kernel, the most notable of which is that in current
+% LaTeX2e releases, the ordering of single and double column floats is not
+% guaranteed to be preserved. Thus, an unpatched LaTeX2e can allow a
+% single column figure to be placed prior to an earlier double column
+% figure.
+% Be aware that LaTeX2e kernels dated 2015 and later have fixltx2e.sty's
+% corrections already built into the system in which case a warning will
+% be issued if an attempt is made to load fixltx2e.sty as it is no longer
+% needed.
+% The latest version and documentation can be found at:
+% http://www.ctan.org/pkg/fixltx2e
+
+
+%\usepackage{stfloats}
+% stfloats.sty was written by Sigitas Tolusis. This package gives LaTeX2e
+% the ability to do double column floats at the bottom of the page as well
+% as the top. (e.g., "\begin{figure*}[!b]" is not normally possible in
+% LaTeX2e). It also provides a command:
+%\fnbelowfloat
+% to enable the placement of footnotes below bottom floats (the standard
+% LaTeX2e kernel puts them above bottom floats). This is an invasive package
+% which rewrites many portions of the LaTeX2e float routines. It may not work
+% with other packages that modify the LaTeX2e float routines. The latest
+% version and documentation can be obtained at:
+% http://www.ctan.org/pkg/stfloats
+% Do not use the stfloats baselinefloat ability as the IEEE does not allow
+% \baselineskip to stretch. Authors submitting work to the IEEE should note
+% that the IEEE rarely uses double column equations and that authors should try
+% to avoid such use. Do not be tempted to use the cuted.sty or midfloat.sty
+% packages (also by Sigitas Tolusis) as the IEEE does not format its papers in
+% such ways.
+% Do not attempt to use stfloats with fixltx2e as they are incompatible.
+% Instead, use Morten Hogholm'a dblfloatfix which combines the features
+% of both fixltx2e and stfloats:
+%
+% \usepackage{dblfloatfix}
+% The latest version can be found at:
+% http://www.ctan.org/pkg/dblfloatfix
+
+
+
+
+% *** PDF, URL AND HYPERLINK PACKAGES ***
+%
+%\usepackage{hyperref}
+\usepackage{url}
+% url.sty was written by Donald Arseneau. It provides better support for
+% handling and breaking URLs. url.sty is already installed on most LaTeX
+% systems. The latest version and documentation can be obtained at:
+% http://www.ctan.org/pkg/url
+% Basically, \url{my_url_here}.
+
+
+
+
+% *** Do not adjust lengths that control margins, column widths, etc. ***
+% *** Do not use packages that alter fonts (such as pslatex).         ***
+% There should be no need to do such things with IEEEtran.cls V1.6 and later.
+% (Unless specifically asked to do so by the journal or conference you plan
+% to submit to, of course. )
+
+
+% correct bad hyphenation here
+\hyphenation{op-tical net-works semi-conduc-tor}
+
+
+\begin{document}
+%
+% paper title
+% Titles are generally capitalized except for words such as a, an, and, as,
+% at, but, by, for, in, nor, of, on, or, the, to and up, which are usually
+% not capitalized unless they are the first or last word of the title.
+% Linebreaks \\ can be used within to get better formatting as desired.
+% Do not put math or special symbols in the title.
+\title{Bare Demo of IEEEtran.cls\\ for IEEE Conferences}
+
+
+% author names and affiliations
+% use a multiple column layout for up to three different
+% affiliations
+\title{Testing Natural Language Grammars}
+
+\author{\IEEEauthorblockN{Inari Listenmaa}
+\IEEEauthorblockA{\textit{Department of Computer Science and Engineering} \\
+\textit{University of Gothenburg and Chalmers University of Technology}\\
+Gothenburg, Sweden \\
+inari@chalmers.se}
+
+}
+
+
+% use for special paper notices
+%\IEEEspecialpapernotice{(Invited Paper)}
+
+
+
+
+% make the title area
+\maketitle
+
+% As a general rule, do not put math, special symbols or citations
+% in the abstract
+%\begin{abstract}
+%The abstract goes here.
+%\end{abstract}
+
+% no keywords
+
+
+
+
+% For peer review papers, you can put extra information on the cover
+% page as needed:
+% \ifCLASSOPTIONpeerreview
+% \begin{center} \bfseries EDICS Category: 3-BBND \end{center}
+% \fi
+%
+% For peerreview papers, this IEEEtran command inserts a page break and
+% creates the second title. It will be ignored for other modes.
+\IEEEpeerreviewmaketitle
+
+
+
+\section{Introduction}
+
+There are many approaches to natural language processing (NLP). 
+%Nowadays, many well-known end-user applications are based on machine learning.
+A data-driven approach is appropriate, when the target language is well-resourced (and grammatically simple), the domain is unlimited and correctness is not crucial.
+For example, a monolingual English speaker who wants to get the gist of any non-English web page will be happy with a free, wide-coverage online service, even if it makes some mistakes.
+
+Rule-based NLP has a different set of use cases. Writing grammar rules takes more human effort than training a machine learning model, but in many cases, it is the more feasible approach:
+%but the results are more general, predictable and adaptable. 
+
+
+
+\begin{itemize}
+\item \textbf{Quality over coverage.} 
+Think of producers instead of consumers of information: the producer needs high guarantees of correctness,
+but often there is only a limited domain to cover. %Grammars are ideal for such use cases.
+%In such a case, a domain-specific grammar %for translation or natural language generation
+%is much more feasible than a general-purpose tool, with wide coverage but limited quality.
+%A user 
+%In contrast, producers of information need strong guarantees that the information they provide is correct in all languages. 
+
+\item \textbf{Less language resources needed}. Most of the 6000+ languages of the world do not have the abundance of data needed for machine learning, making rule-based approach the only feasible one.
+
+\item \textbf{Grammatically complex languages} benefit proportionately more from a grammar-based approach. 
+%Think of a grammar as a compression method: a compact set of rules generates infinitely many sentences. 
+Grammars can also be used in conjunction with machine learning, e.g. synthesizing training data to prevent data sparsity.
+
+\item \textbf{Grammars are explainable}, and hence, testable. If there is a bug in a particular sentence, we can find the reason for it and fix it. In contrast, machine learning models are much more opaque, and the user can just tweak some parameters, without guarantees how it affects the model.
+
+\end{itemize}
+
+%Rule-based and data-driven NLP have different trade-offs: the first prioritizes quality over coverage, and vice versa. It is especially applicable for producers of information, as opposed to consumers: a user who just wants to get the gist of a web page in a foreign language benefits from a wide-coverage system, even if it makes mistakes. In contrast, producers of information need strong guarantees that the information they provide is correct in all languages.
+
+%Another area is lesser-resourced languages. Data-driven methods require large amounts of data, and while major languages such as English, Spanish and Chinese have an abundance of data, the majority of the 6000 \cite{citesomething} languages of the world are in a less fortunate.
+
+%In addition, more complex languages benefit proportionately more from rule-based approach. If a single noun or verb can have hundreds of inflection forms (as opposed to English, think \emph{dog} and \emph{dogs}), we would need much more training data in order to cover all of them. A grammar-based approach can be used to synthesize data, in conjunction with a data-driven approach such as deep learning.
+%This benefits even languages that are relatively well-off, such as Finnish.
+
+Testing grammars has one big difference from testing software: natural language has no formal specification, 
+so ultimately we must involve a human oracle. However, we can automate many useful subtasks: detect \emph{ambiguous constructions} and \emph{contradictory grammar rules}, as well as generate \emph{minimal and representative} set of examples that cover all the constructions. 
+Think of the whole grammar as a haystack, and we suspect there are a few needles---we cannot promise automatic needle-removal, but instead we help the human oracle to narrow down the search.
+% In the end, we need a human to confirm and decide what to do with the needles.
+
+In the following sections, we present our research on testing (computational) natural language grammars, showcasing two different types of grammar formalisms and testing methods.
+
+\section{Symbolic Evaluation of Constraint Grammar}
+
+\subsection{Constraint Grammar}
+Constraint Grammar (CG) \cite{karlsson1995constraint} is a robust and language-independent formalism 
+for part-of-speech tagging and shallow parsing. 
+A grammar consists of disambiguation rules for initially ambiguous, 
+morphologically analyzed text: the correct analysis for the sentence 
+is attained by removing improper readings from ambiguous words.
+Consider the word \emph{wish}: without context, it could be a noun or a verb.
+% singular noun, or a verb either in plural (``we wish\dots'') or infinite (``to wish\dots'').
+But any English speaker can easily tell that ``a wish'' is a noun.
+%The corresponding CG rule would be
+In CG, we can generalize the observation and write the following rule: 
+\texttt{SELECT noun IF (0 noun/verb) (-1 article)}.
+
+Wide-coverage grammars, containing some thousands of rules, 
+generally achieve very high accuracy: 
+thanks to the flexible formalism, new rules can be written 
+to address even the rarest phenomena, without compromising the general tendencies.
+%Even with a smaller set of rules, CG-based taggers have been competetive with statistical taggers.
+But there is a downside to this flexibility: large grammars are difficult to maintain
+and debug. There is no internal mechanism that prevents rules from contradicting 
+each other---furthermore, there are several implementations of CG with different kind of application orders,
+such as ``apply in the order introduced in the grammar file'' or ``apply in order of longer matching context''.
+A particular rule set may be written with one application order in mind, but another party may 
+run the grammar with another implementation---if there are any conflicting rule pairs, then the behaviour of the grammar is different.
+For that reason, we decided to apply software testing and verification methods to CGs.
+
+
+\subsection{Symbolic Evaluation}
+
+We model CG as a SAT-problem \cite{listenmaa_claessen2015}.
+The analyses of the word forms are translated into Boolean variables, 
+and the constraint rules into logical formulas operating on those variables.
+For instance, the analyses ``\emph{wish} is a noun'', ``\emph{wish} is a verb'' 
+are encoded as variables \emph{wish}$_{N}$, \emph{wish}$_{V}$,  
+and the rule ``a word cannot be both a noun and a verb at the same time'' as 
+$\neg($\emph{wish}$_{N}$ $\land$  \emph{wish}$_{V})$.
+Applying a rule becomes a task of assigning truth values to different analyses,
+such that ultimately each word should have one true analysis.
+
+This simple translation gives us properties that standard CG implementations do not have.
+Most importantly, the rules lose their independence: any conflict between two rules renders the formula unsatisfiable. 
+While this is not necessarily a desirable property in a standard CG implementation, it is interesting as a separate tool for grammar analysis. 
+
+Our initial implementation \cite{listenmaa_claessen2015} was unordered, but we improved the tool in \cite{listenmaa_claessen2016} and also chose the most common variant of application order, which is the order of appearance in the grammar file.
+Instead of an actual piece of text, such as 
+``the\texttt{\small<article>} wish\texttt{\small <noun>/<verb>}'', we apply the rules to a {\em symbolic sentence}. 
+Every symbolic word contains every possible tag, and rule applications shape the sentence into a concrete one.
+For a given set of rules, we ask for a sentence that would pass through all of them and still be able to trigger the last one. 
+If such a sentence cannot be created, it means that some rule prevents the last rule from applying, \emph{regardless of the input sentence}; for instance, if an earlier rule removes all verbs unconditionally, then any rule that removes verbs in some specific context may not apply. 
+
+In addition to conflict detection, we have found symbolic sentences and example generation to be helpful in the process of grammar writing, 
+to give grammarians feedback on the rules under development.
+For instance, a grammar writer can take a set of rules and ask for a sequence that triggers some of them and not others.
+We tested the grammar analysis tools in collaboration with CG writers \cite{listenmaa_et_al2017}, and found the preliminary results promising.
+
+
+\section{Test Case Generation for Grammatical Framework}
+
+\subsection{Grammatical Framework}
+
+Grammatical Framework (GF) \cite{ranta2010gfbook} 
+is a framework for building multilingual grammar applications. Its main
+components are a functional programming language for writing grammars
+and a resource library that contains the linguistic details of many
+natural languages.
+A GF program consists of an \emph{abstract syntax} (a set of functions
+and their categories) and a set of one or more
+\emph{concrete syntaxes} which describe how the abstract
+functions and categories are linearized (turned into surface strings) in each
+respective concrete language. The resulting grammar
+describes a mapping between concrete language strings and
+their corresponding abstract trees (structures of function names).
+This mapping is bidirectional---strings can be \emph{parsed} to
+trees, and trees \emph{linearized} to strings.
+As an abstract syntax can have multiple corresponding concrete syntaxes,
+the respective
+languages can be automatically \emph{translated} from one to the other by
+first parsing a string into a tree and then linearizing the obtained tree
+into a new string.
+
+
+\subsection{Automated Test Case Generation}
+
+Traditionally, GF grammars are tested by the grammarians themselves,
+much like unit testing. % in traditional software development.
+When implementing some feature, such as relative clauses, the grammarian
+comes up with a test suite of sentences that include relative clauses, 
+and stores in the form of abstract syntax trees. In principle, a test suite created for one
+language can easily be reused for another, because the ASTs are identical.
+Ideally, every time someone touches relative clauses in the any concrete syntax, the trees 
+in the test suite will be linearized with the changed concrete syntax, and verified by 
+someone who speaks the language (or compared to the original gold standard, if there is one).
+This scheme can fail for various reasons:
+
+\begin{itemize}
+\item The original list is not exhaustive: for instance, it tests only "X, who loves me" but not "X, whom I love".
+\item The original list is exhaustive in one language, but not in all: for instance, it started in English and only included one noun, but in French it would need at least one masculine and one feminine noun.
+\item The list is overly long, with redundant test cases, and human testers are not motivated to read through.
+\item A grammarian makes a change somewhere else in the grammar, and doesn't realize that it affects relative clauses, and thus does not rerun the test suite for relative clauses.
+\end{itemize}
+
+We are working on a system that addresses these questions, with a working implementation on GitHub\footnote{\texttt{\small \url{ https://github.com/inariksit/GF-testing}}}. 
+Our preliminary version is already usable for real, large-scale grammar development, and we have found errors in the grammars we have tested, for languages such as Dutch and Hindi.
+The biggest downside to automatically generated test sentences is the lack of semantic coherence---we expect nonsensical sentences to be more easily judged as grammatically incorrect, especially by oracles that are not language professionals.
+
+We plan to look into existing text corpora, and find trees that are structurally identical  to those that our program generates as a minimal and representative example. As a simplified example, ``a worm without winter'', generated by the program, would be identical\footnote{This particular example holds for English, but in another language, the words ``pizza'' and ``worm'', as well as ``winter'' and ``cheese'' may not match in all relevant features---we mentioned earlier grammatical gender, but also features like whether it starts with a vowel or a consonant. All this information comes from the concrete syntax!}
+ in structure to ``a pizza without cheese'', found in a real text, and can thus be substituted for the generated one.  
+Alternatively, we could use statistical information on co-occurrences of words, and generate appropriate pools of words, from which we draw example sentences.
+
+%it places the burden of completeness on the grammarian herself. 
+
+
+
+
+%GF grammars are very powerful in abstraction---languages as different as Basque and Chinese
+%are all mapped to the same interlingua, and language-specific details, such as inflection and word order,
+%are left for the respective concrete syntaxes.
+
+
+
+
+
+
+
+
+% conference papers do not normally have an appendix
+
+
+% use section* for acknowledgment
+\section*{Acknowledgment}
+
+%Thanks to my supervisors Koen Claessen and Aarne Ranta.
+The project is funded by the Swedish Research Council (Vetenskapsr\r{a}det) under grant number 2012-5746.
+
+
+
+
+
+% trigger a \newpage just before the given reference
+% number - used to balance the columns on the last page
+% adjust value as needed - may need to be readjusted if
+% the document is modified later
+%\IEEEtriggeratref{8}
+% The "triggered" command can be changed if desired:
+%\IEEEtriggercmd{\enlargethispage{-5in}}
+
+% references section
+
+% can use a bibliography generated by BibTeX as a .bbl file
+% BibTeX documentation can be easily obtained at:
+% http://mirror.ctan.org/biblio/bibtex/contrib/doc/
+% The IEEEtran BibTeX style support page is at:
+% http://www.michaelshell.org/tex/ieeetran/bibtex/
+%\bibliographystyle{IEEEtran}
+% argument is your BibTeX string definitions and bibliography database(s)
+%\bibliography{IEEEabrv,../bib/paper}
+%
+% <OR> manually copy in the resultant .bbl file
+% set second argument of \begin to the number of references
+% (used to reserve space for the reference number labels box)
+\begin{thebibliography}{1}
+
+
+\bibitem{karlsson1995constraint}
+  Fred~Karlsson,  Atro~Voutilainen, Juha~Heikkil{\"{a}} and Arto~Anttila,
+ \emph{Constraint Grammar: a language-independent system for parsing unrestricted text},
+Walter de Gruyter, 1995.
+
+\bibitem{ranta2010gfbook}
+  Aarne~Ranta, \emph{Grammatical Framework: Programming with Multilingual Grammars}, 
+     CSLI Publications, 2010.
+
+\bibitem{listenmaa_claessen2015}
+ Inari~Listenmaa and Koen~Claessen, \emph{Constraint Grammar as a SAT-problem}. Proceedings of the Constraint Grammar workshop at NoDaLiDa, the 20th Nordic Conference of Computational Linguistics, 2015.
+
+\bibitem{listenmaa_claessen2016}
+  Inari~Listenmaa and Koen~Claessen, \emph{Analysing Constraint Grammars with a SAT-solver},
+  Proceedings of the 10th edition of the Language Resources and Evaluation Conference, 2016.
+
+\bibitem{listenmaa_et_al2017}
+  Inari~Listenmaa, Jose~Maria~Arriola, Itziar~Aduriz and Eckhard~Bick. \emph{Cleaning up the Basque grammar: a work in progress}. 
+  Proceedings of the Constraint Grammar workshop at NoDaLiDa, the 21th Nordic Conference of Computational Linguistics, 2017.
+
+
+\end{thebibliography}
+
+
+
+
+% that's all folks
+\end{document}
+
+
