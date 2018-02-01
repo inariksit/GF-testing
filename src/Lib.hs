@@ -1,6 +1,8 @@
 module Lib
     ( testTree
     , testFun
+    , compareTree
+    , Comparison(..)
     , treesUsingFun
     , showConcrFun
     , lookupSymbol
@@ -16,10 +18,42 @@ import qualified Data.Set as S
 import Data.Maybe
 import Debug.Trace
 
+data Comparison = Comparison { funTree :: String, linTree :: [(String,String)] }
+instance Show Comparison where
+  show c = unlines $ funTree c : map showLinTree (linTree c)
+
+showLinTree :: (String,String) -> String
+showLinTree (t1,t2) = unlines ["", "NEW> "++t1, "OLD> "++t2]
+
+
+compareFun :: Grammar -> Grammar -> Name -> [Comparison]
+compareFun gr oldgr funname =
+  [ compareTree gr oldgr tree
+  | tree <- treesUsingFun gr (lookupSymbol gr funname) ]
+
+compareTree ::Grammar -> Grammar -> Tree -> Comparison
+compareTree gr oldgr t = Comparison {
+  funTree = "### " ++ show t
+, linTree = [ (newLin, oldLin)
+            | ctx <- ctxs
+            , let newLin = linearize gr (ctx t)
+            , let oldLin = linearize oldgr (ctx t)
+            , newLin /= oldLin ]
+ }
+ where
+  w    = top t
+  c    = snd (ctyp w)
+  ctxs = concat
+         [ contextsFor gr sc c
+         | sc <- starts
+         ] 
+
+  starts = ccats gr "S"
+
 type Result = String
 
 testFun :: Bool -> Grammar -> [Grammar] -> Name -> Result
-testFun debug gr trans funname = unlines  
+testFun debug gr trans funname = unlines
   [ testTree debug gr trans tree
   | tree <- treesUsingFun gr (lookupSymbol gr funname) ]
 

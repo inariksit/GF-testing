@@ -127,9 +127,11 @@ main = do
       let changedFuns = [ (cat,functionsByCat gr cat) | (cat,_,_,_) <- difcats ]
       let writeLinFile file grammar otherGrammar = do
            writeFile file ""
-           sequence_ [ do appendFile file $ unlines
-                           [ testTree False grammar [otherGrammar] t 
-                           | t <- treesUsingFun grammar funs ]
+           sequence_ [ appendFile file $ unlines
+                        [ show comp
+                        | t <- treesUsingFun grammar funs
+                        , let comp = compareTree grammar otherGrammar t
+                        , not $ null $ linTree comp ]
                      | (cat,funs) <- changedFuns ]
 
       writeLinFile (langName ++ "-new-lins.md") gr ogr
