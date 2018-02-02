@@ -22,7 +22,6 @@ data GfTest
   , debug        :: Bool
   , treebank     :: Maybe FilePath
   , old_grammar  :: Maybe FilePath
-
   } deriving (Data,Typeable,Show,Eq)
 
 gftest = GfTest 
