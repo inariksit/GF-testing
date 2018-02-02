@@ -22,6 +22,7 @@ data GfTest
   , debug        :: Bool
   , treebank     :: Maybe FilePath
   , old_grammar  :: Maybe FilePath
+
   } deriving (Data,Typeable,Show,Eq)
 
 gftest = GfTest 
@@ -56,7 +57,10 @@ main = do
 --    ('s':'c':' ':str) -> mapM_ print $ hasConcrString gr str
     "all" -> mapM_ putStrLn [ testTree False gr [] t 
                             | t <- treesUsingFun gr (symbols gr) ]
-    fname -> putStrLn $ testFun (debug args) gr grTrans fname
+    fnames -> 
+      sequence_
+        [ putStrLn $ testFun (debug args) gr grTrans fname
+         | fname <- words fnames ]
 
 -------------------------------------------------------------------------------
 -- secondary operations: read trees from treebank, compare with old grammar
@@ -127,20 +131,23 @@ main = do
       let changedFuns = [ (cat,functionsByCat gr cat) | (cat,_,_,_) <- difcats ]
       let writeLinFile file grammar otherGrammar = do
            writeFile file ""
-           sequence_ [ appendFile file $ unlines
-                        [ show comp
-                        | t <- treesUsingFun grammar funs
-                        , let comp = compareTree grammar otherGrammar t
-                        , not $ null $ linTree comp ]
+           sequence_ [ do print cat
+                          appendFile file $ unlines
+                            [ show comp
+                            | t <- treesUsingFun grammar funs
+                            , let comp = compareTree grammar otherGrammar t
+                            , not $ null $ linTree comp ]
                      | (cat,funs) <- changedFuns ]
 
-      writeLinFile (langName ++ "-new-lins.md") gr ogr
-      writeLinFile (langName ++ "-old-lins.md") ogr gr
+      --writeLinFile (langName ++ "-new-lins.md") gr ogr
+      --writeLinFile (langName ++ "-old-lins.md") ogr gr
+      mapM_ putStrLn $ nub [ show fun | (_,funs) <- changedFuns, fun <- funs ]
 
 
 
 
  where
+  nub = S.toList . S.fromList
   sameCCat :: Symbol -> Symbol -> Bool
   sameCCat s1 s2 = snd (ctyp s1) == snd (ctyp s2)
 
