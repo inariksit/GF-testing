@@ -352,25 +352,25 @@ toGrammar pgf langName =
 --------------------------------------------------------------------------------
 -- analyzing contexts
 
-equalFields :: Grammar -> ConcrCat -> [(ConcrCat,EqRel Int)]
-equalFields gr top = cs `zip` eqrels
+equalFields :: Grammar -> [(ConcrCat,EqRel Int)]
+equalFields gr = cs `zip` eqrels
  where
   eqrels = Mu.mu Top defs cs
   cs     = S.toList (nonEmptyCats gr)
   
   defs =
-    [ if c `isCoercableTo` top
-        then (c, [], \_ -> Classes [[0]])
-        else (c, ys, h)
+    [ (c, ys, h)
     | c <- cs
       -- fs = everything that has c as a goal category
     , let fs = [ Right f
                | f <- symbols gr
+               , all (`S.member` nonEmptyCats gr) (fst (ctyp f))
                , c == snd (ctyp f)
                ] ++
                [ Left b
                | (a,b) <- coercions gr
                , a == c
+               , b `S.member` nonEmptyCats gr
                ]
 
           -- all the categories c depends on
@@ -400,10 +400,6 @@ equalFields gr top = cs `zip` eqrels
       where 
         lin (Left str)    = str
         lin (Right (i,j)) = show i ++ rep (eqs !! i) j
-
-  a `isCoercableTo` b = a==b || ((a,b) `S.member` coercionTab gr)
-
-
 
 contextsFor :: Grammar -> ConcrCat -> ConcrCat -> [Tree -> Tree]
 contextsFor gr top hole =
