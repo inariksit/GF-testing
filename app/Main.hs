@@ -4,10 +4,12 @@ module Main where
 
 import GrammarC
 import Lib
+import EqRel
 import Paths_GF_testing
 
 import Data.List ( intercalate, groupBy, sortBy )
 import qualified Data.Set as S
+import qualified Data.Map as M
 
 
 import System.Console.CmdArgs hiding ( name )
@@ -49,6 +51,20 @@ main = do
   gr     <- readGrammar langName grName
   grTrans <- sequence [ readGrammar lt grName | lt <- langTrans ]
 
+  let tab = M.fromListWith (/\)
+            [ (c', eqr)
+            | (c,eqr) <- equalFields gr
+            , '_' `elem` show c
+            , let c' = takeWhile (/='_') (show c)
+            , not (null c')
+            ]
+  sequence_
+    [ putStrLn (c ++ ": " ++ cl)
+    | (c,eqr) <- M.toList tab
+    , cl <- case eqr of
+              Top -> ["TOP"]
+              Classes xss -> [ show xs | xs@(_:_:_) <- xss ]
+    ]
 
   -- Testing a function
   case function args of
