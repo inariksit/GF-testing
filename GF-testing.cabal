@@ -18,7 +18,7 @@ data-dir:      data/
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Lib, GrammarC, Mu, Graph, FMap
+  exposed-modules:     Lib, GrammarC, Mu, Graph, FMap, EqRel
   other-modules:       Paths_GF_testing
   build-depends:       base >= 4.7 && < 5
                      , containers

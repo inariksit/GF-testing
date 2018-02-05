@@ -8,6 +8,7 @@ import Data.Char
 import qualified Data.Set as S
 import qualified Mu
 import qualified FMap as F
+import EqRel
 
 import GHC.Exts ( the )
 import Debug.Trace
@@ -79,7 +80,7 @@ data Grammar
   , linearize    :: Tree -> String
   , tabularLin   :: Tree ->  [(String,String)]
   , concrCats    :: [(PGF2.Cat,I.FId,I.FId,[String])]
-  , coercions    :: [(ConcrCat,ConcrCat)] -- M.Map ConcrCat ConcrCat 
+  , coercions    :: [(ConcrCat,ConcrCat)]
   , coercionTab  :: S.Set (ConcrCat,ConcrCat)
   , contextsTab  :: M.Map ConcrCat (M.Map ConcrCat [Tree -> Tree])
   , startCat     :: Cat
@@ -350,6 +351,59 @@ toGrammar pgf langName =
 
 --------------------------------------------------------------------------------
 -- analyzing contexts
+
+equalFields :: Grammar -> ConcrCat -> [(ConcrCat,EqRel Int)]
+equalFields gr top = cs `zip` eqrels
+ where
+  eqrels = Mu.mu Top defs cs
+  cs     = S.toList (nonEmptyCats gr)
+  
+  defs =
+    [ if c `isCoercableTo` top
+        then (c, [], \_ -> Classes [[0]])
+        else (c, ys, h)
+    | c <- cs
+      -- fs = everything that has c as a goal category
+    , let fs = [ Right f
+               | f <- symbols gr
+               , c == snd (ctyp f)
+               ] ++
+               [ Left b
+               | (a,b) <- coercions gr
+               , a == c
+               ]
+
+          -- all the categories c depends on
+          ys = S.toList $ S.fromList $ concat
+               [ case f of
+                   Right f -> fst (ctyp f)
+                   Left b  -> [b]
+               | f <- fs
+               ]
+
+          -- computes the equivalence relation, given the eq.rels of its arguments
+          h rs = foldr (/\) Top $ [ apply f eqs
+                  | Right f <- fs
+                  , let eqs = map (args M.!) (fst $ ctyp f)
+                  ] ++
+                  [ args M.! b
+                  | Left b <- fs
+                  ]
+           where
+            args = M.fromList (ys `zip` rs)
+    ]
+   where
+    apply f eqs =
+      basic [ map lin (concrSeqs gr sq)
+            | sq <- seqs f ]
+
+      where 
+        lin (Left str)    = str
+        lin (Right (i,j)) = show i ++ rep (eqs !! i) j
+
+  a `isCoercableTo` b = a==b || ((a,b) `S.member` coercionTab gr)
+
+
 
 contextsFor :: Grammar -> ConcrCat -> ConcrCat -> [Tree -> Tree]
 contextsFor gr top hole =
