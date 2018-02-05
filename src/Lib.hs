@@ -113,8 +113,8 @@ bestTrees :: Symbol -> Grammar -> [ConcrCat] -> [[Tree]]
 bestTrees fun gr cats =
   bestExamples fun gr $ take 200 -- change this to something else if too slow
   [ featIthVec gr cats size i
-  | all (`S.member` nonEmptyCats gr) cats -- so we dare to have no bound on size!
-  , size <- [0..]                         -- look, Ma, no bound!
+  | all (`S.member` nonEmptyCats gr) cats
+  , size <- [0..10]
   , let card = featCardVec gr cats size 
   , i <- [0..card-1]
   ]
