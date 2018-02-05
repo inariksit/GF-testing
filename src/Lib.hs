@@ -18,24 +18,28 @@ import qualified Data.Set as S
 import Data.Maybe
 import Debug.Trace
 
-data Comparison = Comparison { funTree :: String, linTree :: [(String,String)] }
+data Comparison = Comparison { funTree :: String, linTree :: [(String,String,String,String)] }
 instance Show Comparison where
   show c = unlines $ funTree c : map showLinTree (linTree c)
 
-showLinTree :: (String,String) -> String
-showLinTree (t1,t2) = unlines ["", "NEW> "++t1, "OLD> "++t2]
+showLinTree :: (String,String,String,String) -> String
+showLinTree (hl,t1,t2,t3) = unlines ["", hl, "NEW> "++t1, "OLD> "++t2, "TRA> "++t3]
 
 
-compareFun :: Grammar -> Grammar -> Name -> [Comparison]
-compareFun gr oldgr funname =
-  [ compareTree gr oldgr tree
+compareFun :: Grammar -> Grammar -> [Grammar] -> Name -> [Comparison]
+compareFun gr oldgr transgr funname =
+  [ compareTree gr oldgr transgr tree
   | tree <- treesUsingFun gr (lookupSymbol gr funname) ]
 
-compareTree ::Grammar -> Grammar -> Tree -> Comparison
-compareTree gr oldgr t = Comparison {
+compareTree :: Grammar -> Grammar -> [Grammar] -> Tree -> Comparison
+compareTree gr oldgr transgr t = Comparison {
   funTree = "### " ++ show t
-, linTree = [ (newLin, oldLin)
+, linTree = [ (hl, newLin, oldLin, transLin)
             | ctx <- ctxs
+            , let hl = show (ctx (App (hole c) []))
+            , let transLin = case transgr of
+                              []  -> ""
+                              g:_ -> linearize g (ctx t) --pick first
             , let newLin = linearize gr (ctx t)
             , let oldLin = linearize oldgr (ctx t)
             , newLin /= oldLin ]
