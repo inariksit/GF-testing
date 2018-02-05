@@ -93,6 +93,12 @@ data Grammar
   }
 
 
+startConcrCats :: Grammar -> [ConcrCat]
+startConcrCats gr = S.toList $ S.fromList $
+  [ snd (ctyp f)
+  | f <- functionsByCat gr (startCat gr)
+  ]
+
 --------------------------------------------------------------------------------
 -- name
 
