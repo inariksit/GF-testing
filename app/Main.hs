@@ -130,17 +130,17 @@ main = do
       let changedFuns = [ (cat,functionsByCat gr cat) | (cat,_,_,_) <- difcats ]
       let writeLinFile file grammar otherGrammar = do
            writeFile file ""
-           sequence_ [ do print cat
+           sequence_ [ do putStrLn cat
                           appendFile file $ unlines
                             [ show comp
                             | t <- treesUsingFun grammar funs
-                            , let comp = compareTree grammar otherGrammar t
+                            , let comp = compareTree grammar otherGrammar grTrans t
                             , not $ null $ linTree comp ]
                      | (cat,funs) <- changedFuns ]
 
-      --writeLinFile (langName ++ "-new-lins.md") gr ogr
-      --writeLinFile (langName ++ "-old-lins.md") ogr gr
-      mapM_ putStrLn $ nub [ show fun | (_,funs) <- changedFuns, fun <- funs ]
+      writeLinFile (langName ++ "-new-lins.md") gr ogr
+      writeLinFile (langName ++ "-old-lins.md") ogr gr
+      mapM_ putStr $ nub [ show fun | (_,funs) <- changedFuns, fun <- funs ]
 
 
 
