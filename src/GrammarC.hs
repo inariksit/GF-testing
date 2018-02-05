@@ -400,12 +400,12 @@ equalFields gr = cs `zip` eqrels
     ]
    where
     apply f eqs =
-      basic [ map lin (concrSeqs gr sq)
-            | sq <- seqs f ]
-
+      basic [ concatMap lin (concrSeqs gr sq)
+            | sq <- seqs f
+            ]
       where 
-        lin (Left str)    = str
-        lin (Right (i,j)) = show i ++ rep (eqs !! i) j
+        lin (Left str)    = [ str | not (null str) ]
+        lin (Right (i,j)) = [ show i ++ rep (eqs !! i) j ]
 
 contextsFor :: Grammar -> ConcrCat -> ConcrCat -> [Tree -> Tree]
 contextsFor gr top hole =
