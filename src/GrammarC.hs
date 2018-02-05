@@ -99,6 +99,16 @@ startConcrCats gr = S.toList $ S.fromList $
   | f <- functionsByCat gr (startCat gr)
   ]
 
+fieldNames :: Grammar -> Cat -> [String]
+fieldNames gr c = map fst . tabularLin gr $ t
+ where
+  t:_ = [ t
+        | f <- functionsByCat gr c
+        , let (_,c') = ctyp f
+        , c' `S.member` nonEmptyCats gr
+        , t <- featAll gr c'
+        ]
+
 --------------------------------------------------------------------------------
 -- name
 

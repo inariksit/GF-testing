@@ -52,18 +52,17 @@ main = do
   grTrans <- sequence [ readGrammar lt grName | lt <- langTrans ]
 
   let tab = M.fromListWith (/\)
-            [ (c', eqr)
-            | (c,eqr) <- equalFields gr
-            , '_' `elem` show c
-            , let c' = takeWhile (/='_') (show c)
-            , not (null c')
+            [ (c, eqr)
+            | (CC (Just c) _,eqr) <- equalFields gr
             ]
   sequence_
-    [ putStrLn (c ++ ": " ++ cl)
+    [ putStrLn ("==> " ++ c ++ ":\n" ++ cl)
     | (c,eqr) <- M.toList tab
+    , let fs = fieldNames gr c
     , cl <- case eqr of
               Top -> ["TOP"]
-              Classes xss -> [ show xs | xs@(_:_:_) <- xss ]
+              Classes xss -> [ unlines (map (fs!!) xs)
+                             | xs@(_:_:_) <- xss ]
     ]
 
   -- Testing a function
