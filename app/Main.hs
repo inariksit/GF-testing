@@ -22,6 +22,7 @@ data GfTest
   , translations :: Lang
   , function     :: Name
   , debug        :: Bool
+  , eq_fields    :: Bool
   , treebank     :: Maybe FilePath
   , old_grammar  :: Maybe FilePath
   } deriving (Data,Typeable,Show,Eq)
@@ -32,6 +33,7 @@ gftest = GfTest
                        &= A.name "t"   &= help "Optional languages to show translations in."
   , function     = def &= A.typ "UseN" &= help "Function to test"
   , debug        = def                 &= help "Show debug output"
+  , eq_fields    = def                 &= help "Show fields whose strings are always identical"
   , treebank     = def &= typFile
                        &= A.name "b"   &= help "Path to a treebank"
   , old_grammar  = def &= typFile      &= help "Compare with an old grammar"
@@ -55,7 +57,8 @@ main = do
             [ (c, eqr)
             | (CC (Just c) _,eqr) <- equalFields gr
             ]
-  sequence_
+  if eq_fields args
+   then sequence_
     [ putStrLn ("==> " ++ c ++ ":\n" ++ cl)
     | (c,eqr) <- M.toList tab
     , let fs = fieldNames gr c
@@ -64,6 +67,7 @@ main = do
               Classes xss -> [ unlines (map (fs!!) xs)
                              | xs@(_:_:_) <- xss ]
     ]
+   else return ()
 
   -- Testing a function
   case function args of
@@ -94,7 +98,8 @@ main = do
   case old_grammar args of
     Nothing -> return ()
     Just fp -> do
-      ogr <- readGrammar langName =<< getDataFileName fp
+      oldgr <- readGrammar langName =<< getDataFileName fp
+      let ogr = oldgr { concrLang = concrLang oldgr ++ "-OLD" }
       let difcats = diffCats ogr gr -- (acat, [#o, #n], olabels, nlabels)
 
       ---------------------------------------------------------------------------
@@ -142,7 +147,9 @@ main = do
 
       --------------------------------------------------------------------------
       -- print out tests for all functions in the changed cats
-      let changedFuns = [ (cat,functionsByCat gr cat) | (cat,_,_,_) <- difcats ]
+      let changedFuns = if null difcats 
+                         then [ (cat,functionsByCat gr cat) | (cat,_,_,_) <- concrCats gr ]
+                          else [ (cat,functionsByCat gr cat) | (cat,_,_,_) <- difcats ]
       let writeLinFile file grammar otherGrammar = do
            writeFile file ""
            sequence_ [ do putStrLn cat

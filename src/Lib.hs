@@ -2,6 +2,7 @@ module Lib
     ( testTree
     , testFun
     , compareTree
+    , ccats
     , Comparison(..)
     , treesUsingFun
     , showConcrFun
@@ -18,12 +19,13 @@ import qualified Data.Set as S
 import Data.Maybe
 import Debug.Trace
 
-data Comparison = Comparison { funTree :: String, linTree :: [(String,String,String,String)] }
+type LinTree = (String,(Lang,String),(Lang,String),String)
+data Comparison = Comparison { funTree :: String, linTree :: [LinTree] }
 instance Show Comparison where
   show c = unlines $ funTree c : map showLinTree (linTree c)
 
-showLinTree :: (String,String,String,String) -> String
-showLinTree (hl,t1,t2,t3) = unlines ["", hl, "NEW> "++t1, "OLD> "++t2, "TRA> "++t3]
+showLinTree :: LinTree -> String
+showLinTree (hl,(l1,t1),(l2,t2),t3) = unlines ["", hl, l1++"> "++t1, l2++"> "++t2, "TRANSL> "++t3]
 
 
 compareFun :: Grammar -> Grammar -> [Grammar] -> Name -> [Comparison]
@@ -34,7 +36,7 @@ compareFun gr oldgr transgr funname =
 compareTree :: Grammar -> Grammar -> [Grammar] -> Tree -> Comparison
 compareTree gr oldgr transgr t = Comparison {
   funTree = "### " ++ show t
-, linTree = [ (hl, newLin, oldLin, transLin)
+, linTree = [ (hl, (concrLang gr,newLin), (concrLang oldgr, oldLin), transLin)
             | ctx <- ctxs
             , let hl = show (ctx (App (hole c) []))
             , let transLin = case transgr of
@@ -52,7 +54,7 @@ compareTree gr oldgr transgr t = Comparison {
          | sc <- starts
          ] 
 
-  starts = ccats gr "S"
+  starts = ccats gr "Utt"
 
 type Result = String
 
@@ -86,7 +88,7 @@ testTree debug gr tgrs t = unlines
          | sc <- starts
          ] 
 
-  starts = ccats gr "S"
+  starts = ccats gr "Utt"
 
 --------------------------------------------------------------------------------
 

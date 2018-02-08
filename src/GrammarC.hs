@@ -75,7 +75,8 @@ type Lang = String
 data Grammar 
   = Grammar
   {
-    parse        :: String -> [Tree]
+    concrLang    :: Lang
+  , parse        :: String -> [Tree]
   , readTree     :: String -> Tree
   , linearize    :: Tree -> String
   , tabularLin   :: Tree ->  [(String,String)]
@@ -144,8 +145,9 @@ toGrammar pgf langName =
         Grammar
         {
 
+          concrLang = langName
 
-         parse = \s ->
+        , parse = \s ->
             case PGF2.parse lang (PGF2.startCat pgf) s of 
               PGF2.ParseOk es_fs -> map (mkTree.fst) es_fs
               PGF2.ParseFailed i s -> error s
@@ -173,7 +175,10 @@ toGrammar pgf langName =
         , lookupSymbol = lookupSymbs
 
         , functionsByCat = \c ->
-            S.toList $ S.fromList [ symb | symb <- symbs, snd (typ symb) == c ]
+            --S.toList $ S.fromList 
+            [ symb | symb <- symbs
+                   , snd (typ symb) == c
+                   , snd (ctyp symb) `elem` neCats ]
 
         , coercions = coerces
 
@@ -205,48 +210,8 @@ toGrammar pgf langName =
             mkFEAT gr
         
         , nonEmptyCats =
-            S.fromList
-            [ c
-            | let -- all functions, organized by result type
-                  funs = M.fromListWith (++) $
-                    [ (b,[Right f])
-                    | f <- symbols gr
-                    , let (_,b) = ctyp f
-                    ] ++
-                    [ (b,[Left a])
-                    | (b,a) <- coercions gr
-                    ]
-            
-                  -- all categories, with their dependencies
-                  defs =
-                    [ if or [ arity f == 0 | Right f <- fs ]
-                        then (c, [], \_ -> True) -- has a word
-                        else (c, ys, h)          -- no word
-                    | c <- allCats
-                    , let -- relevant functions for c
-                          fs = case M.lookup c funs of
-                                 Nothing -> []
-                                 Just fs -> fs
-                    
-                          -- categories we depend on
-                          ys = S.toList $ S.fromList $
-                               [ a | Right f <- fs, a <- fst (ctyp f) ] ++
-                               [ a | Left a <- fs ]
-                    
-                          -- compute if we're empty, given the emptiness of others
-                          h bs = or $
-                            [ and [ tab M.! a | a <- as ]
-                            | Right f <- fs
-                            , let (as,_) = ctyp f
-                            ] ++
-                            [ tab M.! a
-                            | Left a <- fs
-                            ]
-                           where
-                            tab = M.fromList (ys `zip` bs)
-                    ]
-            , (c,True) <- allCats `zip` Mu.mu False defs allCats
-            ]
+            S.fromList neCats
+
         }
    in gr
  where
@@ -286,6 +251,48 @@ toGrammar pgf langName =
                [] -> [c]
                cs -> cs
 
+  -- non-empty categories
+  neCats = [ c
+            | let -- all functions, organized by result type
+                  funs = M.fromListWith (++) $
+                    [ (b,[Right f])
+                    | f <- symbs
+                    , let (_,b) = ctyp f
+                    ] ++
+                    [ (b,[Left a])
+                    | (b,a) <- coerces
+                    ]
+            
+                  -- all categories, with their dependencies
+                  defs =
+                    [ if or [ arity f == 0 | Right f <- fs ]
+                        then (c, [], \_ -> True) -- has a word
+                        else (c, ys, h)          -- no word
+                    | c <- allCats
+                    , let -- relevant functions for c
+                          fs = case M.lookup c funs of
+                                 Nothing -> []
+                                 Just fs -> fs
+                    
+                          -- categories we depend on
+                          ys = S.toList $ S.fromList $
+                               [ a | Right f <- fs, a <- fst (ctyp f) ] ++
+                               [ a | Left a <- fs ]
+                    
+                          -- compute if we're empty, given the emptiness of others
+                          h bs = or $
+                            [ and [ tab M.! a | a <- as ]
+                            | Right f <- fs
+                            , let (as,_) = ctyp f
+                            ] ++
+                            [ tab M.! a
+                            | Left a <- fs
+                            ]
+                           where
+                            tab = M.fromList (ys `zip` bs)
+                    ]
+            , (c,True) <- allCats `zip` Mu.mu False defs allCats
+            ]
 
 
   -- symbols
