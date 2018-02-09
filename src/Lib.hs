@@ -54,7 +54,7 @@ compareTree gr oldgr transgr t = Comparison {
          | sc <- starts
          ] 
 
-  starts = ccats gr "Utt"
+  starts = startConcrCats gr
 
 type Result = String
 
@@ -88,7 +88,7 @@ testTree debug gr tgrs t = unlines
          | sc <- starts
          ] 
 
-  starts = ccats gr "Utt"
+  starts = startConcrCats gr
 
 --------------------------------------------------------------------------------
 

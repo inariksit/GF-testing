@@ -18,9 +18,12 @@ import System.IO ( stdout, hSetBuffering, BufferMode(..) )
 
 data GfTest 
   = GfTest 
-  { source       :: Lang
+  { grammar      :: Maybe FilePath
+  , source       :: Lang
   , translations :: Lang
   , function     :: Name
+  , category     :: Cat
+  , show_cats    :: Bool
   , debug        :: Bool
   , eq_fields    :: Bool
   , treebank     :: Maybe FilePath
@@ -28,15 +31,20 @@ data GfTest
   } deriving (Data,Typeable,Show,Eq)
 
 gftest = GfTest 
-  { source       = def &= A.typ "Eng"  &= help "Pick the language you want to test."
+  { grammar      = def &= typFile      &= help "Path to the grammar (PGF) you want to test."
+  , source       = def &= A.typ "Eng"  
+                       &= A.name "s"   &= help "Concrete language for the chosen grammar."
   , translations = def &= A.typ "\"Eng Swe\"" 
                        &= A.name "t"   &= help "Optional languages to show translations in."
   , function     = def &= A.typ "UseN" &= help "Function to test"
+  , category     = def &= A.typ "NP"   &= help "Test all functions that return the given category"
+  , show_cats    = def                 &= help "Show all available categories." 
   , debug        = def                 &= help "Show debug output"
   , eq_fields    = def                 &= help "Show fields whose strings are always identical"
   , treebank     = def &= typFile
-                       &= A.name "b"   &= help "Path to a treebank"
-  , old_grammar  = def &= typFile      &= help "Compare with an old grammar"
+                       &= A.name "b"   &= help "Path to a treebank."
+  , old_grammar  = def &= typFile      &= help "Path to an earlier version of the grammar."
+
   }
 
 
@@ -46,13 +54,18 @@ main = do
 
   args <- cmdArgs gftest
 
-  let langName = "TestLang" ++ source args
-  let langTrans = [ "TestLang" ++ t | t <- words (translations args) ]
+  let absName = case grammar args of 
+                  Just fp -> stripPGF fp --doesn't matter if the name is given with or without ".pgf"
+                  Nothing -> "TestLang"
+  let langName = absName ++ source args
+  let langTrans = [ absName ++ t | t <- words (translations args) ]
 
-  grName <- getDataFileName "TestLang.pgf" 
+  grName <- getDataFileName (absName ++ ".pgf")
   gr     <- readGrammar langName grName
   grTrans <- sequence [ readGrammar lt grName | lt <- langTrans ]
 
+
+  -- Show equal fields
   let tab = M.fromListWith (/\)
             [ (c, eqr)
             | (CC (Just c) _,eqr) <- equalFields gr
@@ -69,16 +82,25 @@ main = do
     ]
    else return ()
 
-  -- Testing a function
+  -- Show available categories
+  if show_cats args 
+   then putStrLn $ unlines [ cat | (cat,_,_,_) <- concrCats gr ]
+   else return ()
+
+  -- Testing a function or all functions in a category
   case function args of
-    []    -> return ()
+    [] -> case category args of
+            []  -> return ()
+            cat -> putStrLn $ unlines 
+                    [ testTree False gr [] t 
+                    | t <- treesUsingFun gr (functionsByCat gr cat) ]
 --    ('s':'c':' ':str) -> mapM_ print $ hasConcrString gr str
-    "all" -> mapM_ putStrLn [ testTree False gr [] t 
-                            | t <- treesUsingFun gr (symbols gr) ]
-    fnames -> 
-      sequence_
-        [ putStrLn $ testFun (debug args) gr grTrans fname
-         | fname <- words fnames ]
+    "all" -> putStrLn $ unlines 
+              [ testTree False gr [] t 
+              | t <- treesUsingFun gr (symbols gr) ]
+    fnames -> putStrLn $ unlines
+                [ testFun (debug args) gr grTrans fname
+                | fname <- words fnames ]
 
 -------------------------------------------------------------------------------
 -- secondary operations: read trees from treebank, compare with old grammar
@@ -174,4 +196,9 @@ main = do
 
   compareCCat :: Symbol -> Symbol -> Ordering
   compareCCat s1 s2 = snd (ctyp s1) `compare` snd (ctyp s2)
+
+  stripPGF :: String -> String
+  stripPGF s = case reverse s of
+                'f':'g':'p':'.':name -> reverse name
+                name                 -> s
 
