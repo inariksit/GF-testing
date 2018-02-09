@@ -81,7 +81,6 @@ data Grammar
   , linearize    :: Tree -> String
   , tabularLin   :: Tree ->  [(String,String)]
   , concrCats    :: [(PGF2.Cat,I.FId,I.FId,[String])]
-  , coercions    :: [(ConcrCat,ConcrCat)]
   , coercionTab  :: S.Set (ConcrCat,ConcrCat)
   , contextsTab  :: M.Map ConcrCat (M.Map ConcrCat [Tree -> Tree])
   , startCat     :: Cat
@@ -175,12 +174,9 @@ toGrammar pgf langName =
         , lookupSymbol = lookupSymbs
 
         , functionsByCat = \c ->
-            --S.toList $ S.fromList 
             [ symb | symb <- symbs
                    , snd (typ symb) == c
                    , snd (ctyp symb) `elem` neCats ]
-
-        , coercions = coerces
 
         , coercionTab =
             let go tab []         = tab
@@ -195,7 +191,7 @@ toGrammar pgf langName =
                   | otherwise         = new tab ds (ab:cs)
                 new tab [] cs         = go tab cs
 
-             in go S.empty [ (a,b) | (b,a) <- coerces ]
+             in go S.empty coercions
         
         , contextsTab =
             M.fromList
@@ -225,7 +221,6 @@ toGrammar pgf langName =
                       in trace msg defGr
 
   -- categories and coercions
-
   mkCat tp = cat where (_, cat, _) = PGF2.unType tp
 
   mkExpr (App n []) | not (null s) && all isDigit s =
@@ -243,24 +238,24 @@ toGrammar pgf langName =
                   xs -> Just $ the xs
 
 
-  coerces = [ ( CC Nothing afid, mkCC cfid )
+  coercions = [ ( mkCC cfid, CC Nothing afid )
               | afid <- [0..I.concrTotalCats lang]
               , I.PCoerce cfid <- I.concrProductions lang afid ]
 
-  coerce c = case lookupAll coerces c of
-               [] -> [c]
-               cs -> cs
+  uncoerce c = case c of
+    CC Nothing _ -> lookupAll coercions c
+    _            -> [c]
 
   -- non-empty categories
   neCats = [ c
             | let -- all functions, organized by result type
                   funs = M.fromListWith (++) $
-                    [ (b,[Right f])
+                    [ (cat,[Right f])
                     | f <- symbs
-                    , let (_,b) = ctyp f
+                    , let (_,cat) = ctyp f
                     ] ++
-                    [ (b,[Left a])
-                    | (b,a) <- coerces
+                    [ (coe,[Left cat])
+                    | (cat,coe) <- coercions
                     ]
             
                   -- all categories, with their dependencies
@@ -276,17 +271,17 @@ toGrammar pgf langName =
                     
                           -- categories we depend on
                           ys = S.toList $ S.fromList $
-                               [ a | Right f <- fs, a <- fst (ctyp f) ] ++
-                               [ a | Left a <- fs ]
+                               [ cat | Right f <- fs, cat <- fst (ctyp f) ] ++
+                               [ cat | Left cat <- fs ]
                     
                           -- compute if we're empty, given the emptiness of others
                           h bs = or $
-                            [ and [ tab M.! a | a <- as ]
+                            [ and [ tab M.! a | a <- args ]
                             | Right f <- fs
-                            , let (as,_) = ctyp f
+                            , let (args,_) = ctyp f
                             ] ++
-                            [ tab M.! a
-                            | Left a <- fs
+                            [ tab M.! cat
+                            | Left cat <- fs
                             ]
                            where
                             tab = M.fromList (ys `zip` bs)
@@ -299,33 +294,33 @@ toGrammar pgf langName =
   symbs = [ Symbol { 
               name = nm,
               seqs = sqs,
-              ctyp = (argsCC, resCC),
-              typ = (map coerceAbsCat argsCC, rescat)
+              ctyp = (argsCC, goalCC),
+              typ = (map uncoerceAbsCat argsCC, goalcat)
             }
-            | (rescat,bg,end,_) <- I.concrCategories lang
-            , resfid <- [bg..end] 
-            , I.PApply funId pargs <- I.concrProductions lang resfid
-            , let resCC  = CC (Just rescat) resfid 
+            | (goalcat,bg,end,_) <- I.concrCategories lang
+            , goalfid <- [bg..end] 
+            , I.PApply funId pargs <- I.concrProductions lang goalfid
+            , let goalCC = CC (Just goalcat) goalfid 
             , let argsCC = [ mkCC argfid | I.PArg _ argfid <- pargs ]
             , let (nm,sqs) = I.concrFunction lang funId ]
    where
-    coerceAbsCat c = case c of
+    uncoerceAbsCat c = case c of
       CC (Just cat) _ -> cat
-      CC Nothing    _ -> the [ coerceAbsCat x | x <- coerce c ]
+      CC Nothing    _ -> the [ uncoerceAbsCat x | x <- uncoerce c ]
 
   allCats = S.toList $ S.fromList $
             [ a
             | f <- symbs
-            , let (as,b) = ctyp f
-            , a <- b:as
+            , let (args,goal) = ctyp f
+            , a <- goal:args
             ] ++
             [ c
-            | (a,b) <- coerces
-            , c <- [a,b]
+            | (cat,coe) <- coercions
+            , c <- [coe,cat]
             ]
 
   lookupSymbs = lookupAll (map symb2table symbs)
-   where symb2table s = (name s, s)
+   where symb2table s = (s, name s)
 
 
   -- parsing and reading trees
@@ -352,18 +347,18 @@ toGrammar pgf langName =
     reduceSymbol (AmbApp fs as) = case all (singleton . atop) as of
       True  -> let red = [ symbol
                            | symbol <- fs
-                           , let argTypes = map coerce ( fst $ ctyp symbol )
-                           , let resTypes = map coerce [ snd $ ctyp s 
-                                                        | (AmbApp [s] _) <- as ] 
+                           , let argTypes = map uncoerce ( fst $ ctyp symbol )
+                           , let goalTypes = map uncoerce [ snd $ ctyp s 
+                                                         | (AmbApp [s] _) <- as ] 
                            , and [ intersect a r /= [] -- TODO: can this lead to ambiguous trees?
-                                 | (a,r) <- zip argTypes resTypes ] ]
+                                 | (a,r) <- zip argTypes goalTypes ] ]
                 in case red of
                     [x] -> [x]
                     _   -> fs
       False -> fs
 
   -- misc
-  lookupAll kvs key = [ v | (k,v) <- kvs, k==key ]  
+  lookupAll kvs key = [ v | (v,k) <- kvs, k==key ]
 
   singleton [x] = True
   singleton xs  = False
@@ -382,38 +377,43 @@ equalFields gr = cs `zip` eqrels
   cs     = S.toList (nonEmptyCats gr)
   
   defs =
-    [ (c, ys, h)
+    [ (c, depcats, h)
     | c <- cs
       -- fs = everything that has c as a goal category
-    , let fs = [ Right f
+      -- there's two possibilities:
+    , let fs = -- 1) c is not a coercion: functions can have c as a goal category
+               [ Right f
                | f <- symbols gr
                , all (`S.member` nonEmptyCats gr) (fst (ctyp f))
                , c == snd (ctyp f)
                ] ++
-               [ Left b
-               | (a,b) <- coercions gr
-               , a == c
-               , b `S.member` nonEmptyCats gr
+               -- 2) c is a coercion: here's a list of (nonempty) categories c uncoercions into 
+               [ Left cat
+               | (cat,coe) <- S.toList (coercionTab gr)
+               , coe == c
+               , cat `S.member` nonEmptyCats gr
                ]
 
           -- all the categories c depends on
-          ys = S.toList $ S.fromList $ concat
+          depcats = S.toList $ S.fromList $ concat
                [ case f of
-                   Right f -> fst (ctyp f)
-                   Left b  -> [b]
+                   Right f  -> fst (ctyp f) -- 1) if c is not a coercion: 
+                                            -- all arg cats of the functions with c as goal cat
+                   Left cat -> [cat] -- 2) if c is a coercion: just the cats that it uncoercions into
                | f <- fs
                ]
 
+          -- Function to give to mu:
           -- computes the equivalence relation, given the eq.rels of its arguments
           h rs = foldr (/\) Top $ [ apply f eqs
                   | Right f <- fs
                   , let eqs = map (args M.!) (fst $ ctyp f)
                   ] ++
-                  [ args M.! b
-                  | Left b <- fs
+                  [ args M.! cat
+                  | Left cat <- fs
                   ]
            where
-            args = M.fromList (ys `zip` rs)
+            args = M.fromList (depcats `zip` rs)
     ]
    where
     apply f eqs =
@@ -421,8 +421,8 @@ equalFields gr = cs `zip` eqrels
             | sq <- seqs f
             ]
       where 
-        lin (Left str)    = [ str | not (null str) ]
-        lin (Right (i,j)) = [ show i ++ rep (eqs !! i) j ]
+        lin (Left str)    = [ str | not (null str) ] -- what is this? special treatment of empty strings?
+        lin (Right (i,j)) = [ show i ++ rep (eqs !! i) j ] -- j'th field from i'th argument
 
 contextsFor :: Grammar -> ConcrCat -> ConcrCat -> [Tree -> Tree]
 contextsFor gr top hole =
@@ -477,26 +477,37 @@ contexts gr top =
         then (c, [], \_ -> F.unit [0] [])
         else (c, ys, h)
     | c <- cs
-    , let fs = [ Right (f,k)
+
+      -- everything that uses c in one of the two ways:
+    , let fs = -- 1) Functions that take c as the kth argument
+               [ Right (f,k)
                | f <- goodSyms
                , (t,k) <- fst (ctyp f) `zip` [0..]
                , t == c
                ] ++
-               [ Left a
-               | (a,b) <- coercions gr
-               , b == c
-               , a `S.member` nonEmptyCats gr
+               -- 2) Coercions that uncoerce to c
+               [ Left coe
+               | (cat,coe) <- S.toList (coercionTab gr)
+               , cat == c
+               , coe `S.member` nonEmptyCats gr
                ]
           
+          -- goal categories for c
           ys = S.toList $ S.fromList $
                [ case f of
-                   Right (f,_) -> snd (ctyp f)
-                   Left a      -> a
+                   Right (f,_) -> snd (ctyp f) -- 1) goal category of the function that uses c
+                   Left coe    -> coe          -- 2)    (category of the) coercion that uncoercions to c
                | f <- fs
                ]
 
+          -- Function to give to mu: given a list of ???, compute a single ???
+          -- each goal category of c corresponds to a path that ≥1 of c's strings can go up the tree
+          -- but I don't really get the aspect of [a] -> a: if `a` is a path, how come we get only one?
+          -- h :: [FMap Int [(Symbol, Int)]] -> FMap Int [(Symbol, Int)]
+          -- also what is the first Int in FMap Int [(Symbol,Int)]? Related to sequence IDs?
+          -- [(Symbol,Int)] seems to be the same as (f,k) of fs, i.e. fun that uses c as its #kth arg.
           h ps = ([ (apply (f,k) str, (f,k):fis)
-                  | Right (f,k) <- fs
+                  | Right (f,k) <- fs 
                   , (str,fis) <- args M.! snd (ctyp f)
                   ] ++
                   [ q
@@ -507,11 +518,12 @@ contexts gr top =
             args = M.fromList (ys `zip` map F.toList ps)
     ]
    where
+    apply :: (Symbol, Int) -> [Int] -> [Int]
     apply (f,k) is =
       S.toList $ S.fromList $
       [ y
       | (sq,i) <- seqs f `zip` [0..]
-      , i `elem` is
+      , i `elem` is 
       , Right (x,y) <- concrSeqs gr sq
       , x == k
       ]
@@ -575,7 +587,7 @@ mkFEAT gr = catList
           ] ++
           [ catList [x] s -- put (s-1) if it doesn't terminate
           | s > 0 
-          , (y,x) <- coercions gr -- !now flipped
+          , (x,y) <- S.toList (coercionTab gr)
           , y == c
           ]
 
@@ -594,7 +606,7 @@ mkFEAT gr = catList
            [ x | f <- symbols gr
                , let (xs,y) = ctyp f
                , x <- y:xs ] ++
-           [ z | (y,x) <- coercions gr -- !now flipped
+           [ z | (x,y) <- S.toList (coercionTab gr)
                , z <- [x,y] ]
 
     memoList f = \cs -> case cs of
