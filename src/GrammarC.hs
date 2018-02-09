@@ -387,7 +387,7 @@ equalFields gr = cs `zip` eqrels
                , all (`S.member` nonEmptyCats gr) (fst (ctyp f))
                , c == snd (ctyp f)
                ] ++
-               -- 2) c is a coercion: here's a list of (nonempty) categories c uncoercions into 
+               -- 2) c is a coercion: here's a list of (nonempty) categories c uncoerces into
                [ Left cat
                | (cat,coe) <- S.toList (coercionTab gr)
                , coe == c
@@ -399,7 +399,7 @@ equalFields gr = cs `zip` eqrels
                [ case f of
                    Right f  -> fst (ctyp f) -- 1) if c is not a coercion: 
                                             -- all arg cats of the functions with c as goal cat
-                   Left cat -> [cat] -- 2) if c is a coercion: just the cats that it uncoercions into
+                   Left cat -> [cat] -- 2) if c is a coercion: just the cats that it uncoerces into
                | f <- fs
                ]
 
@@ -496,7 +496,7 @@ contexts gr top =
           ys = S.toList $ S.fromList $
                [ case f of
                    Right (f,_) -> snd (ctyp f) -- 1) goal category of the function that uses c
-                   Left coe    -> coe          -- 2)    (category of the) coercion that uncoercions to c
+                   Left coe    -> coe          -- 2)    (category of the) coercion that uncoerces to c
                | f <- fs
                ]
 
