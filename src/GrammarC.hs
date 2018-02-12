@@ -358,6 +358,34 @@ toGrammar pgf langName =
   cseq2Either x              = Left (show x)
 
 --------------------------------------------------------------------------------
+-- compute categories reachable from S
+
+reachableFromTop :: Grammar -> ConcrCat -> [ConcrCat]
+reachableFromTop gr top = [ c | (c,True) <- cs `zip` rs ]
+ where
+  rs = Mu.mu False defs cs
+  cs = S.toList (nonEmptyCats gr)
+  
+  defs =
+    [ if c == top
+        then (c, [], \_ -> True)
+        else (c, ys, or)
+    | c <- cs
+    , let ys = S.toList $ S.fromList $
+               [ b
+               | f <- symbols gr
+               , let (as,b) = ctyp f
+               , all (`S.member` nonEmptyCats gr) as
+               , c `elem` as
+               ] ++
+               [ b
+               | (b,a) <- coercions gr
+               , a == c
+               , b `S.member` nonEmptyCats gr
+               ]
+    ]
+
+--------------------------------------------------------------------------------
 -- analyzing contexts
 
 equalFields :: Grammar -> [(ConcrCat,EqRel Int)]
