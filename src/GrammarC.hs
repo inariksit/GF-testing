@@ -529,6 +529,68 @@ contexts gr top =
 
 --traceLength s xs = trace (s ++ ":" ++ show (length xs)) xs
 
+emptyFields :: Grammar -> [(ConcrCat,S.Set Int)]
+emptyFields gr = cs `zip` fields
+ where
+  cs     = S.toList (nonEmptyCats gr)
+  fields = Mu.mu (S.fromList [0..99999]) defs cs 
+
+  defs =
+    [ (c, ys, h)
+    | c <- cs
+    , let fs =  -- everything that has c as a goal category
+               [ Right f
+               | f <- symbols gr
+               , all (`S.member` nonEmptyCats gr) (fst (ctyp f))
+               , c == snd (ctyp f)
+               ] ++
+               -- 2) c is a coercion: here's a list of (nonempty) categories c uncoerces into
+               [ Left cat
+               | (cat,coe) <- coercions gr
+               , coe == c
+               , cat `S.member` nonEmptyCats gr
+               ]
+
+          -- all the categories c depends on
+          ys = S.toList $ S.fromList $ concat
+               [ case f of
+                   Right f  -> fst (ctyp f)
+                   Left cat -> [cat]
+               | f <- fs
+               ]
+
+          -- Function to give to mu:
+          -- computes whether the field is empty, given the emptiness of its arguments.
+          -- a field in C is empty, if there's some function
+          --      f :: A -> B -> C
+          -- and it uses only empty fields from A and B.
+          -- we're only looking at a given C at a time, 
+
+          h :: [S.Set Int] -> S.Set Int
+          h vs = foldr1 S.intersection $ [ apply f emptyfields
+                  | Right f <- fs
+                  , let emptyfields = map (args M.!) (fst $ ctyp f)
+                  ] ++
+                  [ args M.! cat
+                  | Left cat <- fs
+                  ]
+           where
+            args :: M.Map ConcrCat (S.Set Int) -- empty fields of each category
+            args = M.fromList (ys `zip` vs)
+    ]
+   where            
+    --apply :: Symbol        -- some f :: A -> B
+    --        -> [S.Set Int] -- for each argument type to f, which fields are empty
+    --        -> S.Set Int   -- empty fields in B
+    apply f empties =
+      S.fromList 
+      [ i
+      | (sq,i) <- seqs f `zip` [0..]
+      , let isEmpty s = case s of 
+              Left str    -> str == ""
+              Right (k,j) -> j `S.member` (empties !! k)
+      , all isEmpty (concrSeqs gr sq)
+      ]
 --------------------------------------------------------------------------------
 -- FEAT-style generator magic
 

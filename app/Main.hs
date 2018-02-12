@@ -64,6 +64,26 @@ main = do
   gr     <- readGrammar langName grName
   grTrans <- sequence [ readGrammar lt grName | lt <- langTrans ]
 
+  -- print how many categories and non-empty categories
+
+  putStrLn $ "the grammar has " ++ show (length (allcats gr))  ++  " categories"
+  putStrLn $ "the grammar has " ++ show (length (S.toList $ nonEmptyCats gr))  ++  " non-empty categories"
+  --mapM_ print $ allcats gr
+  --putStrLn "-----"
+  --mapM_ print $ S.toList $ nonEmptyCats gr
+
+--  mapM_ print $ emptyFields gr
+  let tab = M.fromListWith S.intersection
+            [ (c, empties)
+            | (CC (Just c) _,empties) <- emptyFields gr
+            ]
+  sequence_
+    [ putStrLn ("==> " ++ c ++ ":\n" ++ unlines (map (fs!!) cl))
+    | (c,empties) <- M.toList tab
+    , let fs = fieldNames gr c
+    , cl@(x:_) <- [ S.toList empties ] 
+    ]
+
 
   -- Show equal fields
   let tab = M.fromListWith (/\)
