@@ -2,8 +2,12 @@
 
 LANG=$1
 DIRTYWORDS=$2
+OPTIMIZEPGF=$3
 if [[ $DIRTYWORDS == "" ]]; then
 	DIRTYWORDS="forbidden-words.txt"
+fi
+if [[ $LANG == "" ]]; then
+	LANG="Eng"
 fi
 
 
@@ -21,4 +25,4 @@ for FUN in `cat $DIRTYWORDS`;
 done
 echo " dummy_N ]"  >> $GRFILE  #hack
 
-gf -make --src -gfo-dir /tmp grammars/*.gf
+gf -make $OPTIMIZEPGF --src -gfo-dir /tmp grammars/*.gf
