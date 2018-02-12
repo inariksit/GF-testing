@@ -81,7 +81,7 @@ data Grammar
   , linearize    :: Tree -> String
   , tabularLin   :: Tree ->  [(String,String)]
   , concrCats    :: [(PGF2.Cat,I.FId,I.FId,[String])]
-  , coercionTab  :: S.Set (ConcrCat,ConcrCat)
+  , coercions    :: [(ConcrCat,ConcrCat)]
   , contextsTab  :: M.Map ConcrCat (M.Map ConcrCat [Tree -> Tree])
   , startCat     :: Cat
   , symbols      :: [Symbol]
@@ -90,6 +90,7 @@ data Grammar
   , concrSeqs    :: SeqId -> [Either String (Int,Int)] 
   , feat         :: FEAT
   , nonEmptyCats :: S.Set ConcrCat
+  , allcats      :: [ConcrCat]
   }
 
 
@@ -178,20 +179,7 @@ toGrammar pgf langName =
                    , snd (typ symb) == c
                    , snd (ctyp symb) `elem` neCats ]
 
-        , coercionTab =
-            let go tab []         = tab
-                go tab ((a,b):cs) = new (S.insert (a,b) tab)
-                                        ( [ (x,b) | (x,y) <- S.toList tab, y == a ]
-                                       ++ [ (a,y) | (x,y) <- S.toList tab, x == b ]
-                                        )
-                                        cs
-                
-                new tab (ab:ds) cs
-                  | ab `S.member` tab = new tab ds cs
-                  | otherwise         = new tab ds (ab:cs)
-                new tab [] cs         = go tab cs
-
-             in go S.empty coercions
+        , coercions = coerces
         
         , contextsTab =
             M.fromList
@@ -208,6 +196,8 @@ toGrammar pgf langName =
         , nonEmptyCats =
             S.fromList neCats
 
+        , allcats = allCats
+
         }
    in gr
  where
@@ -220,7 +210,7 @@ toGrammar pgf langName =
                                 ", using " ++ defName
                       in trace msg defGr
 
-  -- categories and coercions
+  -- categories and coerces
   mkCat tp = cat where (_, cat, _) = PGF2.unType tp
 
   mkExpr (App n []) | not (null s) && all isDigit s =
@@ -238,12 +228,12 @@ toGrammar pgf langName =
                   xs -> Just $ the xs
 
 
-  coercions = [ ( mkCC cfid, CC Nothing afid )
+  coerces = [ ( mkCC cfid, CC Nothing afid )
               | afid <- [0..I.concrTotalCats lang]
               , I.PCoerce cfid <- I.concrProductions lang afid ]
 
   uncoerce c = case c of
-    CC Nothing _ -> lookupAll coercions c
+    CC Nothing _ -> lookupAll coerces c
     _            -> [c]
 
   -- non-empty categories
@@ -255,7 +245,7 @@ toGrammar pgf langName =
                     , let (_,cat) = ctyp f
                     ] ++
                     [ (coe,[Left cat])
-                    | (cat,coe) <- coercions
+                    | (cat,coe) <- coerces
                     ]
             
                   -- all categories, with their dependencies
@@ -315,7 +305,7 @@ toGrammar pgf langName =
             , a <- goal:args
             ] ++
             [ c
-            | (cat,coe) <- coercions
+            | (cat,coe) <- coerces
             , c <- [coe,cat]
             ]
 
@@ -389,7 +379,7 @@ equalFields gr = cs `zip` eqrels
                ] ++
                -- 2) c is a coercion: here's a list of (nonempty) categories c uncoerces into
                [ Left cat
-               | (cat,coe) <- S.toList (coercionTab gr)
+               | (cat,coe) <- coercions gr
                , coe == c
                , cat `S.member` nonEmptyCats gr
                ]
@@ -421,7 +411,7 @@ equalFields gr = cs `zip` eqrels
             | sq <- seqs f
             ]
       where 
-        lin (Left str)    = [ str | not (null str) ] -- what is this? special treatment of empty strings?
+        lin (Left str)    = [ str | not (null str) ]
         lin (Right (i,j)) = [ show i ++ "#" ++ show (rep (eqs !! i) j) ]
 
 contextsFor :: Grammar -> ConcrCat -> ConcrCat -> [Tree -> Tree]
@@ -473,7 +463,7 @@ contexts gr top =
           ]
 
   defs =
-    [ if c `isCoercableTo` top
+    [ if c == top
         then (c, [], \_ -> F.unit [0] [])
         else (c, ys, h)
     | c <- cs
@@ -485,9 +475,9 @@ contexts gr top =
                , (t,k) <- fst (ctyp f) `zip` [0..]
                , t == c
                ] ++
-               -- 2) Coercions that uncoerce to c
+               -- 2) coerces that uncoerce to c
                [ Left coe
-               | (cat,coe) <- S.toList (coercionTab gr)
+               | (cat,coe) <- coercions gr
                , cat == c
                , coe `S.member` nonEmptyCats gr
                ]
@@ -517,8 +507,8 @@ contexts gr top =
            where
             args = M.fromList (ys `zip` map F.toList ps)
     ]
-   where
-    apply :: (Symbol, Int) -> [Int] -> [Int]
+   where                      -- fields of B that make it to the top
+    apply :: (Symbol, Int) -> [Int] -> [Int] -- fields of A that make it to the top
     apply (f,k) is =
       S.toList $ S.fromList $
       [ y
@@ -527,8 +517,6 @@ contexts gr top =
       , Right (x,y) <- concrSeqs gr sq
       , x == k
       ]
-
-  a `isCoercableTo` b = a==b || ((a,b) `S.member` coercionTab gr)
   
   path2context []          x = x
   path2context ((f,i):fis) x =
@@ -587,7 +575,7 @@ mkFEAT gr = catList
           ] ++
           [ catList [x] s -- put (s-1) if it doesn't terminate
           | s > 0 
-          , (x,y) <- S.toList (coercionTab gr)
+          , (x,y) <- coercions gr
           , y == c
           ]
 
@@ -606,7 +594,7 @@ mkFEAT gr = catList
            [ x | f <- symbols gr
                , let (xs,y) = ctyp f
                , x <- y:xs ] ++
-           [ z | (x,y) <- S.toList (coercionTab gr)
+           [ z | (x,y) <- coercions gr
                , z <- [x,y] ]
 
     memoList f = \cs -> case cs of
