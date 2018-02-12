@@ -422,7 +422,7 @@ equalFields gr = cs `zip` eqrels
             ]
       where 
         lin (Left str)    = [ str | not (null str) ] -- what is this? special treatment of empty strings?
-        lin (Right (i,j)) = [ show i ++ rep (eqs !! i) j ] -- j'th field from i'th argument
+        lin (Right (i,j)) = [ show i ++ "#" ++ show (rep (eqs !! i) j) ]
 
 contextsFor :: Grammar -> ConcrCat -> ConcrCat -> [Tree -> Tree]
 contextsFor gr top hole =

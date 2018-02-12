@@ -26,9 +26,7 @@ basic :: (Ord a) => [a] -> EqRel Int
 basic xs = Classes $ sort $ map sort $ M.elems $ M.fromListWith (++) 
   [ (x,[i]) | (x,i) <- zip xs [0..] ]
 
-rep :: EqRel Int -> Int -> String
-rep Top j           = "#0"
-rep (Classes xss) j = head [ "#" ++ show (head xs)
-                           | xs <- xss
-                           , j `elem` xs ]
-                           
+rep :: EqRel Int -> Int -> Int
+rep Top j           = 0
+rep (Classes xss) j = head [ head xs | xs <- xss, j `elem` xs ]
+
