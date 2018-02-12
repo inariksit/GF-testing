@@ -358,6 +358,84 @@ toGrammar pgf langName =
   cseq2Either x              = Left (show x)
 
 --------------------------------------------------------------------------------
+-- compute categories reachable from S
+
+reachableCatsFromTop :: Grammar -> ConcrCat -> [ConcrCat]
+reachableCatsFromTop gr top = [ c | (c,True) <- cs `zip` rs ]
+ where
+  rs = Mu.mu False defs cs
+  cs = S.toList (nonEmptyCats gr)
+  
+  defs =
+    [ if c == top
+        then (c, [], \_ -> True)
+        else (c, ys, or)
+    | c <- cs
+    , let ys = S.toList $ S.fromList $
+               [ b
+               | f <- symbols gr
+               , let (as,b) = ctyp f
+               , all (`S.member` nonEmptyCats gr) as
+               , c `elem` as
+               ] ++
+               [ b
+               | (a,b) <- coercions gr
+               , a == c
+               , b `S.member` nonEmptyCats gr
+               ]
+    ]
+
+reachableFieldsFromTop :: Grammar -> ConcrCat -> [(ConcrCat,[Int])]
+reachableFieldsFromTop gr top = cs `zip` map S.toList rs
+ where
+  rs = Mu.mu S.empty defs cs
+  cs = S.toList (nonEmptyCats gr)
+
+  defs =
+    [ if c == top
+        then (c, [], \_ -> S.fromList [0]) -- this assumes the top only has one field
+        else (c, ys, h)
+    | c <- cs
+    , let fs = [ Right (f,k)
+               | f <- symbols gr
+               , let (as,_) = ctyp f
+               , all (`S.member` nonEmptyCats gr) as
+               , (a,k) <- as `zip` [0..]
+               , c == a
+               ] ++
+               [ Left b
+               | (a,b) <- coercions gr
+               , a == c
+               , b `S.member` nonEmptyCats gr
+               ]
+          
+          ys = S.toList $ S.fromList $
+               [ case f of
+                   Right (f,_) -> snd (ctyp f)
+                   Left b      -> b
+               | f <- fs
+               ]
+          
+          h rs = S.unions
+                 [ case f of
+                     Right (f,k) -> apply (f,k) (args M.! snd (ctyp f))
+                     Left b      -> args M.! b
+                 | f <- fs
+                 ]
+           where
+            args = M.fromList (ys `zip` rs)
+    ]
+
+  apply (f,k) r =
+    S.fromList
+    [ j
+    | (sq,i) <- seqs f `zip` [0..]
+    , i `S.member` r
+    , Right (k',j) <- concrSeqs gr sq
+    , k' == k
+    ]
+
+--------------------------------------------------------------------------------
 -- analyzing contexts
 
 equalFields :: Grammar -> [(ConcrCat,EqRel Int)]

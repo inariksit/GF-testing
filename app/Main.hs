@@ -102,6 +102,17 @@ main = do
     ]
    else return ()
 
+  sequence_
+    [ putStrLn ("==> " ++ show c ++ ": notUsed = " ++ show notUsed)
+    | let top:_ = ccats gr "Utt"
+    , (c,is) <- reachableFieldsFromTop gr top
+    , let ar     = head $
+                    [ length (seqs f) | f <- symbols gr, snd (ctyp f) == c ] ++
+                    [ length (seqs f) | (b,a) <- coercions gr, a == c, f <- symbols gr, snd (ctyp f) == b ]
+          notUsed = [ i | i <- [0..ar-1], i `notElem` is ]
+    , not (null notUsed)
+    ]
+
   -- Show available categories
   if show_cats args 
    then putStrLn $ unlines [ cat | (cat,_,_,_) <- concrCats gr ]
