@@ -19,13 +19,14 @@ import qualified Data.Set as S
 import Data.Maybe
 import Debug.Trace
 
-type LinTree = (String,(Lang,String),(Lang,String),String)
+type LinTree = ((Lang,String),(Lang,String),(Lang,String),(Lang,String))
 data Comparison = Comparison { funTree :: String, linTree :: [LinTree] }
 instance Show Comparison where
   show c = unlines $ funTree c : map showLinTree (linTree c)
 
 showLinTree :: LinTree -> String
-showLinTree (hl,(l1,t1),(l2,t2),t3) = unlines ["", hl, l1++"> "++t1, l2++"> "++t2, "TRANSL> "++t3]
+showLinTree ((an,hl),(l1,t1),(l2,t2),(_l,[])) = unlines ["", an++hl, l1++t1, l2++t2]
+showLinTree ((an,hl),(l1,t1),(l2,t2),(l3,t3)) = unlines ["", an++hl, l1++t1, l2++t2, l3++t3]
 
 
 compareFun :: Grammar -> Grammar -> [Grammar] -> Name -> [Comparison]
@@ -36,12 +37,12 @@ compareFun gr oldgr transgr funname =
 compareTree :: Grammar -> Grammar -> [Grammar] -> Tree -> Comparison
 compareTree gr oldgr transgr t = Comparison {
   funTree = "### " ++ show t
-, linTree = [ (hl, (concrLang gr,newLin), (concrLang oldgr, oldLin), transLin)
+, linTree = [ ( (absName gr,hl), (langName gr,newLin), (langName oldgr, oldLin), transLin )
             | ctx <- ctxs
             , let hl = show (ctx (App (hole c) []))
             , let transLin = case transgr of
-                              []  -> ""
-                              g:_ -> linearize g (ctx t) --pick first
+                              []  -> ("","")
+                              g:_ -> (langName g, linearize g (ctx t))
             , let newLin = linearize gr (ctx t)
             , let oldLin = linearize oldgr (ctx t)
             , newLin /= oldLin ]
@@ -51,31 +52,31 @@ compareTree gr oldgr transgr t = Comparison {
   c    = snd (ctyp w)
   ctxs = concat
          [ contextsFor gr sc c
-         | sc <- starts
+         | sc <- startConcrCats gr
          ] 
-
-  starts = startConcrCats gr
+  langName gr = concrLang gr ++ "> "
+  absName gr = (reverse $ drop 3 $ reverse $ concrLang gr) ++ "> "
 
 type Result = String
 
-testFun :: Bool -> Grammar -> [Grammar] -> Name -> Result
-testFun debug gr trans funname = unlines
-  [ testTree debug gr trans tree
+testFun :: Bool -> Grammar -> [Grammar] -> Cat -> Name -> Result
+testFun debug gr trans startcat funname = unlines
+  [ testTree debug gr trans startcat tree
   | tree <- treesUsingFun gr (lookupSymbol gr funname) ]
 
 
-testTree :: Bool -> Grammar -> [Grammar] -> Tree -> Result
-testTree debug gr tgrs t = unlines 
+testTree :: Bool -> Grammar -> [Grammar] -> Cat -> Tree -> Result
+testTree debug gr tgrs startcat t = unlines 
   [ ("### " ++ showConcrFun gr w) 
   , show t
   , if debug then unlines $ tabularPrint gr t else ""
   , unlines $ concat 
        [ [ ""
-         , "- "     ++ show (ctx (App (hole c) []))
-         , "  --> " ++ linearize gr (ctx (App (hole c) []))
-         , "  --> " ++ linearize gr (ctx t) 
+         , absName gr ++ show (ctx (App (hole c) []))
+       --  , "  --> " ++ linearize gr (ctx (App (hole c) []))
+         , langName gr ++ linearize gr (ctx t) 
          ] ++
-         [ "  ==> " ++ linearize tgr (ctx t) 
+         [ langName tgr ++ linearize tgr (ctx t) 
          | tgr <- tgrs ]
        | ctx <- ctxs
        ]
@@ -85,18 +86,17 @@ testTree debug gr tgrs t = unlines
   c    = snd (ctyp w)
   ctxs = concat
          [ contextsFor gr sc c
-         | sc <- starts
+         | sc <- ccats gr startcat
          ] 
 
-  starts = startConcrCats gr
-
+  langName gr = concrLang gr ++ "> "
+  absName gr = (reverse $ drop 3 $ reverse $ concrLang gr) ++ "> "
 --------------------------------------------------------------------------------
 
-ccats :: Grammar -> String -> [ConcrCat]
-ccats gr cl = [ CC (Just cat) fid 
-                 | (cat,start,end,_) <- concrCats gr
-                 , cat == cl
-                 , fid <- [start..end] ]
+ccats :: Grammar -> Cat -> [ConcrCat]
+ccats gr utt = [ cc
+               | cc@(CC (Just cat) _) <- S.toList (nonEmptyCats gr)
+               , cat == utt ]
 
 treesUsingFun :: Grammar -> [Symbol] -> [Tree] 
 treesUsingFun gr detCNs = 

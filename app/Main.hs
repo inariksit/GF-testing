@@ -9,6 +9,7 @@ import Paths_GF_testing
 
 import Control.Monad ( when )
 import Data.List ( intercalate, groupBy, sortBy )
+import Data.Maybe ( fromMaybe )
 import qualified Data.Set as S
 import qualified Data.Map as M
 
@@ -20,46 +21,51 @@ import System.IO ( stdout, hSetBuffering, BufferMode(..) )
 data GfTest 
   = GfTest 
   { grammar       :: Maybe FilePath
-  , old_grammar   :: Maybe FilePath
-  , treebank      :: Maybe FilePath
-
   -- Languages
-  , source        :: Lang
+  , lang          :: Lang
   , translations  :: Lang
 
   -- Functions and cats
   , function      :: Name
   , category      :: Cat
+  , start_cat     :: Maybe Cat
   , show_cats     :: Bool
   , concr_string  :: String
-
-  , debug         :: Bool
 
   -- Information about fields
   , equal_fields  :: Bool
   , empty_fields  :: Bool
   , unused_fields :: Bool
+
+  -- Compare to old grammar
+  , old_grammar   :: Maybe FilePath
+  , only_changed_cats :: Bool
+  , treebank      :: Maybe FilePath
+  , debug         :: Bool
+
   } deriving (Data,Typeable,Show,Eq)
 
 gftest = GfTest 
   { grammar       = def &= typFile      &= help "Path to the grammar (PGF) you want to test"
-  , source        = def &= A.typ "Eng"  
-                        &= A.name "s"   &= help "Concrete language for the chosen grammar"
+  , lang          = def &= A.typ "Eng"  &= help "Concrete language for the chosen grammar"
   , translations  = def &= A.typ "\"Eng Swe\"" 
                         &= A.name "t"   &= help "Optional languages to show translations in"
   , function      = def &= A.typ "UseN" &= help "Test the given function(s)"
-  , category      = def &= A.typ "NP"   
+  , category      = def &= A.typ "NP"  
                         &= A.name "c"   &= help "Test all functions with given goal category"
-  , concr_string  = def &= A.typ "the"  &= help "Show all functions that include the given string"
+  , start_cat     = def &= A.typ "Utt"  
+                        &= A.name "s"   &= help "Use the given category as start category"
+  , concr_string  = def &= A.typ "the"  &= help "Show all functions that include given string"
   , show_cats     = def                 &= help "Show all available categories" 
   , debug         = def                 &= help "Show debug output"
-  , equal_fields  = def                 &= help "Show fields whose strings are always identical"
-  , empty_fields  = def                 &= help "Show fields whose strings are always empty"
+  , equal_fields  = def &= A.name "q"   &= help "Show fields whose strings are always identical"
+  , empty_fields  = def &= A.name "e"   &= help "Show fields whose strings are always empty"
   , unused_fields = def                 &= help "Show fields that never make it into the top category"
   , treebank      = def &= typFile
                         &= A.name "b"   &= help "Path to a treebank"
-  , old_grammar   = def &= typFile      &= help "Path to an earlier version of the grammar"
-
+  , old_grammar   = def &= typFile      
+                        &= A.name "o"   &= help "Path to an earlier version of the grammar"
+  , only_changed_cats = def             &= help "When comparing against an earlier version of a grammar, only test functions in categories that have changed between versions"
   }
 
 
@@ -72,13 +78,14 @@ main = do
   let absName = case grammar args of 
                   Just fp -> stripPGF fp --doesn't matter if the name is given with or without ".pgf"
                   Nothing -> "TestLang"
-  let langName = absName ++ source args
+  let langName = absName ++ lang args
   let langTrans = [ absName ++ t | t <- words (translations args) ]
 
   grName <- getDataFileName (absName ++ ".pgf")
   gr     <- readGrammar langName grName
   grTrans <- sequence [ readGrammar lt grName | lt <- langTrans ]
 
+  let startcat = startCat gr `fromMaybe` start_cat args
 
 
   -----------------------------------------------------------------------------
@@ -95,8 +102,8 @@ main = do
               , c == coe
               ])
 
-  let printStats tab = 
-        sequence_ [ do putStrLn $ "==> " ++ c ++ ":" 
+      printStats tab = 
+        sequence_ [ do putStrLn $ "==> " ++ c ++ ": " 
                        putStrLn $ unlines (map (fs!!) xs)
                   | (c,vs) <- M.toList tab
                   , let fs = fieldNames gr c
@@ -104,17 +111,32 @@ main = do
                   ]
 
   -- Show empty fields
-  when (empty_fields args) $ 
+  when (empty_fields args) $ do
+    putStrLn "### Empty fields:"
     printStats $ intersectConcrCats (emptyFields gr) S.intersection
+    putStrLn ""
 
   -- Show unused fields
-  let (tp:_) = startConcrCats gr
-  when (unused_fields args) $ 
-    printStats $ intersectConcrCats (reachableFieldsFromTop gr tp) S.intersection
+  when (unused_fields args) $ do
+
+    let unused = 
+         [ (c,S.fromList notUsed)
+         | tp <- ccats gr startcat
+         , (c,is) <- reachableFieldsFromTop gr tp
+         , let ar = head $
+                [ length (seqs f) | f <- symbols gr, snd (ctyp f) == c ] ++
+                [ length (seqs f) | (b,a) <- coercions gr, a == c, f <- symbols gr, snd (ctyp f) == b ]
+               notUsed = [ i | i <- [0..ar-1], i `notElem` is ]
+         , not (null notUsed)
+         ]
+    putStrLn "### Unused fields:"
+    printStats $ intersectConcrCats unused S.intersection
+    putStrLn ""
 
   -- Show equal fields
   let tab = intersectConcrCats (equalFields gr) (/\)
-  when (equal_fields args) $
+  when (equal_fields args) $ do
+    putStrLn "### Equal fields:"
     sequence_
      [ putStrLn ("==> " ++ c ++ ":\n" ++ cl)
      | (c,eqr) <- M.toList tab
@@ -124,19 +146,8 @@ main = do
                Classes xss -> [ unlines (map (fs!!) xs)
                               | xs@(_:_:_) <- xss ]
      ]
-{-
- original unused -- is this different?
-   sequence_
-    [ putStrLn ("==> " ++ show c ++ ": notUsed = " ++ show notUsed)
-    | let top:_ = startConcrCats gr
-    , (c,is) <- reachableFieldsFromTop gr top
-    , let ar     = head $
-                    [ length (seqs f) | f <- symbols gr, snd (ctyp f) == c ] ++
-                    [ length (seqs f) | (b,a) <- coercions gr, a == c, f <- symbols gr, snd (ctyp f) == b ]
-          notUsed = [ i | i <- [0..ar-1], i `notElem` is ]
-    , not (null notUsed)
-    ]
--}
+    putStrLn ""
+
   -----------------------------------------------------------------------------
   -- Show available categories
   when (show_cats args) $
@@ -146,7 +157,7 @@ main = do
   -- (e.g. English "it" appears in DefArt, ImpersCl, it_Pron, …)
   case concr_string args of
     []  -> return ()
-    str -> do putStrLn $ "The following functions contain the syncategorematic string '" ++ str ++ "':"
+    str -> do putStrLn $ "### The following functions contain the syncategorematic string '" ++ str ++ "':"
               putStr "==> "
               putStrLn $ (intercalate ", ") $ nub [ name s | s <- hasConcrString gr str]
 
@@ -155,13 +166,13 @@ main = do
     [] -> case category args of
             []  -> return ()
             cat -> putStrLn $ unlines 
-                    [ testTree False gr [] t 
+                    [ testTree False gr [] startcat t 
                     | t <- treesUsingFun gr (functionsByCat gr cat) ]
     "all" -> putStrLn $ unlines 
-              [ testTree False gr [] t 
+              [ testTree False gr [] startcat t 
               | t <- treesUsingFun gr (symbols gr) ]
     fnames -> putStrLn $ unlines
-                [ testFun (debug args) gr grTrans fname
+                [ testFun (debug args) gr grTrans startcat fname
                 | fname <- words fnames ]
 
 
@@ -171,9 +182,9 @@ main = do
   case old_grammar args of
     Nothing -> return ()
     Just fp -> do
-      oldgr <- readGrammar langName =<< getDataFileName fp
+      oldgr <- readGrammar langName =<< getDataFileName (stripPGF fp ++ ".pgf")
       let ogr = oldgr { concrLang = concrLang oldgr ++ "-OLD" }
-      let difcats = diffCats ogr gr -- (acat, [#o, #n], olabels, nlabels)
+          difcats = diffCats ogr gr -- (acat, [#o, #n], olabels, nlabels)
 
       ---------------------------------------------------------------------------
       -- Print statistics about the functions: e.g., in the old grammar,
@@ -182,19 +193,18 @@ main = do
       -- but in the new grammar, they are split into two:
       -- [DefArt,PossPron,no_Quant] and [this_Quant,that_Quant].
       let groupFuns grammar = -- :: Grammar -> [[Symbol]]
-            concat [ groupBy sameCCat $ sortBy compareCCat existingFuns
+            concat [ groupBy sameCCat $ sortBy compareCCat funs
                    | (cat,_,_,_) <- difcats
-                   , let funs = functionsByCat grammar cat
-                   , let existingFuns = filter (\s -> snd (ctyp s) `S.member` nonEmptyCats grammar) funs ]
+                   , let funs = functionsByCat grammar cat ]
 
 
-      let sortByName = sortBy (\s t -> name s `compare` name t)
-      let writeFunFile groupedFuns file grammar = do
-           writeFile file ""
-           sequence_ [ do appendFile file "---\n"
-                          appendFile file $ unlines
-                            [ showConcrFun gr fun
-                            | fun <- sortByName funs ]
+          sortByName = sortBy (\s t -> name s `compare` name t)
+          writeFunFile groupedFuns file grammar = do
+            writeFile file ""
+            sequence_ [ do appendFile file "---\n"
+                           appendFile file $ unlines
+                             [ showConcrFun gr fun
+                             | fun <- sortByName funs ]
                       | funs <- groupedFuns ]
 
       writeFunFile (groupFuns ogr) (langName ++ "-old-funs.md") ogr
@@ -220,22 +230,22 @@ main = do
 
       --------------------------------------------------------------------------
       -- print out tests for all functions in the changed cats
-      let changedFuns = if null difcats 
-                         then [ (cat,functionsByCat gr cat) | (cat,_,_,_) <- concrCats gr ]
-                          else [ (cat,functionsByCat gr cat) | (cat,_,_,_) <- difcats ]
-      let writeLinFile file grammar otherGrammar = do
-           writeFile file ""
-           sequence_ [ do putStrLn cat
-                          appendFile file $ unlines
-                            [ show comp
-                            | t <- treesUsingFun grammar funs
-                            , let comp = compareTree grammar otherGrammar grTrans t
-                            , not $ null $ linTree comp ]
-                     | (cat,funs) <- changedFuns ]
+      let changedFuns = 
+           if only_changed_cats args
+            then [ (cat,functionsByCat gr cat) | (cat,_,_,_) <- difcats ]
+            else [ (cat,functionsByCat gr cat) | (cat,_,_,_) <- concrCats gr ]
+          writeLinFile file grammar otherGrammar = do
+            writeFile file ""
+            sequence_ [ do putStrLn cat
+                           appendFile file $ unlines
+                             [ show comp
+                             | t <- treesUsingFun grammar funs
+                             , let comp = compareTree grammar otherGrammar grTrans t
+                             , not $ null $ linTree comp ]
+                      | (cat,funs) <- changedFuns ]
 
       writeLinFile (langName ++ "-new-lins.md") gr ogr
       writeLinFile (langName ++ "-old-lins.md") ogr gr
-      mapM_ putStr $ nub [ show fun | (_,funs) <- changedFuns, fun <- funs ]
 
 
   -------------------------------------------------------------------------------
@@ -246,7 +256,7 @@ main = do
     Just fp -> do
       tb <- readFile =<< getDataFileName fp
       sequence_ [ do let tree = readTree gr str
-                     let (_args,ty) = ctyp (top tree)
+                         (_args,ty) = ctyp (top tree)
                      putStrLn $ unlines [ "", show tree ++ " : " ++ show ty]
                      putStrLn $ linearize gr tree
                      --mapM_ putStrLn $ tabularPrint gr tree
@@ -255,6 +265,7 @@ main = do
 
  where
   nub = S.toList . S.fromList
+
   sameCCat :: Symbol -> Symbol -> Bool
   sameCCat s1 s2 = snd (ctyp s1) == snd (ctyp s2)
 
