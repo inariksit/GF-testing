@@ -385,8 +385,8 @@ reachableCatsFromTop gr top = [ c | (c,True) <- cs `zip` rs ]
                ]
     ]
 
-reachableFieldsFromTop :: Grammar -> ConcrCat -> [(ConcrCat,[Int])]
-reachableFieldsFromTop gr top = cs `zip` map S.toList rs
+reachableFieldsFromTop :: Grammar -> ConcrCat -> [(ConcrCat,S.Set Int)]
+reachableFieldsFromTop gr top = cs `zip` rs
  where
   rs = Mu.mu S.empty defs cs
   cs = S.toList (nonEmptyCats gr)
