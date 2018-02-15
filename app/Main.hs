@@ -51,9 +51,9 @@ gftest = GfTest
   , translations  = def &= A.typ "\"Eng Swe\"" 
                         &= A.name "t"   &= help "Optional languages to show translations in"
   , function      = def &= A.typ "UseN" &= help "Test the given function(s)"
-  , category      = def &= A.typ "NP"  
+  , category      = def &= A.typ "NP"
                         &= A.name "c"   &= help "Test all functions with given goal category"
-  , start_cat     = def &= A.typ "Utt"  
+  , start_cat     = def &= A.typ "Utt"
                         &= A.name "s"   &= help "Use the given category as start category"
   , concr_string  = def &= A.typ "the"  &= help "Show all functions that include given string"
   , show_cats     = def                 &= help "Show all available categories" 
@@ -63,7 +63,7 @@ gftest = GfTest
   , unused_fields = def                 &= help "Show fields that never make it into the top category"
   , treebank      = def &= typFile
                         &= A.name "b"   &= help "Path to a treebank"
-  , old_grammar   = def &= typFile      
+  , old_grammar   = def &= typFile
                         &= A.name "o"   &= help "Path to an earlier version of the grammar"
   , only_changed_cats = def             &= help "When comparing against an earlier version of a grammar, only test functions in categories that have changed between versions"
   }
@@ -166,10 +166,10 @@ main = do
     [] -> case category args of
             []  -> return ()
             cat -> putStrLn $ unlines 
-                    [ testTree False gr [] startcat t 
+                    [ testTree False gr [] startcat t
                     | t <- treesUsingFun gr (functionsByCat gr cat) ]
     "all" -> putStrLn $ unlines 
-              [ testTree False gr [] startcat t 
+              [ testTree False gr [] startcat t
               | t <- treesUsingFun gr (symbols gr) ]
     fnames -> putStrLn $ unlines
                 [ testFun (debug args) gr grTrans startcat fname
@@ -185,6 +185,42 @@ main = do
       oldgr <- readGrammar langName =<< getDataFileName (stripPGF fp ++ ".pgf")
       let ogr = oldgr { concrLang = concrLang oldgr ++ "-OLD" }
           difcats = diffCats ogr gr -- (acat, [#o, #n], olabels, nlabels)
+ 
+      --------------------------------------------------------------------------
+      -- generate statistics of the changes in the concrete categories
+      let ccatChangeFile = langName ++ "-ccat-diff.md"
+      writeFile ccatChangeFile ""
+      sequence_
+        [ appendFile ccatChangeFile $ unlines
+           [ "### " ++ acat
+           , show o ++ " concrete categories in the old grammar, "
+           , show n ++ " concrete categories in the new grammar.  "
+           , "* Labels only in old: " ++ intercalate ", " ol
+           , " (" ++ show (length ol) ++ ")"
+           , "* Labels only in new: " ++ intercalate ", " nl 
+           , " (" ++ show (length nl) ++ ")" ]
+        | (acat, [o,n], ol, nl) <- difcats ] 
+      putStrLn $ "Created file " ++ ccatChangeFile
+
+      --------------------------------------------------------------------------
+      -- print out tests for all functions in the changed cats
+      let changedFuns =
+           if only_changed_cats args
+            then [ (cat,functionsByCat gr cat) | (cat,_,_,_) <- difcats ]
+            else [ (cat,functionsByCat gr cat) | (cat,_,_,_) <- concrCats gr ]
+          writeLinFile file grammar otherGrammar = do
+            writeFile file ""
+            putStrLn "Testing functions in the following categories:"
+            sequence_ [ do putStr $ cat ++ "                \r"
+                           appendFile file $ unlines
+                             [ show comp
+                             | t <- treesUsingFun grammar funs
+                             , let comp = compareTree grammar otherGrammar grTrans t
+                             , not $ null $ linTree comp ]
+                      | (cat,funs) <- changedFuns ]
+
+      writeLinFile (langName ++ "-lin-diff.md") gr ogr
+      putStrLn $ "Created file " ++ (langName ++ "-lin-diff.md")
 
       ---------------------------------------------------------------------------
       -- Print statistics about the functions: e.g., in the old grammar,
@@ -211,43 +247,6 @@ main = do
       writeFunFile (groupFuns gr)  (langName ++ "-new-funs.md") gr
 
       putStrLn $ "Created files " ++ langName ++ "-(old|new)-funs.md"
- 
-      --------------------------------------------------------------------------
-      -- generate statistics of the changes in the concrete categories
-      let ccatChangeFile = langName ++ "-ccat-changes.md"
-      writeFile ccatChangeFile ""
-      sequence_
-        [ appendFile ccatChangeFile $ unlines
-           [ "### " ++ acat
-           , show o ++ " concrete categories in the old grammar, "
-           , show n ++ " concrete categories in the new grammar.  "
-           , "* Labels only in old: " ++ intercalate ", " ol
-           , " (" ++ show (length ol) ++ ")"
-           , "* Labels only in new: " ++ intercalate ", " nl 
-           , " (" ++ show (length nl) ++ ")" ]
-        | (acat, [o,n], ol, nl) <- difcats ] 
-      putStrLn $ "Created file " ++ ccatChangeFile
-
-      --------------------------------------------------------------------------
-      -- print out tests for all functions in the changed cats
-      let changedFuns = 
-           if only_changed_cats args
-            then [ (cat,functionsByCat gr cat) | (cat,_,_,_) <- difcats ]
-            else [ (cat,functionsByCat gr cat) | (cat,_,_,_) <- concrCats gr ]
-          writeLinFile file grammar otherGrammar = do
-            writeFile file ""
-            sequence_ [ do putStrLn cat
-                           appendFile file $ unlines
-                             [ show comp
-                             | t <- treesUsingFun grammar funs
-                             , let comp = compareTree grammar otherGrammar grTrans t
-                             , not $ null $ linTree comp ]
-                      | (cat,funs) <- changedFuns ]
-
-      writeLinFile (langName ++ "-new-lins.md") gr ogr
-      writeLinFile (langName ++ "-old-lins.md") ogr gr
-
-
   -------------------------------------------------------------------------------
   -- Read trees from treebank. No fancier functionality yet.
 
