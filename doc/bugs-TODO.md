@@ -72,3 +72,37 @@ Which one is correct, or are both wrong?
   new> sommigen zullen zichzelf zonder me af vragen wie er is
   old> sommigen zullen zonder me zich af vragen wie er is
 ```
+
+
+*** 
+
+Reflexive + number of the NP with ConjNP:
+
+```
+UseCl (TTAnt TPast ASimul) PPos (PredVP (ConjNP either7or_DConj (BaseNP something_NP (UsePron i_Pron))) VP_387)
+TestLangDut> ofwel iets of ik smeekten het ons te schrijven
+TestLangEng> either something or I begged it to write myself
+```
+
+What happens here with the reflexive pronoun?
+
+```
+UseCl (TTAnt TPast ASimul) PPos (PredVP (UsePron we_Pron) VP_387)
+TestLangDut> we smeekten het zich te schrijven
+TestLangEng> we begged it to write ourselves
+```
+
+***
+
+```
+TestLang> UseCl (TTAnt TPres ASimul) PPos (ExistNP (MassNP (AdjCN (ComplA2 A2_2 (UsePron it_Pron)) (UseN worm_N))))
+TestLangDut> er is getrouwde ermee worm
+TestLangEng> there is worm married to it
+
+TestLang> UseCl (TTAnt TPres ASimul) PPos (ExistNP (MassNP (AdjCN (ComplA2 A2_2 something_NP) (UseN worm_N))))
+TestLangDut> er is gemakkelijke voor iets worm
+TestLangEng> there is worm easy for something
+```
+
+split between heavy and light APs?
+
