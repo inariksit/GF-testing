@@ -2,6 +2,7 @@
 
 ISO="Eng"
 LANG="english"
+LANGISO="LangEng.gf"
 
 # TODO: get some actual
 if [[ $1 != "" ]]; then
