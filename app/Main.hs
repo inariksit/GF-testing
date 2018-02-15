@@ -166,10 +166,10 @@ main = do
     [] -> case category args of
             []  -> return ()
             cat -> putStrLn $ unlines 
-                    [ testTree False gr [] startcat t
+                    [ testTree False gr grTrans startcat t
                     | t <- treesUsingFun gr (functionsByCat gr cat) ]
     "all" -> putStrLn $ unlines 
-              [ testTree False gr [] startcat t
+              [ testTree False gr grTrans startcat t
               | t <- treesUsingFun gr (symbols gr) ]
     fnames -> putStrLn $ unlines
                 [ testFun (debug args) gr grTrans startcat fname
@@ -210,7 +210,7 @@ main = do
             else [ (cat,functionsByCat gr cat) | (cat,_,_,_) <- concrCats gr ]
           writeLinFile file grammar otherGrammar = do
             writeFile file ""
-            putStrLn "Testing functions in the following categories:"
+            putStrLn "Testing functions in… "
             sequence_ [ do putStr $ cat ++ "                \r"
                            appendFile file $ unlines
                              [ show comp
