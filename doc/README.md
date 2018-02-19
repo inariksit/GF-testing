@@ -109,9 +109,6 @@ ___
 
 ## TODO (2018-01-22)
 
-### Make context generation faster
-~~Koen's on it!~~ 2018-01-25 it's super fast ^_^ \o/
-
 ### Evaluation
 
 * Cost
@@ -158,3 +155,11 @@ Another use case: I'm reading a grammar, and something in the documentation seem
 I generated test cases for `PredVP` in Dutch, and it printed out 30k lines. Then I made a rather crude change into the Dutch grammar, removing a parameter from VP, generated test cases for `PredVP` again, and this time it only printed out 20k lines.
 And when I `sort -u`'d the old and the new file, there was no difference.
 This is a rather strong hint that the parameter didn't make any difference -- but is "nothing changed in linearisations" sufficient to prove that?
+
+### Question marks / nullable arguments
+
+### Other grammar formalisms 
+
+Such as UD; or anything that can be transformed into GF
+
+Attribute grammars and then full Haskell programs ^_^
