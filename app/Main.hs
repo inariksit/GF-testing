@@ -116,6 +116,23 @@ main = do
     printStats $ intersectConcrCats (emptyFields gr) S.intersection
     putStrLn ""
 
+  -- Show question marks
+  when True $ do
+    putStrLn "### Question marks:"
+    sequence_
+      [ do putStrLn ("==> " ++ show c ++ ":")
+           sequence_
+             [ do putStrLn ("- Tree:  " ++ show t)
+                  putStrLn ("- Lin:   " ++ s)
+                  putStrLn ("- Parse: " ++ show (take 1 $ parse gr s))
+             | t <- ts
+             , let s = linearize gr t
+             ]
+      | top <- take 1 $ ccats gr startcat
+      , (c,ts) <- forgets gr top
+      ]
+    putStrLn ""
+
   -- Show unused fields
   when (unused_fields args) $ do
 
