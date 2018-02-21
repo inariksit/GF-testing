@@ -605,6 +605,132 @@ contexts gr top =
     | (t,j) <- fst (ctyp f) `zip` [0..]
     ]
 
+forgets :: Grammar -> ConcrCat -> [(ConcrCat,[Tree])]
+forgets gr top =
+  filter (not . null . snd)
+  [ (c, [ path2context (reverse p) (head (featAll gr c))
+        | (is,p) <- F.toList paths
+        , length is == fields c -- all indexes forgotten
+        ]
+    )
+  | (c, paths) <- cs `zip` pathss
+  ]
+ where
+  pathss = Mu.muDiff F.nil F.isNil dif uni defs cs
+  cs     = S.toList (nonEmptyCats gr)
+  
+  -- all symbols with at least one argument, and only good arguments
+  goodSyms =
+    [ f
+    | f <- symbols gr
+    , arity f >= 1
+    , snd (ctyp f) `S.member` nonEmptyCats gr
+    , all (`S.member` nonEmptyCats gr) (fst (ctyp f))
+    ]
+ 
+  fieldsTab =
+    M.fromList $
+    [ (b, length (seqs f))
+    | f <- symbols gr
+    , let (as,b) = ctyp f
+    ]
+ 
+  fields a =
+    head $
+    [ n
+    | c <- a : [ b | (b,a') <- coercions gr, a' == a ]
+    , Just n <- [M.lookup c fieldsTab]
+    ] ++
+    error (show a ++ " has no function creating it")
+ 
+  -- definitions table for fixpoint iteration
+  fm1 `dif` fm2 =
+    [ d | d@(xs,_) <- F.toList fm1, not (fm2 `F.covers` xs) ] `ins` F.nil
+  
+  fm1 `uni` fm2 =
+    F.toList fm1 `ins` fm2
+  
+  paths `ins` fm =
+       foldl collect fm
+     . map snd
+     . sort
+     $ [ (size p, p) | p <- paths ]
+   where
+    collect fm (str,p)
+      | fm `F.covers` str = fm
+      | otherwise         = F.add str p fm
+
+    size (_,p) =
+      sum [ if i == j then 1 else smallest gr t
+          | (f,i) <- p
+          , let (ts,_) = ctyp f
+          , (t,j) <- ts `zip` [0..]
+          ]
+
+  defs =
+    [ if c == top
+        then (c, [], \_ -> F.unit [] [])
+        else (c, ys, h)
+    | c <- cs
+
+      -- everything that uses c in one of the two ways:
+    , let fs = -- 1) Functions that take c as the kth argument
+               [ Right (f,k)
+               | f <- goodSyms
+               , (t,k) <- fst (ctyp f) `zip` [0..]
+               , t == c
+               ] ++
+               -- 2) coerces that uncoerce to c
+               [ Left coe
+               | (cat,coe) <- coercions gr
+               , cat == c
+               , coe `S.member` nonEmptyCats gr
+               ]
+          
+          -- goal categories for c
+          ys = S.toList $ S.fromList $
+               [ case f of
+                   Right (f,_) -> snd (ctyp f)
+                   Left coe    -> coe
+               | f <- fs
+               ]
+
+          h ps = ([ (apply (f,k) str, (f,k):fis)
+                  | Right (f,k) <- fs 
+                  , (str,fis) <- args M.! snd (ctyp f)
+                  ] ++
+                  [ q
+                  | Left a <- fs
+                  , q <- args M.! a
+                  ]) `ins` F.nil
+           where
+            args = M.fromList (ys `zip` map F.toList ps)
+    ]
+   where
+    apply :: (Symbol, Int) -> [Int] -> [Int]
+    apply (f,k) is =
+      [ y
+      | y <- [0..fields (fst (ctyp f) !! k)-1]
+      , y `S.notMember` used
+      ]
+     where
+      used = S.fromList $
+             [ y
+             | (sq,i) <- seqs f `zip` [0..]
+             , i `notElem` is 
+             , Right (x,y) <- concrSeqs gr sq
+             , x == k
+             ]
+  
+  path2context []          x = x
+  path2context ((f,i):fis) x =
+    App f
+    [ if j == i
+        then path2context fis x
+        else head (featAll gr t)
+    | (t,j) <- fst (ctyp f) `zip` [0..]
+    ]
+
 --traceLength s xs = trace (s ++ ":" ++ show (length xs)) xs
 
 emptyFields :: Grammar -> [(ConcrCat,S.Set Int)]
