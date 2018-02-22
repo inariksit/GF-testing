@@ -158,8 +158,121 @@ This is a rather strong hint that the parameter didn't make any difference -- bu
 
 ### Question marks / nullable arguments
 
+2018-02-21: first version exists!
+
 ### Other grammar formalisms 
 
 Such as UD; or anything that can be transformed into GF
 
 Attribute grammars and then full Haskell programs ^_^
+
+### Word order 
+
+Consider the concrete categories `Adj_pre, Adj_post`, where the only difference is whether the adjective is placed before or after a noun.
+
+When testing a single function in start category `NP`, we get the following output:
+
+```
+Foods> Mod Quality_7 Wine
+FoodsSpa> vino muy vegano
+
+Foods> Mod Quality_7 Pizza
+FoodsSpa> pizza muy vegana
+
+Foods> Mod Quality_8 Wine
+FoodsSpa> muy buen vino
+
+Foods> Mod Quality_8 Pizza
+FoodsSpa> muy buena pizza
+```
+
+This is all fine, and doesn't require a lot of intelligence: we get `Wine` and `Pizza` because they come from different genders, and `Good` and `Vegan` because they have different positions. Furthermore, the function `Mod` puts adjectives into an attributive position, where this distinction is visible. So we are representative and minimal by chance.
+
+We have two problems:
+
+#### Not representative
+
+Assume we have a bug in the grammar (actually no need to assume, this is 100% real bug in the Spanish RGL) that linearises `Mod Good Wine` into *bueno vino* instead of the correct *buen vino*. Now this is a problem, because the strings are identical in the attributive and predicative positions. When we generate all trees in the start category, instead of NP, we don't cover everything:
+
+```
+Foods> Pred (That Wine) Quality_99
+FoodsSpa> ese vino es muy vegano
+
+Foods> Pred (These Wine) Quality_99
+FoodsSpa> estos vinos son muy veganos
+
+Foods> Pred (That Pizza) Quality_99
+FoodsSpa> esa pizza es muy vegana
+
+Foods> Pred (These Pizza) Quality_99
+FoodsSpa> estas pizzas son muy veganas
+
+Foods> Pred (That Wine) Quality_100
+FoodsSpa> ese vino es muy bueno
+
+Foods> Pred (These Wine) Quality_100
+FoodsSpa> estos vinos son muy buenos
+
+Foods> Pred (That Pizza) Quality_100
+FoodsSpa> esa pizza es muy buena
+
+Foods> Pred (These Pizza) Quality_100
+FoodsSpa> estas pizzas son muy buenas
+```
+This is also not minimal, but also not representative. It did not generate a tree with `Mod Good __`, because the strings are identical, and it just thought it has the string covered.
+But it still generated **the same** examples with both `Good` and `Vegan`.
+They are in different concrete categories, but the program chose a context where the crucial difference -- word order and different form -- doesn't show. It generated 4 redundant examples and didn't reveal the bug.
+
+#### Not minimal
+
+Despite the hardships, I went and fixed the bug. Now I'm generating trees in the start category, and get 16 trees. Good news is we're representative, but bad news is a) it's only because the string *buen* happens to be different and b) we're even more redundant now.
+
+```
+Foods> Pred (That (Mod Quality_7 Wine)) Vegan
+FoodsSpa> ese vino muy vegano es vegano
+
+Foods> Pred (That Wine) Quality_7
+FoodsSpa> ese vino es muy vegano
+
+Foods> Pred (These (Mod Quality_7 Wine)) Vegan
+FoodsSpa> estos vinos muy veganos son veganos
+
+Foods> Pred (These Wine) Quality_7
+FoodsSpa> estos vinos son muy veganos
+
+Foods> Pred (That (Mod Quality_7 Pizza)) Vegan
+FoodsSpa> esa pizza muy vegana es vegana
+
+Foods> Pred (That Pizza) Quality_7
+FoodsSpa> esa pizza es muy vegana
+
+Foods> Pred (These (Mod Quality_7 Pizza)) Vegan
+FoodsSpa> estas pizzas muy veganas son veganas
+
+Foods> Pred (These Pizza) Quality_7
+FoodsSpa> estas pizzas son muy veganas
+
+Foods> Pred (That (Mod Quality_8 Wine)) Vegan
+FoodsSpa> ese muy buen vino es vegano
+
+Foods> Pred (That Wine) Quality_8
+FoodsSpa> ese vino es muy bueno
+
+Foods> Pred (These (Mod Quality_8 Wine)) Vegan
+FoodsSpa> estos muy buenos vinos son veganos
+
+Foods> Pred (These Wine) Quality_8
+FoodsSpa> estos vinos son muy buenos
+
+Foods> Pred (That (Mod Quality_8 Pizza)) Vegan
+FoodsSpa> esa muy buena pizza es vegana
+
+Foods> Pred (That Pizza) Quality_8
+FoodsSpa> esa pizza es muy buena
+
+Foods> Pred (These (Mod Quality_8 Pizza)) Vegan
+FoodsSpa> estas muy buenas pizzas son veganas
+
+Foods> Pred (These Pizza) Quality_8
+FoodsSpa> estas pizzas son muy buenas
+```
