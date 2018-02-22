@@ -698,10 +698,12 @@ forgets gr top =
           h ps = ([ (apply (f,k) str, (f,k):fis)
                   | Right (f,k) <- fs 
                   , (str,fis) <- args M.! snd (ctyp f)
+                  , length str < fields c
                   ] ++
                   [ q
                   | Left a <- fs
-                  , q <- args M.! a
+                  , q@(str,_) <- args M.! a
+                  , length str < fields c
                   ]) `ins` F.nil
            where
             args = M.fromList (ys `zip` map F.toList ps)
