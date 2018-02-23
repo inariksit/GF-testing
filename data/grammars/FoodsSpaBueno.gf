@@ -1,4 +1,4 @@
-concrete FoodsSpaBuen of Foods = open Prelude,Predef in {
+concrete FoodsSpaBueno of Foods = open Prelude,Predef in {
 
 	lincat
 		Item = NP ;
@@ -8,22 +8,22 @@ concrete FoodsSpaBuen of Foods = open Prelude,Predef in {
   lin 
     QUtt s = s ;
     PUtt s = s ;
-    Quest i q = { s = i.s ++ copula ! i.a ++ q.s ! i.a.g ! i.a.n ! Predic ++ "?" } ;
-    Pred i q = { s = i.s ++ copula ! i.a ++ q.s ! i.a.g ! i.a.n ! Predic } ;
+    Quest i q = { s = i.s ++ copula ! i.a ++ q.s ! i.a.g ! i.a.n ++ "?" } ;
+    Pred i q = { s = i.s ++ copula ! i.a ++ q.s ! i.a.g ! i.a.n } ;
     This = det "este" "esta" Sg ;
     That = det "ese" "esa" Sg ;
     These = det "estos" "estas" Pl ;
     Those = det "esos" "esas" Pl ;
     Mod q k = k ** 
       { s = \\n => 
-         let adj = q.s ! k.g ! n ! Attrib ;
+         let adj = q.s ! k.g ! n ;
              noun = k.s ! n
           in if_then_Str q.isPre (adj++noun) (noun++adj) } ;
     Wine = cn "vino" Masc ;
     Cheese = cn "queso" Masc ;
     Fish = cn "pescado" Masc ;
     Pizza = cn "pizza" Fem ;
-    Very q = q ** { s = \\g,n,p => "muy" ++ q.s ! g ! n ! p } ;
+    Very q = q ** { s = \\g,n => "muy" ++ q.s ! g ! n } ;
     Fresh = ap "fresco" False ;
     Delicious = ap "delicioso" False ;
     Italian = ap "italiano" False ;
@@ -33,12 +33,11 @@ concrete FoodsSpaBuen of Foods = open Prelude,Predef in {
 param
   Number   = Sg | Pl ;
   Gender   = Masc | Fem ;
-  Position = Attrib | Predic ;
 
 oper 
   NP : Type = { s : Str ; a : Agr } ;
   CN : Type = { s : Number => Str ; g : Gender } ;
-  AP : Type = { s : Gender => Number => Position => Str ; isPre : Bool } ;
+  AP : Type = { s : Gender => Number => Str ; isPre : Bool } ;
   Agr : Type = { g : Gender ; n : Number } ;
 
   det : (_,_ : Str) -> Number -> CN -> NP = \ese,esa,num,kind ->
@@ -48,9 +47,8 @@ oper
   
   ap : Str -> Bool -> AP = \bueno,isPre ->
     let buen = tk 1 bueno in 
-    { s = \\g,n,p => case <g,n,p> of {
-          <Masc,Sg,Attrib> => if_then_Str isPre buen bueno ;
-          <Masc,Sg,Predic> => bueno ;
+    { s = \\g,n => case <g,n> of {
+          <Masc,Sg> => bueno ;
           <Masc,Pl> => bueno + "s" ;
           <Fem,Sg> => buen + "a" ;
           <Fem,Pl> => buen + "as" } ;
