@@ -36,6 +36,7 @@ data GfTest
   , equal_fields  :: Bool
   , empty_fields  :: Bool
   , unused_fields :: Bool
+  , nullable      :: Bool 
 
   -- Compare to old grammar
   , old_grammar   :: Maybe FilePath
@@ -61,6 +62,7 @@ gftest = GfTest
   , equal_fields  = def &= A.name "q"   &= help "Show fields whose strings are always identical"
   , empty_fields  = def &= A.name "e"   &= help "Show fields whose strings are always empty"
   , unused_fields = def                 &= help "Show fields that never make it into the top category"
+  , nullable      = def                 &= help "Show trees that are erased"
   , treebank      = def &= typFile
                         &= A.name "b"   &= help "Path to a treebank"
   , old_grammar   = def &= typFile
@@ -87,7 +89,12 @@ main = do
 
   let startcat = startCat gr `fromMaybe` start_cat args
 
-
+      testTree' t = testTree False gr grTrans t ctxs
+       where
+        w    = top t
+        c    = snd (ctyp w)
+        ctxs = concat [ contextsFor gr sc c
+                      | sc <- ccats gr startcat ]
   -----------------------------------------------------------------------------
   -- Statistics about the grammar
 
@@ -117,14 +124,14 @@ main = do
     putStrLn ""
 
   -- Show question marks
-  when True $ do
+  when (nullable args) $ do
     putStrLn "### Question marks:"
     sequence_
       [ do putStrLn ("==> " ++ show c ++ ":")
            sequence_
              [ do putStrLn ("- Tree:  " ++ show t)
                   putStrLn ("- Lin:   " ++ s)
-                  putStrLn ("- Parse: " ++ show (take 1 $ parse gr s))
+                 -- putStrLn ("- Parse: " ++ show (take 1 $ parse gr s))
              | t <- ts
              , let s = linearize gr t
              ]
@@ -183,16 +190,32 @@ main = do
     [] -> case category args of
             []  -> return ()
             cat -> putStrLn $ unlines 
-                    [ testTree False gr grTrans startcat t
+                    [ testTree' t
                     | t <- treesUsingFun gr (functionsByCat gr cat) ]
     "all" -> putStrLn $ unlines 
-              [ testTree False gr grTrans startcat t
+              [ testTree' t
               | t <- treesUsingFun gr (symbols gr) ]
     fnames -> putStrLn $ unlines
                 [ testFun (debug args) gr grTrans startcat fname
                 | fname <- words fnames ]
-
-
+{-
+              do --sequence_ 
+              --    [ do print symb
+              --         mapM_ (putStr.intercalate " ".map showSeq.concrSeqs gr) sqs
+              --         putStrLn ""
+              --    | symb <- lookupSymbol gr fnames
+              --    , let sqs = seqs symb ]
+                 putStrLn $ unlines
+                  [ testFun (debug args) gr grTrans startcat fname
+                  | fname <- words fnames ]
+                 mapM_ print (coercions gr)
+                 let (startccat:_) = ccats gr startcat
+                 mapM_ print [ (c, treeWithHole, topOf hl treeWithHole) 
+                             | (c,tts) <- contexts gr startccat 
+                             , tt <- tts
+                             , let hl = hole c
+                             , let treeWithHole = tt (App hl [])]
+-}
   -------------------------------------------------------------------------------
   -- Comparison with old grammar
 
@@ -280,6 +303,7 @@ main = do
 
 
  where
+
   nub = S.toList . S.fromList
 
   sameCCat :: Symbol -> Symbol -> Bool
@@ -293,3 +317,6 @@ main = do
                 'f':'g':'p':'.':name -> reverse name
                 name                 -> s
 
+  showSeq s = case s of
+    Left syncat -> syncat
+    Right (i,j) -> "<" ++ show i ++ "," ++ show j ++ ">"
