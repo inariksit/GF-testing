@@ -1,0 +1,401 @@
+%
+% File coling2018.tex
+%
+% Contact: zhu2048@gmail.com & liuzy@tsinghua.edu.cn
+%% Based on the style files for COLING-2016, which were, in turn,
+%% Based on the style files for COLING-2014, which were, in turn,
+%% Based on the style files for ACL-2014, which were, in turn,
+%% Based on the style files for ACL-2013, which were, in turn,
+%% Based on the style files for ACL-2012, which were, in turn,
+%% based on the style files for ACL-2011, which were, in turn, 
+%% based on the style files for ACL-2010, which were, in turn, 
+%% based on the style files for ACL-IJCNLP-2009, which were, in turn,
+%% based on the style files for EACL-2009 and IJCNLP-2008...
+
+%% Based on the style files for EACL 2006 by 
+%%e.agirre@ehu.es or Sergi.Balari@uab.es
+%% and that of ACL 08 by Joakim Nivre and Noah Smith
+
+\documentclass[11pt]{article}
+\usepackage{coling2018}
+\usepackage{times}
+\usepackage{url}
+\usepackage{color}
+\usepackage{latexsym}
+
+\def\t#1{\texttt{#1}}
+\newcommand{\todo}[1]{{\color{cyan}\textbf{[TODO: }#1\textbf{]}}}
+
+%\setlength\titlebox{5cm}
+
+% You can expand the titlebox if you need extra space
+% to show all the authors. Please do not make the titlebox
+% smaller than 5cm (the original size); we will check this
+% in the camera-ready version and ask you to change it back.
+
+
+\title{Instructions for COLING-2018 Proceedings}
+
+\author{Inari Listenmaa \\
+  University of Gothenburg \\
+  Gothenburg, Sweden \\
+  {\tt inari@chalmers.se} \\\And
+  Koen Claessen \\
+  Chalmers University of Technology \\
+  Gothenburg, Sweden \\
+  {\tt koen@chalmers.se} \\}
+
+\date{}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+  This document contains the instructions for preparing a paper submitted
+  to COLING-2018 or accepted for publication in its proceedings. The document itself
+  conforms to its own specifications, and is therefore an example of
+  what your manuscript should look like. These instructions should be
+  used for both papers submitted for review and for final versions of
+  accepted papers. Authors are asked to conform to all the directions
+  reported in this document.
+\end{abstract}
+
+
+
+
+
+
+\section{Experiences as a grammar writer}
+
+Concrete problems: the kind of bugs we set out to find
+* Empty categories
+* Empty fields
+* Eliminated arguments
+
+Pick ~3 bugs: 
+what tree was generated? why? likelihood of finding this bug without our method.
+
+Results
+
+
+
+\section{The problem}
+
+Traditionally, GF grammars are tested by the grammarians themselves,
+much like unit testing. When implementing some feature, such as 
+relative clauses, the grammarian comes up with a test suite of 
+sentences that include relative clauses, and stores in the form of 
+abstract syntax trees. In principle, a test suite created for one 
+language can easily be reused for another, because the ASTs are 
+identical. Ideally, every time someone touches relative clauses 
+in the any concrete syntax, the trees in the test suite will be 
+linearised with the changed concrete syntax, and verified by someone
+who speaks the language (or compared to the original gold standard, 
+if there is one). This scheme can fail for various reasons: 
+
+\begin{itemize}
+\item The original list is not exhaustive: for instance, it tests only
+``X, who loves me'' but not ``X, whom I love''. 
+\item The original list is exhaustive in one language, but not in all:
+for instance, it started in English and only included one noun, but in
+French it would need at least one masculine and one feminine noun. 
+\item The list is overly long, with redundant test cases, and human
+testers are not motivated to read through. 
+\item A grammarian makes a change somewhere else in the grammar, and
+does not realize that it affects relative clauses, and thus does not
+rerun the appropriate test suite. 
+\end{itemize}
+
+\section{How it works}
+
+
+\begin{figure}[h]
+
+  \centering
+    \begin{verbatim}
+abstract Foods = {
+  flags startcat = Comment ;
+  cat
+    Comment ; Item ; Kind ; Quality ;
+  fun
+    Pred : Item -> Quality -> Comment ;
+    This, That, These, Those : Kind -> Item ;
+    Mod : Quality -> Kind -> Kind ;
+    Wine, Cheese, Fish, Pizza : Kind ;
+    Very : Quality -> Quality ;
+    Fresh, Warm, Good, Italian, 
+      Expensive, Delicious, Vegan : Quality ;
+}
+    \end{verbatim}
+  \caption{GF grammar}
+\label{fig:exampleGrammar}
+\end{figure}
+
+Figure~\ref{fig:exampleGrammar} shows a small example of a GF
+grammar. We refer to this grammar throughout the section. 
+
+\paragraph{Test case} 
+The basic unit of a test case is a single constructor. 
+We start by building a set of trees using the constructor.
+The constructor can be of any arity: if we are interested in a 0-place
+function, such as \t{Pizza}, then the subtree \t{Pizza} is the full
+set of trees. If we choose a function with arguments, such as
+\t{Pred}, then we do the following: 
+\begin{itemize}
+\item For each argument type (\t{Item} and \t{Quality}), compute the
+  set of minimal and representative trees. This is a recursive
+  process: to compute the set of trees in \t{Item}, we must consider
+  all functions that create its argument types (\t{Kind}), until we
+  have a set of 0-place functions which to choose from. 
+\item Apply the constructor \t{Mod} to the combinations of the trees.
+\end{itemize}
+
+\paragraph{Testing the function \t{Very}}
+Let us consider a Spanish concrete syntax, and test the function
+\t{Very : Quality -> Quality}. \t{Very} takes a \t{Quality} and
+generates a \t{Quality}; for example, \t{Warm} to \t{Very Warm}. 
+
+Firstly, we need a minimal and representative set of arguments of type
+\t{Quality}, to \t{Very}. We can exclude trees that use the same
+constructor twice (i.e. trees that are already using \t{Very}), so we
+only concentrate on the set \t{Fresh, Warm, Good, Italian, Expensive,
+  Delicious, Vegan}, and pick as many as are needed to highlight
+different grammatical phenomena in the particular concrete syntax.
+
+The normal Spanish word order is noun--adjective, e.g. \emph{vino
+  italiano} `Italian wine', but a few exceptional adjectives are
+placed in front of the noun, e.g. \emph{buen vino} `good wine'. Thus
+in order to cover the full spectrum of adjective placement, we need
+one premodifier and one postmodifier adjective. The two examples of
+the category \t{Quality} could be e.g. \t{\{Good, Vegan\}}. We finish
+the test cases by applying the constructor \t{Very} to them, which
+gives us the minimal and representative set \t{\{Very Good, Very
+  Vegan\}}.
+
+
+\paragraph{Context} 
+
+Secondly, we create contexts for the previously chosen test cases. By
+\emph{context}, we mean simply a tree in some other category, with a
+\emph{hole} of type \t{Quality}. 
+
+
+\begin{figure}[h]
+
+  \centering
+  \todo{A picture of trees with holes}
+ \caption{Two trees of type \t{Comment}, with a hole of type \t{Quality}}
+\end{figure}
+
+There are two ways that a \t{Quality} can end up in a \t{Comment}: by
+using \t{Pred : Item -> Quality -> Comment} or \t{Mod : Quality ->
+  Kind -> Kind}. (It can also be used by another \t{Very}, but we
+exclude repetitions of the same constructor.)
+
+\paragraph{Context created by \t{Mod}} Firstly, let us look at the context created by \t{Mod : Kind -> Quality}.
+We have our two examples of \t{Quality}, and we want to make sure that we see all the variation in them.
+Spanish nouns have gender, hence a minimal and representative set of
+trees in category \t{Kind} could be e.g. \t{\{Pizza, Cheese\}}, where
+pizza is feminine and cheese is masculine.
+
+Applying the set of arguments \t{\{Very Good, Very Vegan\}} into the
+contexts \t{\{Mod ? Pizza, Mod ? Cheese\}}, we get the set \t{\{Mod
+  (Very Good) Pizza, Mod (Very Good) Cheese, Mod (Very Vegan) Pizza,
+  Mod (Very Vegan)
+  Cheese\footnote{\url{http://realvegancheese.org/}}\}}. Note that
+\t{Kind} is unspecified for number, because it is still waiting for a
+determiner (\t{This, That, These} or \t{Those}) to complete it into
+\t{Item}. The type of \t{Kind} contains both singular and plural
+variants, and by linearising these 4 trees, we get the strings shown
+in Figure~\ref{fig:veganCheese}.
+
+\begin{figure}
+\centering
+\begin{tabular}{| l | l |}
+\hline
+\t{Mod (Very Good) Pizza}   & \t{Mod (Very Good) Cheese} \\ 
+muy buena pizza             & muy buen queso \\
+muy buenas pizzas           & muy buenos quesos \\ \hline
+
+\t{Mod (Very Vegan) Pizza}  & \t{Mod (Very Vegan) Cheese} \\
+pizza muy vegana            & queso muy vegano \\
+pizzas muy veganas          & quesos muy veganos \\ \hline
+\end{tabular}
+\caption{Variation of adjective forms and placement in attributive position}
+\label{fig:veganCheese}
+\end{figure}
+
+\paragraph{Context created by \t{Pred}} 
+Secondly, let us look at the context created by \t{Pred : Item ->
+  Quality -> Comment}. Now the \t{Quality} is in a predicative
+position: ``X is very good/very vegan''. We start by creating a
+representative and minimal set of arguments of type \t{Item}, in order
+to squeeze out all the variation from the test cases of type
+\t{Quality}.
+
+\t{Item} is formed by using one of the four functions \t{This, That, These, Those : Kind -> Item}.
+We remember from choosing \t{Kind}s that gender was important, and it
+is still relevant for \t{Item}: the predicative adjective should agree
+with the subject, so a pizza is \emph{vegana}, and cheese is
+\emph{vegano}. We have already found a set of \t{Kind}s to represent
+all genders, so we can reuse that set to create a representative set
+of \t{Item}s. But we need something more too---\t{Item} has an
+inherent number, which comes from the constructor function. \t{This}
+and \t{That} are singular, \t{These} and \t{Those} are plural, so we
+should choose one of each. Hence we end up with the following trees:
+\t{\{This Pizza, This Cheese, These Pizza, These Cheese\}}. 
+
+The presence or absence of additional adjectives wouldn't make any
+difference in Spanish: both \t{This Pizza} and \t{This (Very Italian)
+ Pizza} select the feminine form of the \t{Quality} in the predicative
+position. In the minimalist spirit, we prefer \t{This Pizza}: the
+resulting \t{Comment} is shorter, and it is easier for the oracle to
+judge the grammaticality of the predicative adjective, if there is
+only one adjective in the whole sentence. 
+
+Applying the same process as before, we get the set of trees shown in 
+Figure~\ref{fig:goodCheese}. This is representative but not minimal,
+so we proceed to the next step, shrinking.
+
+\begin{figure}
+\centering
+\begin{tabular}{| l | l |}
+\hline
+\t{Pred (This Pizza) (Very Good)}   & \t{Pred (This Cheese) (Very Good)} \\ 
+esta pizza es muy buena             & este queso es muy bueno \\ \hline
+\t{Pred (These Pizza) (Very Good)}  & \t{Pred (These Cheese) (Very Good)} \\ 
+estas pizzas son muy buenas         & estos quesos son muy buenos \\ \hline
+\t{Pred (This Pizza) (Very Vegan)}   & \t{Pred (This Cheese) (Very Vegan)} \\ 
+esta pizza es muy vegana             & este queso es muy vegano \\ \hline
+\t{Pred (These Pizza) (Very Vegan)}  & \t{Pred (These Cheese) (Very Vegan)} \\ 
+estas pizzas son muy veganas         & estos quesos son muy veganos \\ \hline
+\end{tabular}
+\caption{Variation of adjective forms in the predicative position}
+\label{fig:goodCheese}
+\end{figure}
+
+
+\paragraph{Shrinking}
+
+Two aspects to shrinking:
+
+Some distinctions are relevant only in certain
+contexts. Compare the eight strings we got from \t{Mod} context, and
+how they all showed different combination of gender, number and
+placement. But eight strings in predicative position (Figure~\ref{fig:goodCheese})
+are redundant: ``estos quesos son muy buenos'' is essentially the same
+as ``estos quesos son muy veganos''. In contrast, ``muy buen queso''
+and ``queso muy vegano'' differ in placement, so it is necessary to
+include both examples.
+
+We notice that only by testing one function, \t{Very}, we have
+actually quite a coverage of the grammar. Lot of the considerations
+are the same: number and grammatical gender play a role in a lot of
+stuff. Easy step: don't show redundant trees to the user. One tree can
+actually test different phenomena. 
+
+\section{Technical details}
+
+GF grammar compiles into a low-level format called PGF. After the
+compilation, we get one category for each combination of parameters:
+for English adjectives, \texttt{A => A$_{pos}$, A$_{comp}$,
+A$_{superl}$}, and for Spanish, \texttt{A => A$_{pos×sg×masc}$, \dots,
+A$_{superl×pl×fem}$}. 
+
+Suddenly, we have a bunch of new types, and those are different for
+each concrete syntax! The original question ``we need a sample of
+nouns/verbs/… that makes sense'' can be simplified ``we need one
+noun/verb/… of each type''. The types are determined by the parameters
+in the concrete syntax. 
+
+So remember all the hassle when you can't pattern match strings to
+know something, but instead you have to define a parameter? This is
+actually a nice side effect from that: each parameter contributes to a
+new category, so it pays off in generating examples. If the feature is
+important for your grammar---say that in language A, negation is
+simply attaching the word  ``no'' before the verb, and in language B,
+negation changes the word order and the object case. Then in the GF
+grammar for language B, we would need a Boolean \texttt{isNeg} field
+in the relevant categories, which we then pattern match against in
+order to determine the relevant operations. That parameter in the
+abstract category translates into different concrete categories, and
+that way, when we generate example trees, we make sure to include one
+of each. For instance, in language A, we could end up with the trees
+``any horse'' and ``all horses'' when testing NPs, but in language B,
+the set would also include ``no horses''. 
+
+
+
+\section{Evaluation}
+
+
+\begin{itemize}
+\item Cost
+  \begin{itemize}
+  \item time of generating examples
+  \item time of looking at examples
+  \end{itemize}
+
+\item Effect
+  \begin{itemize}
+  \item compare against other methods -- what methods?
+  \item For application grammars, if you're writing them from scratch, it is actually pretty feasible to just gt the hell out of it as you write. But this doesn't work for bigger grammars.
+  \item Morphology can be tested efficiently againts any existing morphological analyser. I've used Apertium for Dutch and Basque.
+  \end{itemize}
+\end{itemize}
+
+
+\section{Future work}
+
+
+Generality -- turn any other grammar formalism into PGF, and you can use this method to test it.
+
+
+We plan to look into existing text corpora, and find trees that are
+structurally identical  to those that our program generates as a
+minimal and representative example. As a simplified example, ``a worm
+without winter'', generated by the program, would be identical\footnote{This particular example holds for English, but in another language, the words ``pizza'' and ``worm'', as well as ``winter'' and ``cheese'' may not match in all relevant features---grammatical gender, whether the word starts with a vowel or a consonant, etc. All this information comes from the concrete syntax!} 
+in structure to ``a pizza without cheese'', found in a real text, and
+can thus be substituted for the generated one.   
+Alternatively, we could use statistical information on co-occurrences
+of words, and generate appropriate pools of words, from which we draw
+example sentences. 
+
+% include your own bib file like this:
+%\bibliographystyle{acl}
+%\bibliography{coling2018}
+
+\begin{thebibliography}{}
+
+\bibitem[\protect\citename{Aho and Ullman}1972]{Aho:72}
+Alfred~V. Aho and Jeffrey~D. Ullman.
+\newblock 1972.
+\newblock {\em The Theory of Parsing, Translation and Compiling}, volume~1.
+\newblock Prentice-{Hall}, Englewood Cliffs, NJ.
+
+\bibitem[\protect\citename{{American Psychological Association}}1983]{APA:83}
+{American Psychological Association}.
+\newblock 1983.
+\newblock {\em Publications Manual}.
+\newblock American Psychological Association, Washington, DC.
+
+\bibitem[\protect\citename{{Association for Computing Machinery}}1983]{ACM:83}
+{Association for Computing Machinery}.
+\newblock 1983.
+\newblock {\em Computing Reviews}, 24(11):503--512.
+
+\bibitem[\protect\citename{Chandra \bgroup et al.\egroup }1981]{Chandra:81}
+Ashok~K. Chandra, Dexter~C. Kozen, and Larry~J. Stockmeyer.
+\newblock 1981.
+\newblock Alternation.
+\newblock {\em Journal of the Association for Computing Machinery},
+  28(1):114--133.
+
+\bibitem[\protect\citename{Gusfield}1997]{Gusfield:97}
+Dan Gusfield.
+\newblock 1997.
+\newblock {\em Algorithms on Strings, Trees and Sequences}.
+\newblock Cambridge University Press, Cambridge, UK.
+
+\end{thebibliography}
+
+\end{document}
