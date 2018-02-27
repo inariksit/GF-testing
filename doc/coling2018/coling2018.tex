@@ -22,8 +22,11 @@
 \usepackage{url}
 \usepackage{color}
 \usepackage{latexsym}
+\usepackage{amssymb}
+\usepackage{stackengine}
 
 \def\t#1{\texttt{#1}}
+\newcommand{\tts}[1]{{\tt \small #1}}
 \newcommand{\todo}[1]{{\color{cyan}\textbf{[TODO: }#1\textbf{]}}}
 
 %\setlength\titlebox{5cm}
@@ -36,14 +39,17 @@
 
 \title{Instructions for COLING-2018 Proceedings}
 
-\author{Inari Listenmaa \\
-  University of Gothenburg \\
+\author{Inari Listenmaa and Koen Claessen \\
+  Department of Computer Science and Engineering \\
+  University of Gothenburg and Chalmers University of Technology \\
   Gothenburg, Sweden \\
-  {\tt inari@chalmers.se} \\\And
-  Koen Claessen \\
-  Chalmers University of Technology \\
-  Gothenburg, Sweden \\
-  {\tt koen@chalmers.se} \\}
+  {\tt inari@chalmers.se, koen@chalmers.se} }
+%\\\And
+%  Koen Claessen \\
+%  Department of Computer Science and Engineering \\
+%  Chalmers University of Technology \\
+%  Gothenburg, Sweden \\
+ % {\tt koen@chalmers.se} \\}
 
 \date{}
 
@@ -61,20 +67,6 @@
 
 
 
-
-
-
-\section{Experiences as a grammar writer}
-
-Concrete problems: the kind of bugs we set out to find
-* Empty categories
-* Empty fields
-* Eliminated arguments
-
-Pick ~3 bugs: 
-what tree was generated? why? likelihood of finding this bug without our method.
-
-Results
 
 
 
@@ -105,195 +97,158 @@ does not realize that it affects relative clauses, and thus does not
 rerun the appropriate test suite. 
 \end{itemize}
 
-\section{How it works}
+
+\section{Experiences as a grammar writer}
+
+
+GF resource grammars include basic morphology and syntax of a language. GF morphology and lexicon can often be extracted fully or partly from data or existing morphological lexica, but the development of syntactic functions requires intensive human labour, and advanced knowledge on both linguistics and programming.
+Many GF resource grammars are written by non-native speakers, relying on a grammar book and possibly a native informant.
+
+%To make the problem more concrete, here is a set of problems, all found in real GF resource grammars.
+
+%\begin{itemize}
+%\item Prepositions should merge with a single determiner, e.g. \emph{with~this} $\rightarrow$ \emph{thiswith}, but stay independent when the determiner quantifies a noun, e.g. \emph{with this house}.
+%\item Word order 
+%\end{itemize}
+%Concrete problems: the kind of bugs we set out to find
+%* Empty categories
+%* Empty fields
+%* Eliminated arguments
+
+%Pick ~3 bugs: 
+%what tree was generated? why? likelihood of finding this bug without our method.
+
+%Results
 
 
 \begin{figure}[h]
-
   \centering
     \begin{verbatim}
-abstract Foods = {
-  flags startcat = Comment ;
+abstract NounPhrases = {
+  flags startcat = NP ;
   cat
-    Comment ; Item ; Kind ; Quality ;
+    NP ; Adv ;                   -- Categories formed from other categories
+    CN ; Det ; Adj ; Prep ;      -- Lexical categories
   fun
-    Pred : Item -> Quality -> Comment ;
-    This, That, These, Those : Kind -> Item ;
-    Mod : Quality -> Kind -> Kind ;
-    Wine, Cheese, Fish, Pizza : Kind ;
-    Very : Quality -> Quality ;
-    Fresh, Warm, Good, Italian, 
-      Expensive, Delicious, Vegan : Quality ;
-}
-    \end{verbatim}
-  \caption{GF grammar}
+    DetNP : Det -> NP ;          -- e.g. "this"
+    DetCN : Det -> CN -> NP ;    -- e.g. "this house"
+    AdvNP : Adv -> NP -> NP ;    -- e.g. "these houses on the hill"
+    PrepNP : Prep -> NP -> Adv ; -- e.g. "without this house"
+    AdjCN : Adj -> CN -> CN ;    -- e.g. "small house"
+
+    house, hill, cake : CN ;
+    this, these, your : Det ;
+    good, small, blue : Adj ;
+    on, with, without : Prep ;
+}\end{verbatim}
+  \caption{GF grammar for noun phrases}
 \label{fig:exampleGrammar}
 \end{figure}
 
 Figure~\ref{fig:exampleGrammar} shows a small example of a GF
-grammar. We refer to this grammar throughout the section. 
+grammar. The grammar generates noun phrases for a lexicon of eight words (\emph{house, hill, \dots, without}) in four lexical categories, and five functions to construct phrases. 
+\t{CN} stands for common noun, and it can be modified by arbitrarily many adjectives (\t{Adj}), e.g. \emph{good small house}. A \t{CN} is quantified into a noun phrase (\t{NP}) by adding a determiner (\t{Det}); alternatively, a \t{Det} can also become an independent noun phrase. Finally, we can form an adverb (\t{Adv}) by combining a preposition (\t{Prep}) with an \t{NP}, and those adverbs can modify yet another \t{NP}.
+We refer to this grammar throughout the paper.
 
-\paragraph{Test case} 
-The basic unit of a test case is a single constructor. 
-We start by building a set of trees using the constructor.
-The constructor can be of any arity: if we are interested in a 0-place
-function, such as \t{Pizza}, then the subtree \t{Pizza} is the full
-set of trees. If we choose a function with arguments, such as
-\t{Pred}, then we do the following: 
+\subsection{How it works}
+
+\paragraph{Test cases} 
+The basic unit of a test case is a single constructor, and the first step 
+is to build a set of trees using that constructor.
+If we are interested in a single lexical item, such as \emph{small}, 
+then the subtree \t{small} is the full set of trees. If we choose a function 
+with arguments, such as \t{PrepNP}, then we do the following: 
 \begin{itemize}
-\item For each argument type (\t{Item} and \t{Quality}), compute the
+\item For each argument type (\t{Prep} and \t{NP}), compute the
   set of minimal and representative trees. This is a recursive
-  process: to compute the set of trees in \t{Item}, we must consider
-  all functions that create its argument types (\t{Kind}), until we
-  have a set of 0-place functions which to choose from. 
-\item Apply the constructor \t{Mod} to the combinations of the trees.
+  process: to compute the set of trees in \t{NP}, we must consider
+  all functions that create its argument types (\t{Det} and \t{CN}), until we
+  have a set of lexical functions to choose from. 
+\item Take a cross product, prune out redundant combinations, and apply the constructor \t{PrepNP} to the resulting set of arguments. The pruning method will be described later.
 \end{itemize}
 
-\paragraph{Testing the function \t{Very}}
-Let us consider a Spanish concrete syntax, and test the function
-\t{Very : Quality -> Quality}. \t{Very} takes a \t{Quality} and
-generates a \t{Quality}; for example, \t{Warm} to \t{Very Warm}. 
+\paragraph{Test cases using \t{AdjCN}} Let us test the function
+\t{AdjCN : Adj $\rightarrow$ CN $\rightarrow$ CN}, and take a Spanish concrete syntax as an example.
+Firstly, we need a minimal and representative set of arguments of types
+\t{Adj} and \t{CN}. Consider the nouns first: Spanish has a grammatical gender, so in order to be representative, we need an example of both masculine and feminine. Out of the small lexicon, \t{house} (\emph{casa}) is feminine, and \t{hill} (\emph{cerro}) is masculine, so we return those two nouns as the full set of argument trees in \t{CN}.
 
-Firstly, we need a minimal and representative set of arguments of type
-\t{Quality}, to \t{Very}. We can exclude trees that use the same
-constructor twice (i.e. trees that are already using \t{Very}), so we
-only concentrate on the set \t{Fresh, Warm, Good, Italian, Expensive,
-  Delicious, Vegan}, and pick as many as are needed to highlight
-different grammatical phenomena in the particular concrete syntax.
+Secondly, we consider the adjectives. Most commonly, adjectives follow the noun, e.g. \emph{casa peque\~{n}a} `small house', 
+but some adjectives precede the noun, e.g. \emph{buena casa} `good house'. Thus
+in order to cover the full spectrum of adjective placement, we need one premodifier and one postmodifier adjective. We pick the words \t{good} and \t{small} as the arguments of type \t{Adj}.
 
-The normal Spanish word order is noun--adjective, e.g. \emph{vino
-  italiano} `Italian wine', but a few exceptional adjectives are
-placed in front of the noun, e.g. \emph{buen vino} `good wine'. Thus
-in order to cover the full spectrum of adjective placement, we need
-one premodifier and one postmodifier adjective. The two examples of
-the category \t{Quality} could be e.g. \t{\{Good, Vegan\}}. We finish
-the test cases by applying the constructor \t{Very} to them, which
-gives us the minimal and representative set \t{\{Very Good, Very
-  Vegan\}}.
+Now, our full set of test cases are \t{AdjCN} applied to the cross product of \{\stackanchor{\tt \small good}{\tt \small small}\} $\times$ \{ \stackanchor{\tt \small house}{\tt \small hill}\}. 
+Note that \t{CN} is unspecified for number, because it is still waiting for a
+determiner (e.g. \t{this} or \t{these}) to complete it into an
+\t{NP}. Thus all the test cases contain both singular and plural
+variants, and by linearizing these 4 trees, we get the 8 strings shown
+in Figure~\ref{fig:adjAttr}.
+
+\begin{figure}
+\centering
+\begin{minipage}{.5\textwidth}
+\centering
+\begin{tabular}{| l | l |}
+\hline
+\t{AdjCN good house}   & \t{AdjCN good hill} \\ 
+\textsc{(sg)} buena casa             & \textsc{(sg)} buen cerro \\
+\textsc{(pl)} buenas casas           & \textsc{(pl)} buenos cerros \\ \hline
+
+\t{AdjCN small house}   & \t{AdjCN small hill} \\ 
+\textsc{(sg)} casa  peque\~{n}a            & \textsc{(sg)} cerro  peque\~{n}o \\
+\textsc{(pl)} casas  peque\~{n}as          & \textsc{(pl)} cerros  peque\~{n}os \\ \hline
+\end{tabular}
+\caption{Agreement and placement of adjectives in attributive position}
+\label{fig:adjAttr}
+\end{minipage}%
+\begin{minipage}{.5\textwidth}
+  \centering
+  \todo{A picture of trees with holes}
+ \caption{Trees with a hole of type \t{CN}}
+\label{fig:treesWithHoles}
+\end{minipage}
+\end{figure}
 
 
 \paragraph{Context} 
 
-Secondly, we create contexts for the previously chosen test cases. By
-\emph{context}, we mean simply a tree in some other category, with a
-\emph{hole} of type \t{Quality}. 
+Now that we have a set of test cases, we create contexts that show all variation within them.
+By \emph{context}, we mean simply a tree in some other category, with a \emph{hole} of type \t{CN}, as shown in Figure~\ref{fig:treesWithHoles}.
+In this grammar, the only category above is \t{NP}, and there is only one way that a \t{CN} can end up in an \t{NP}: by using the function \t{DetCN : Det $\rightarrow$ CN $\rightarrow$ NP}.
+
+Just like before, we start by creating a representative and minimal set of arguments of type \t{Det}. So far the relevant features have been grammatical gender an adjective placement---we have 4 trees with all combinations of \{masculine, feminine\} and \{pre,post\}. The resulting trees have \emph{variable} number, but now we have a category \t{Det} with an inherent number, so we can create the context that picks the string ``casa  peque\~{n}a'', and another that picks ``casas  peque\~{n}as''. By simple combinatorics, we pick the representative set of \t{Det} with one singular and one plural element, e.g. \t{this} and \t{these}, and form two contexts: \verb|DetCN this _| and  \verb|DetCN these _|. We plug in the 4 test cases, and get 8 trees in total: \t{\{DetCN this (good house), \dots, DetCN these (small hill)\}}.
 
 
-\begin{figure}[h]
+The grammar, with only 12-word lexicon and 5 syntactic functions, generates \todo{n} trees up to depth 5\footnote{example of a tree of that depth}. These 8 test cases are enough to test whether the syntactic function \t{AdjCN} is correctly implemented.  
 
-  \centering
-  \todo{A picture of trees with holes}
- \caption{Two trees of type \t{Comment}, with a hole of type \t{Quality}}
-\end{figure}
-
-There are two ways that a \t{Quality} can end up in a \t{Comment}: by
-using \t{Pred : Item -> Quality -> Comment} or \t{Mod : Quality ->
-  Kind -> Kind}. (It can also be used by another \t{Very}, but we
-exclude repetitions of the same constructor.)
-
-\paragraph{Context created by \t{Mod}} Firstly, let us look at the context created by \t{Mod : Kind -> Quality}.
-We have our two examples of \t{Quality}, and we want to make sure that we see all the variation in them.
-Spanish nouns have gender, hence a minimal and representative set of
-trees in category \t{Kind} could be e.g. \t{\{Pizza, Cheese\}}, where
-pizza is feminine and cheese is masculine.
-
-Applying the set of arguments \t{\{Very Good, Very Vegan\}} into the
-contexts \t{\{Mod ? Pizza, Mod ? Cheese\}}, we get the set \t{\{Mod
-  (Very Good) Pizza, Mod (Very Good) Cheese, Mod (Very Vegan) Pizza,
-  Mod (Very Vegan)
-  Cheese\footnote{\url{http://realvegancheese.org/}}\}}. Note that
-\t{Kind} is unspecified for number, because it is still waiting for a
-determiner (\t{This, That, These} or \t{Those}) to complete it into
-\t{Item}. The type of \t{Kind} contains both singular and plural
-variants, and by linearising these 4 trees, we get the strings shown
-in Figure~\ref{fig:veganCheese}.
-
-\begin{figure}
-\centering
-\begin{tabular}{| l | l |}
-\hline
-\t{Mod (Very Good) Pizza}   & \t{Mod (Very Good) Cheese} \\ 
-muy buena pizza             & muy buen queso \\
-muy buenas pizzas           & muy buenos quesos \\ \hline
-
-\t{Mod (Very Vegan) Pizza}  & \t{Mod (Very Vegan) Cheese} \\
-pizza muy vegana            & queso muy vegano \\
-pizzas muy veganas          & quesos muy veganos \\ \hline
-\end{tabular}
-\caption{Variation of adjective forms and placement in attributive position}
-\label{fig:veganCheese}
-\end{figure}
-
-\paragraph{Context created by \t{Pred}} 
-Secondly, let us look at the context created by \t{Pred : Item ->
-  Quality -> Comment}. Now the \t{Quality} is in a predicative
-position: ``X is very good/very vegan''. We start by creating a
-representative and minimal set of arguments of type \t{Item}, in order
-to squeeze out all the variation from the test cases of type
-\t{Quality}.
-
-\t{Item} is formed by using one of the four functions \t{This, That, These, Those : Kind -> Item}.
-We remember from choosing \t{Kind}s that gender was important, and it
-is still relevant for \t{Item}: the predicative adjective should agree
-with the subject, so a pizza is \emph{vegana}, and cheese is
-\emph{vegano}. We have already found a set of \t{Kind}s to represent
-all genders, so we can reuse that set to create a representative set
-of \t{Item}s. But we need something more too---\t{Item} has an
-inherent number, which comes from the constructor function. \t{This}
-and \t{That} are singular, \t{These} and \t{Those} are plural, so we
-should choose one of each. Hence we end up with the following trees:
-\t{\{This Pizza, This Cheese, These Pizza, These Cheese\}}. 
-
-The presence or absence of additional adjectives wouldn't make any
-difference in Spanish: both \t{This Pizza} and \t{This (Very Italian)
- Pizza} select the feminine form of the \t{Quality} in the predicative
-position. In the minimalist spirit, we prefer \t{This Pizza}: the
-resulting \t{Comment} is shorter, and it is easier for the oracle to
-judge the grammaticality of the predicative adjective, if there is
-only one adjective in the whole sentence. 
-
-Applying the same process as before, we get the set of trees shown in 
-Figure~\ref{fig:goodCheese}. This is representative but not minimal,
-so we proceed to the next step, shrinking.
-
-\begin{figure}
-\centering
-\begin{tabular}{| l | l |}
-\hline
-\t{Pred (This Pizza) (Very Good)}   & \t{Pred (This Cheese) (Very Good)} \\ 
-esta pizza es muy buena             & este queso es muy bueno \\ \hline
-\t{Pred (These Pizza) (Very Good)}  & \t{Pred (These Cheese) (Very Good)} \\ 
-estas pizzas son muy buenas         & estos quesos son muy buenos \\ \hline
-\t{Pred (This Pizza) (Very Vegan)}   & \t{Pred (This Cheese) (Very Vegan)} \\ 
-esta pizza es muy vegana             & este queso es muy vegano \\ \hline
-\t{Pred (These Pizza) (Very Vegan)}  & \t{Pred (These Cheese) (Very Vegan)} \\ 
-estas pizzas son muy veganas         & estos quesos son muy veganos \\ \hline
-\end{tabular}
-\caption{Variation of adjective forms in the predicative position}
-\label{fig:goodCheese}
-\end{figure}
+Of course, this test set will not catch if e.g. any of the lexical functions contains a typo, or if there is a more severe bug in the morphological paradigms. But there are easier methods to test for such bugs---our goal is to test the more abstract, syntactic phenomena with as few trees as possible.
+%a bug in the morphological paradigms will go unnoticed, 
 
 
-\paragraph{Shrinking}
+\paragraph{Pruning}
 
-Two aspects to shrinking:
+For the previous example, we did not need any pruning: the cross product of all relevant distinctions produced a minimal and representative set of trees. Now assume we have a larger grammar, which also covers adjectives in a predicative position: e.g. \emph{esta casa es peque\~{n}a} `this house is small' and \emph{esta casa es buena} `this house is good'. The distinction which made us choose \t{small} and \t{good} in the first place is now gone: in predicative position, both adjectives behave the same. Thus, in this larger grammar, when we want to test adjectives, it is necessary to include two examples when in attributive position, but only one when in predicative position. We describe exactly how this works in Section~\ref{sec:details}.
+%In total we would get 12 sentences: the 8 shown previously, and 4 
 
-Some distinctions are relevant only in certain
-contexts. Compare the eight strings we got from \t{Mod} context, and
-how they all showed different combination of gender, number and
-placement. But eight strings in predicative position (Figure~\ref{fig:goodCheese})
-are redundant: ``estos quesos son muy buenos'' is essentially the same
-as ``estos quesos son muy veganos''. In contrast, ``muy buen queso''
-and ``queso muy vegano'' differ in placement, so it is necessary to
-include both examples.
+\subsection{Examples of real bugs} 
+To make this more concrete, we list out some examples of bugs found in real grammars, and how they would be found by this generation.
 
-We notice that only by testing one function, \t{Very}, we have
-actually quite a coverage of the grammar. Lot of the considerations
-are the same: number and grammatical gender play a role in a lot of
-stuff. Easy step: don't show redundant trees to the user. One tree can
-actually test different phenomena. 
+\paragraph{Preposition contraction in Dutch} Some prepositions should merge with a single determiner or pronoun, e.g. \emph{met~deze} `with this' becomes \emph{hiermee} `herewith', but stay independent when the determiner quantifies a noun, e.g. \emph{met deze huis} `with this house'. When testing \t{PrepNP}, the program should generate one preposition that contracts and one that does not, as well as one \t{NP} that is a single determiner, and one that comes from a noun. 
+In order to catch a bug in the function, or confirm there is none, the program should generate the four trees
+\t{PrepNP} \{ \stackanchor{\tt with}{\tt without} \} \{ \stackanchor{\tt DetNP this}{\tt DetCN this house} \}. 
+
+\paragraph{Determiner placement in Basque} When a number or a possessive pronoun acts as a determiner in a complex noun phrase, it is placed
+between ``heavy'' modifiers, such as adverbials or relative clauses, and the rest of the noun phrase. Demonstrative pronouns, such as \emph{this},
+ are placed before all modifiers. Indefinite article goes at the end of the whole noun phrase as an independent word.
+If there is a ``light'' modifier, such as an adjective, the definite article is suffixed to the modifier; otherwise it is suffixed to the noun.
+In order to test the implementation of this phenomenon, we need a subset of the following trees: \\
+\{ \stackanchor{ \tt AdvNP on\_the\_hill}{ $\varnothing$ }  \}  (\t{DetCN} \{ \stackanchor{\stackanchor{\tts{a}}{\tts{the}}}{\stackanchor{\tts{this}}{\tts{your}}} \} \{ \stackanchor{\tt AdjCN small}{$\varnothing$} \} {\tt house})
+
+
+
+
 
 \section{Technical details}
+\label{sec:details}
 
 GF grammar compiles into a low-level format called PGF. After the
 compilation, we get one category for each combination of parameters:
