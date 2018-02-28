@@ -26,7 +26,8 @@
 \usepackage{stackengine}
 
 \def\t#1{\texttt{#1}}
-\newcommand{\tts}[1]{{\tt \small #1}}
+\newcommand{\tts}[1]{{\tt #1}}
+%\newcommand{\tts}[1]{{\tt \small #1}}
 \newcommand{\todo}[1]{{\color{cyan}\textbf{[TODO: }#1\textbf{]}}}
 
 %\setlength\titlebox{5cm}
@@ -132,9 +133,9 @@ abstract NounPhrases = {
   fun
     DetNP : Det -> NP ;          -- e.g. "this"
     DetCN : Det -> CN -> NP ;    -- e.g. "this house"
-    AdvNP : Adv -> NP -> NP ;    -- e.g. "these houses on the hill"
     PrepNP : Prep -> NP -> Adv ; -- e.g. "without this house"
     AdjCN : Adj -> CN -> CN ;    -- e.g. "small house"
+    AdvCN : Adv -> CN -> CN ;    -- e.g. "house on this hill"
 
     house, hill, cake : CN ;
     this, these, your : Det ;
@@ -147,7 +148,7 @@ abstract NounPhrases = {
 
 Figure~\ref{fig:exampleGrammar} shows a small example of a GF
 grammar. The grammar generates noun phrases for a lexicon of eight words (\emph{house, hill, \dots, without}) in four lexical categories, and five functions to construct phrases. 
-\t{CN} stands for common noun, and it can be modified by arbitrarily many adjectives (\t{Adj}), e.g. \emph{good small house}. A \t{CN} is quantified into a noun phrase (\t{NP}) by adding a determiner (\t{Det}); alternatively, a \t{Det} can also become an independent noun phrase. Finally, we can form an adverb (\t{Adv}) by combining a preposition (\t{Prep}) with an \t{NP}, and those adverbs can modify yet another \t{NP}.
+\t{CN} stands for common noun, and it can be modified by arbitrarily many adjectives (\t{Adj}), e.g. \emph{small blue house}. A \t{CN} is quantified into a noun phrase (\t{NP}) by adding a determiner (\t{Det}); alternatively, a \t{Det} can also become an independent noun phrase. Finally, we can form an adverb (\t{Adv}) by combining a preposition (\t{Prep}) with an \t{NP}, and those adverbs can modify yet another \t{CN}.
 We refer to this grammar throughout the paper.
 
 \subsection{How it works}
@@ -215,7 +216,7 @@ Now that we have a set of test cases, we create contexts that show all variation
 By \emph{context}, we mean simply a tree in some other category, with a \emph{hole} of type \t{CN}, as shown in Figure~\ref{fig:treesWithHoles}.
 In this grammar, the only category above is \t{NP}, and there is only one way that a \t{CN} can end up in an \t{NP}: by using the function \t{DetCN : Det $\rightarrow$ CN $\rightarrow$ NP}.
 
-Just like before, we start by creating a representative and minimal set of arguments of type \t{Det}. So far the relevant features have been grammatical gender an adjective placement---we have 4 trees with all combinations of \{masculine, feminine\} and \{pre,post\}. The resulting trees have \emph{variable} number, but now we have a category \t{Det} with an inherent number, so we can create the context that picks the string ``casa  peque\~{n}a'', and another that picks ``casas  peque\~{n}as''. By simple combinatorics, we pick the representative set of \t{Det} with one singular and one plural element, e.g. \t{this} and \t{these}, and form two contexts: \verb|DetCN this _| and  \verb|DetCN these _|. We plug in the 4 test cases, and get 8 trees in total: \t{\{DetCN this (good house), \dots, DetCN these (small hill)\}}.
+Just like before, we start by creating a representative and minimal set of arguments of type \t{Det}. So far the relevant features have been grammatical gender an adjective placement---we have 4 trees with all combinations of \{masculine, feminine\} and \{pre,post\}. The resulting trees have \emph{variable} number, but now we have a category \t{Det} with an inherent number, so we can create the context that picks the string ``casa  peque\~{n}a'', and another that picks ``casas  peque\~{n}as''. By simple combinatorics, we pick the representative set of \t{Det} with one singular and one plural element, e.g. \t{this} and \t{these}, and form two contexts: \verb|DetCN this _| and  \verb|DetCN these _|. We insert the 4 test cases into the holes, and get 8 trees in total: \t{\{DetCN this (good house), \dots, DetCN these (small hill)\}}.
 
 
 The grammar, with only 12-word lexicon and 5 syntactic functions, generates \todo{n} trees up to depth 5\footnote{example of a tree of that depth}. These 8 test cases are enough to test whether the syntactic function \t{AdjCN} is correctly implemented.  
@@ -240,8 +241,8 @@ In order to catch a bug in the function, or confirm there is none, the program s
 between ``heavy'' modifiers, such as adverbials or relative clauses, and the rest of the noun phrase. Demonstrative pronouns, such as \emph{this},
  are placed before all modifiers. Indefinite article goes at the end of the whole noun phrase as an independent word.
 If there is a ``light'' modifier, such as an adjective, the definite article is suffixed to the modifier; otherwise it is suffixed to the noun.
-In order to test the implementation of this phenomenon, we need a subset of the following trees: \\
-\{ \stackanchor{ \tt AdvNP on\_the\_hill}{ $\varnothing$ }  \}  (\t{DetCN} \{ \stackanchor{\stackanchor{\tts{a}}{\tts{the}}}{\stackanchor{\tts{this}}{\tts{your}}} \} \{ \stackanchor{\tt AdjCN small}{$\varnothing$} \} {\tt house})
+In order to test the implementation of this phenomenon, we need a subset of the following trees: \\ \\
+\t{DetCN} \{ \stackanchor{\stackanchor{\tts{a}}{\tts{the}}}{\stackanchor{\tts{this}}{\tts{your}}} \} \{ \stackanchor{\tt AdvCN on\_the\_hill}{$\varnothing$} \} \{ \stackanchor{\tt AdjCN small}{$\varnothing$} \}  {\tt house}
 
 
 
