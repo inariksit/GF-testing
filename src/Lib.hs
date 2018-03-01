@@ -2,6 +2,7 @@ module Lib
     ( testTree
     , testFun
     , compareTree
+    , compareFun
     , ccats
     , Comparison(..)
     , treesUsingFun
@@ -36,7 +37,7 @@ compareFun gr oldgr transgr funname =
 
 compareTree :: Grammar -> Grammar -> [Grammar] -> Tree -> Comparison
 compareTree gr oldgr transgr t = Comparison {
-  funTree = "### " ++ show t
+  funTree = "* " ++ show t
 , linTree = [ ( (absName gr,hl), (langName gr,newLin), (langName oldgr, oldLin), transLin )
             | ctx <- ctxs
             , let hl = show (ctx (App (hole c) []))
@@ -66,14 +67,19 @@ testFun :: Bool -> Grammar -> [Grammar] -> Cat -> Name -> Result
 testFun debug gr trans startcat funname = 
  let test = testTree debug gr trans
   in unlines $ 
-      [ test t commonCtxs 
-      | t <- reducedTrees 
-      , not $ null commonCtxs
-      ] ++ 
-      [ test t uniqueCtxs
-      | t <- allTrees
-      , not $ null uniqueCtxs ] 
+      [ test t n ctxs
+      | (n,(t,ctxs)) <- zip [1..] trees_Ctxs ] -- maybe add numbering back at some point?
+
+
+      --[ test t n commonCtxs 
+      -- | (t,n) <- zip reducedTrees [1..]
+      --, not $ null commonCtxs
+      --] ++ 
+      --[ test t n uniqueCtxs
+      -- | (t,n) <- zip allTrees [1..]
+      --, not $ null uniqueCtxs ] 
  where
+  trees_Ctxs = (zip reducedTrees (repeat commonCtxs)) ++ (zip allTrees (repeat uniqueCtxs))
   
   (start:_) = ccats gr startcat
   hl c1 c2 = c1 dummyHole == c2 dummyHole -- :: (Tree -> Tree) -> (Tree -> Tree) -> Bool
@@ -104,20 +110,18 @@ testFun debug gr trans startcat funname =
   coerces coe cat = (cat,coe) `elem` coercions gr
 
 
-testTree :: Bool -> Grammar -> [Grammar] -> Tree -> [Tree -> Tree] -> Result
-testTree debug gr tgrs t ctxs = {-trace (show $ length ctxs) $ -} unlines 
-  [ ("### " ++ showConcrFun gr w) 
-  , show t
+testTree :: Bool -> Grammar -> [Grammar] -> Tree -> Int -> [Tree -> Tree] -> Result
+testTree debug gr tgrs t n ctxs = {-trace (show $ length ctxs) $ -} unlines 
+  [ ("* " ++ show t) 
+  , showConcrFun gr w
   , if debug then unlines $ tabularPrint gr t else ""
   , unlines $ nub $ concat --TODO: get rid of the nub here, there's something wrong with checking the equality of contexts before??
-       [ [ ""
-         , absName gr ++ show (ctx (App (hole c) []))
-       --  , "  --> " ++ linearize gr (ctx (App (hole c) []))
+       [ [ "** " ++ show m ++ ") " ++ show (ctx (App (hole c) []))
          , langName gr ++ linearize gr (ctx t) 
          ] ++
          [ langName tgr ++ linearize tgr (ctx t) 
          | tgr <- tgrs ]
-       | ctx <- ctxs
+       | (ctx,m) <- zip ctxs [1..]
        ]
   , "" ]
  where
@@ -125,7 +129,7 @@ testTree debug gr tgrs t ctxs = {-trace (show $ length ctxs) $ -} unlines
   c = snd (ctyp w)
 
   langName gr = concrLang gr ++ "> "
-  absName gr = (reverse $ drop 3 $ reverse $ concrLang gr) ++ "> "
+
 --------------------------------------------------------------------------------
 
 ccats :: Grammar -> Cat -> [ConcrCat]

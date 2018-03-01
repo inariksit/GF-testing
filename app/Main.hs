@@ -14,7 +14,7 @@ import qualified Data.Set as S
 import qualified Data.Map as M
 
 
-import System.Console.CmdArgs hiding ( name )
+import System.Console.CmdArgs hiding ( name, args )
 import qualified System.Console.CmdArgs as A
 import System.IO ( stdout, hSetBuffering, BufferMode(..) )
 
@@ -43,6 +43,7 @@ data GfTest
   , only_changed_cats :: Bool
   , treebank      :: Maybe FilePath
   , debug         :: Bool
+  , write_to_file :: Bool
 
   } deriving (Data,Typeable,Show,Eq)
 
@@ -69,6 +70,7 @@ gftest = GfTest
   , old_grammar   = def &= typFile
                         &= A.name "o"   &= help "Path to an earlier version of the grammar"
   , only_changed_cats = def             &= help "When comparing against an earlier version of a grammar, only test functions in categories that have changed between versions"
+  , write_to_file = def                 &= help "Write the results in a file (<GRAMMAR>_<FUN>.org)"
   }
 
 
@@ -89,12 +91,23 @@ main = do
 
   let startcat = startCat gr `fromMaybe` start_cat args
 
-      testTree' t = testTree False gr grTrans t ctxs
+      testTree' t n = testTree False gr grTrans t n ctxs
        where
         w    = top t
         c    = snd (ctyp w)
         ctxs = concat [ contextsFor gr sc c
                       | sc <- ccats gr startcat ]
+
+                        -- Print to stdout or write to a file
+      output = 
+       if write_to_file args 
+         then \x -> 
+           do let fname = concat [ langName, "_", function args, ".org" ]
+              writeFile fname x 
+              putStrLn $ "Wrote results in " ++ fname
+         else putStrLn
+
+
   -----------------------------------------------------------------------------
   -- Statistics about the grammar
 
@@ -185,41 +198,28 @@ main = do
               putStr "==> "
               putStrLn $ (intercalate ", ") $ nub [ name s | s <- hasConcrString gr str]
 
+
   -- Testing a tree
   case tree args of 
     [] -> return ()
-    t  -> putStrLn $ testTree' (readTree gr t)
+    t  -> output $ testTree' (readTree gr t) 1
+
   -- Testing a function or all functions in a category
   case function args of
     [] -> case category args of
             []  -> return ()
-            cat -> putStrLn $ unlines 
-                    [ testTree' t
-                    | t <- treesUsingFun gr (functionsByCat gr cat) ]
-    "all" -> putStrLn $ unlines 
-              [ testTree' t
-              | t <- treesUsingFun gr (symbols gr) ]
-    fnames -> putStrLn $ unlines
-                [ testFun (debug args) gr grTrans startcat fname
-                | fname <- words fnames ]
-{-
-              do --sequence_ 
-              --    [ do print symb
-              --         mapM_ (putStr.intercalate " ".map showSeq.concrSeqs gr) sqs
-              --         putStrLn ""
-              --    | symb <- lookupSymbol gr fnames
-              --    , let sqs = seqs symb ]
-                 putStrLn $ unlines
-                  [ testFun (debug args) gr grTrans startcat fname
-                  | fname <- words fnames ]
-                 mapM_ print (coercions gr)
-                 let (startccat:_) = ccats gr startcat
-                 mapM_ print [ (c, treeWithHole, topOf hl treeWithHole) 
-                             | (c,tts) <- contexts gr startccat 
-                             , tt <- tts
-                             , let hl = hole c
-                             , let treeWithHole = tt (App hl [])]
--}
+            cat -> output $ unlines 
+                    [ testTree' t n
+                    | (t,n) <- treesUsingFun gr (functionsByCat gr cat) `zip` [1..]]
+
+    fnames -> let funs = case fnames of
+                    "all" -> nub $ map show (symbols gr)
+                    _     -> words fnames
+               in output $ unlines
+                   [ testFun (debug args) gr grTrans startcat f
+                   | f <- funs ]
+
+
   -------------------------------------------------------------------------------
   -- Comparison with old grammar
 
