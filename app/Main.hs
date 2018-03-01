@@ -23,11 +23,11 @@ data GfTest
   { grammar       :: Maybe FilePath
   -- Languages
   , lang          :: Lang
-  , translations  :: Lang
 
   -- Functions and cats
   , function      :: Name
   , category      :: Cat
+  , tree          :: String
   , start_cat     :: Maybe Cat
   , show_cats     :: Bool
   , concr_string  :: String
@@ -48,9 +48,10 @@ data GfTest
 
 gftest = GfTest 
   { grammar       = def &= typFile      &= help "Path to the grammar (PGF) you want to test"
-  , lang          = def &= A.typ "Eng"  &= help "Concrete language for the chosen grammar"
-  , translations  = def &= A.typ "\"Eng Swe\"" 
-                        &= A.name "t"   &= help "Optional languages to show translations in"
+  , lang          = def &= A.typ "\"Eng Swe\""  
+                                        &= help "Concrete syntax + optional translations"
+  , tree          = def &= A.typ "\"UseN tree_N\"" 
+                        &= A.name "t"   &= help "Test the given tree"
   , function      = def &= A.typ "UseN" &= help "Test the given function(s)"
   , category      = def &= A.typ "NP"
                         &= A.name "c"   &= help "Test all functions with given goal category"
@@ -80,8 +81,7 @@ main = do
   let absName = case grammar args of 
                   Just fp -> stripPGF fp --doesn't matter if the name is given with or without ".pgf"
                   Nothing -> "TestLang"
-  let langName = absName ++ lang args
-  let langTrans = [ absName ++ t | t <- words (translations args) ]
+  let (langName:langTrans) = [ absName ++ t | t <- words (lang args) ]
 
   grName <- getDataFileName (absName ++ ".pgf")
   gr     <- readGrammar langName grName
@@ -185,6 +185,10 @@ main = do
               putStr "==> "
               putStrLn $ (intercalate ", ") $ nub [ name s | s <- hasConcrString gr str]
 
+  -- Testing a tree
+  case tree args of 
+    [] -> return ()
+    t  -> putStrLn $ testTree' (readTree gr t)
   -- Testing a function or all functions in a category
   case function args of
     [] -> case category args of
@@ -247,7 +251,10 @@ main = do
       let changedFuns =
            if only_changed_cats args
             then [ (cat,functionsByCat gr cat) | (cat,_,_,_) <- difcats ]
-            else [ (cat,functionsByCat gr cat) | (cat,_,_,_) <- concrCats gr ]
+            else
+              case function args of
+                [] -> [ (cat,functionsByCat gr cat) | (cat,_,_,_) <- concrCats gr ]
+                fn -> [ (snd $ GrammarC.typ f, [f]) | f <- lookupSymbol gr fn ]
           writeLinFile file grammar otherGrammar = do
             writeFile file ""
             putStrLn "Testing functions in… "
