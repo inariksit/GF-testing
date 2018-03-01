@@ -230,12 +230,23 @@ Of course, this test set will not catch if e.g. any of the lexical functions con
 For the previous example, we did not need any pruning: the cross product of all relevant distinctions produced a minimal and representative set of trees. Now assume we have a larger grammar, which also covers adjectives in a predicative position: e.g. \emph{esta casa es peque\~{n}a} `this house is small' and \emph{esta casa es buena} `this house is good'. The distinction which made us choose \t{small} and \t{good} in the first place is now gone: in predicative position, both adjectives behave the same. Thus, in this larger grammar, when we want to test adjectives, it is necessary to include two examples when in attributive position, but only one when in predicative position. We describe exactly how this works in Section~\ref{sec:details}.
 %In total we would get 12 sentences: the 8 shown previously, and 4 
 
-\subsection{Examples of real bugs} 
-To make this more concrete, we list out some examples of bugs found in real grammars, and how they would be found by this generation.
+\subsection{Examples of representative and minimal test cases} 
+To make the example more concrete, we list out some phenomena found in real grammars, and how to test their implementation.
 
 \paragraph{Preposition contraction in Dutch} Some prepositions should merge with a single determiner or pronoun, e.g. \emph{met~deze} `with this' becomes \emph{hiermee} `herewith', but stay independent when the determiner quantifies a noun, e.g. \emph{met deze huis} `with this house'. When testing \t{PrepNP}, the program should generate one preposition that contracts and one that does not, as well as one \t{NP} that is a single determiner, and one that comes from a noun. 
 In order to catch a bug in the function, or confirm there is none, the program should generate the four trees
 \t{PrepNP} \{ \stackanchor{\tt with}{\tt without} \} \{ \stackanchor{\tt DetNP this}{\tt DetCN this house} \}. 
+
+\paragraph{Adjective agreement in Estonian} In attributive position, most adjectives agree with nouns in case and number. However, participle adjectives are invariable (singular nominative) as attributes but inflect regularly in a predicative position, and a set of invariable adjectives do not inflect in any position. Furthermore, in 4 of the 14 grammatical cases, even the regular adjectives only agree with the noun in number, but the case is always genitive: e.g.
+\stackanchor{ \emph{suur-e} \emph{auto-ga}}{\small \emph{big}-\textsc{gen} \emph{car}-\textsc{com}} 
+%\emph{suur-e} \emph{auto-ga}  \emph{big}-\textsc{gen} \emph{car}-\textsc{com} 
+`with a big car'. 
+Thus in order to test adjectives as attributes, we need an example for one of the 10 ``usual'' cases and one of the 4 ``unusual'' cases, one of each type of adjective, and one of each number. 
+The following test set creates all the relevant cases:
+ \t{PrepNP} \{ \stackanchor{\tt on}{\tt with} \} {\t{(DetCN} \{ \stackanchor{\tt this}{\tt these} \} \t{AdjCN} \{ \stackanchor{\stackanchor{\tt small}{\tt tired}}{\stackanchor{\tt ready}{}} \} {\tt house)}
+
+%To test the whole phenomenon, we would need one more context, where the adjective is in the predicative position `the house is \verb|_|', and one more example adjective---as an attribute, we can lump participles and invariables into one test example, but as a predicative, regular and participles behave the same and differently from invariable.
+
 
 \paragraph{Determiner placement in Basque} When a number or a possessive pronoun acts as a determiner in a complex noun phrase, it is placed
 between ``heavy'' modifiers, such as adverbials or relative clauses, and the rest of the noun phrase. Demonstrative pronouns, such as \emph{this},
@@ -243,8 +254,6 @@ between ``heavy'' modifiers, such as adverbials or relative clauses, and the res
 If there is a ``light'' modifier, such as an adjective, the definite article is suffixed to the modifier; otherwise it is suffixed to the noun.
 In order to test the implementation of this phenomenon, we need a subset of the following trees: \\ \\
 \t{DetCN} \{ \stackanchor{\stackanchor{\tts{a}}{\tts{the}}}{\stackanchor{\tts{this}}{\tts{your}}} \} \{ \stackanchor{\tt AdvCN on\_the\_hill}{$\varnothing$} \} \{ \stackanchor{\tt AdjCN small}{$\varnothing$} \}  {\tt house}
-
-
 
 
 
