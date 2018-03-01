@@ -17,7 +17,7 @@ If you want to use the `testLang.sh`, then you should clone this repository into
 
 If you have `cabal install`ed the program, you can run it like this anywhere -- the relevant stuff is in the `data/` directory.
 
-`gftest -l Dut -t Eng -f UseN`
+`gftest -l "Dut Eng" -f UseN`
 
 No grammar specified so it uses the `TestLang` grammar. 
 
@@ -34,33 +34,34 @@ Start by copying/linking the PGF in the directory `data/`. Then give it as an ar
 
 ```
 Common flags:
-  -g --grammar=FILE            Path to the grammar (PGF) you want to test
-  -l --lang=Eng                Concrete language for the chosen grammar
-  -t --translations="Eng Swe"  Optional languages to show translations in
-  -f --function=UseN           Test the given function(s)
-  -c --category=NP             Test all functions with given goal category
-  -s --start-cat=Utt           Use the given category as start category
-     --show-cats               Show all available categories
-     --concr-string=the        Show all functions that include given string
-  -q --equal-fields            Show fields whose strings are always identical
-  -e --empty-fields            Show fields whose strings are always empty
-  -u --unused-fields           Show fields that never make it into the top category
-  -o --old-grammar=FILE        Path to an earlier version of the grammar
-  -o --old-grammar=FILE        Path to an earlier version of the grammar
-     --only-changed-cats       When comparing against an earlier version of a
-                               grammar, only test functions in categories that
-                               have changed between versions
-  -b --treebank=FILE           Path to a treebank
-  -d --debug                   Show debug output
-  -? --help                    Display help message
-  -V --version                 Print version information
+  -g --grammar=FILE        Path to the grammar (PGF) you want to test
+  -l --lang="Eng Swe"      Concrete syntax + optional translations
+  -f --function=UseN       Test the given function(s)
+  -c --category=NP         Test all functions with given goal category
+  -t --tree="UseN tree_N"  Test the given tree
+  -s --start-cat=Utt       Use the given category as start category
+     --show-cats           Show all available categories
+     --concr-string=the    Show all functions that include given string
+  -q --equal-fields        Show fields whose strings are always identical
+  -e --empty-fields        Show fields whose strings are always empty
+  -u --unused-fields       Show fields that never make it into the top
+                           category
+  -n --nullable            Show trees that are erased
+  -o --old-grammar=ITEM    Path to an earlier version of the grammar
+     --only-changed-cats   When comparing against an earlier version of a
+                           grammar, only test functions in categories that have
+                           changed between versions
+  -b --treebank=ITEM       Path to a treebank
+  -d --debug               Show debug output
+  -? --help                Display help message
+  -V --version             Print version information
 ```
 
 #### `-f` 
 
 specifies the function: we test `UseN` and put it in the default start category of the grammar. If you want to specify another start category, you can do it with the `-s` flag:
 
-`gftest -l Dut -t Eng -f UseN -s Adv`
+`gftest -l "Dut Eng" -f UseN -s Adv`
 
 This only creates holes using `UseN` in `Adv`, instead of `S` or `Utt`.
 
