@@ -3,8 +3,11 @@
 abstract Foods = {
   flags startcat = Comment ;
   cat
-    Comment ; Item ; Kind ; Quality ;
+    Comment ; Item ; Kind ; Quality ; Utt ; Question ;
   fun
+    QUtt : Question -> Utt ;
+    CUtt : Comment -> Utt ;
+    Quest : Item -> Quality -> Question ;
     Pred : Item -> Quality -> Comment ;
     This, That, These, Those : Kind -> Item ;
     Mod : Quality -> Kind -> Kind ;
