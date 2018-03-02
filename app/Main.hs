@@ -8,7 +8,7 @@ import EqRel
 import Paths_GF_testing
 
 import Control.Monad ( when )
-import Data.List ( intercalate, groupBy, sortBy )
+import Data.List ( intercalate, groupBy, sortBy, deleteFirstsBy )
 import Data.Maybe ( fromMaybe )
 import qualified Data.Set as S
 import qualified Data.Map as M
@@ -196,25 +196,25 @@ main = do
     []  -> return ()
     str -> do putStrLn $ "### The following functions contain the syncategorematic string '" ++ str ++ "':"
               putStr "==> "
-              putStrLn $ (intercalate ", ") $ nub [ name s | s <- hasConcrString gr str]
+              putStrLn $ intercalate ", " $ nub [ name s | s <- hasConcrString gr str]
 
 
   -- Testing a tree
   case tree args of 
     [] -> return ()
-    t  -> output $ testTree' (readTree gr t) 1
+    t  -> output $ testTree' (readTree gr t) 1
 
   -- Testing a function or all functions in a category
+  case category args of
+    []  -> return ()
+    cat -> output $ unlines 
+            [ testTree' t n
+            | (t,n) <- treesUsingFun gr (functionsByCat gr cat) `zip` [1..]]
   case function args of
-    [] -> case category args of
-            []  -> return ()
-            cat -> output $ unlines 
-                    [ testTree' t n
-                    | (t,n) <- treesUsingFun gr (functionsByCat gr cat) `zip` [1..]]
-
-    fnames -> let funs = case fnames of
-                    "all" -> nub $ map show (symbols gr)
-                    _     -> words fnames
+    [] -> return ()
+    fs -> let funs = case fs of
+                    "all" -> nub [ show s | s <- symbols gr, arity s >= 1 ] 
+                    _     -> words fs
                in output $ unlines
                    [ testFun (debug args) gr grTrans startcat f
                    | f <- funs ]
@@ -232,42 +232,60 @@ main = do
  
       --------------------------------------------------------------------------
       -- generate statistics of the changes in the concrete categories
-      let ccatChangeFile = langName ++ "-ccat-diff.md"
+      let ccatChangeFile = langName ++ "-ccat-diff.org"
       writeFile ccatChangeFile ""
       sequence_
         [ appendFile ccatChangeFile $ unlines
-           [ "### " ++ acat
-           , show o ++ " concrete categories in the old grammar, "
-           , show n ++ " concrete categories in the new grammar.  "
-           , "* Labels only in old: " ++ intercalate ", " ol
+           [ "* " ++ acat
+           , show o ++ " concrete categories in the old grammar,"
+           , show n ++ " concrete categories in the new grammar."
+           , "** Labels only in old: " ++ intercalate ", " ol
            , " (" ++ show (length ol) ++ ")"
-           , "* Labels only in new: " ++ intercalate ", " nl 
+           , "** Labels only in new: " ++ intercalate ", " nl 
            , " (" ++ show (length nl) ++ ")" ]
         | (acat, [o,n], ol, nl) <- difcats ] 
       putStrLn $ "Created file " ++ ccatChangeFile
 
       --------------------------------------------------------------------------
       -- print out tests for all functions in the changed cats
+
       let changedFuns =
            if only_changed_cats args
             then [ (cat,functionsByCat gr cat) | (cat,_,_,_) <- difcats ]
             else
-              case function args of
-                [] -> [ (cat,functionsByCat gr cat) | (cat,_,_,_) <- concrCats gr ]
-                fn -> [ (snd $ GrammarC.typ f, [f]) | f <- lookupSymbol gr fn ]
+              case category args of
+                [] -> case function args of
+                        [] -> [ (cat,functionsByCat gr cat) 
+                              | (cat,_,_,_) <- concrCats gr ]
+                        fn -> [ (snd $ GrammarC.typ f, [f]) 
+                              | f <- lookupSymbol gr fn ]
+                ct -> [ (ct,functionsByCat gr ct) ]
           writeLinFile file grammar otherGrammar = do
             writeFile file ""
             putStrLn "Testing functions in… "
-            sequence_ [ do putStr $ cat ++ "                \r"
-                           appendFile file $ unlines
-                             [ show comp
-                             | t <- treesUsingFun grammar funs
-                             , let comp = compareTree grammar otherGrammar grTrans t
-                             , not $ null $ linTree comp ]
-                      | (cat,funs) <- changedFuns ]
+            diff <- concat `fmap`
+              sequence [ do let cs = [ compareTree grammar otherGrammar grTrans t
+                                     | t <- treesUsingFun grammar funs ]
+                            putStr $ cat ++ "                \r"
+                            -- prevent lazy evaluation; make printout accurate
+                            appendFile ("/tmp/"++file) (unwords $ map show cs)
+                            return cs
+                       | (cat,funs) <- changedFuns ]
+            let relevantDiff = go [] [] diff where
+                  go res seen [] = res
+                  go res seen (Comparison f ls:cs) = 
+                    if null uniqLs then go res seen cs
+                      else go (Comparison f uniqLs:res) (uniqLs++seen) cs
+                     where uniqLs = deleteFirstsBy ctxEq ls seen
+                           ctxEq (a,_,_,_) (b,_,_,_) = a==b
+                shorterTree c1 c2 = length (funTree c1) `compare` length (funTree c2)
+            writeFile file $ unlines
+              [ show comp 
+              | comp <- sortBy shorterTree relevantDiff ]
 
-      writeLinFile (langName ++ "-lin-diff.md") gr ogr
-      putStrLn $ "Created file " ++ (langName ++ "-lin-diff.md")
+            
+      writeLinFile (langName ++ "-lin-diff.org") gr ogr
+      putStrLn $ "Created file " ++ (langName ++ "-lin-diff.org")
 
       ---------------------------------------------------------------------------
       -- Print statistics about the functions: e.g., in the old grammar,
@@ -290,10 +308,10 @@ main = do
                              | fun <- sortByName funs ]
                       | funs <- groupedFuns ]
 
-      writeFunFile (groupFuns ogr) (langName ++ "-old-funs.md") ogr
-      writeFunFile (groupFuns gr)  (langName ++ "-new-funs.md") gr
+      writeFunFile (groupFuns ogr) (langName ++ "-old-funs.org") ogr
+      writeFunFile (groupFuns gr)  (langName ++ "-new-funs.org") gr
 
-      putStrLn $ "Created files " ++ langName ++ "-(old|new)-funs.md"
+      putStrLn $ "Created files " ++ langName ++ "-(old|new)-funs.org"
   -------------------------------------------------------------------------------
   -- Read trees from treebank. No fancier functionality yet.
 
@@ -305,7 +323,6 @@ main = do
                          (_args,ty) = ctyp (top tree)
                      putStrLn $ unlines [ "", show tree ++ " : " ++ show ty]
                      putStrLn $ linearize gr tree
-                     --mapM_ putStrLn $ tabularPrint gr tree
                 | str <- lines tb ]
 
 

@@ -2,13 +2,10 @@ module Lib
     ( testTree
     , testFun
     , compareTree
-    , compareFun
-    , ccats
     , Comparison(..)
+    , ccats
     , treesUsingFun
     , showConcrFun
-    , lookupSymbol
-    , tabularPrint
     ) where
 
 import GrammarC
@@ -20,7 +17,8 @@ import qualified Data.Set as S
 import Data.Maybe
 import Debug.Trace
 
-type LinTree = ((Lang,String),(Lang,String),(Lang,String),(Lang,String))
+type Context = String
+type LinTree = ((Lang,Context),(Lang,String),(Lang,String),(Lang,String))
 data Comparison = Comparison { funTree :: String, linTree :: [LinTree] }
 instance Show Comparison where
   show c = unlines $ funTree c : map showLinTree (linTree c)
@@ -29,18 +27,12 @@ showLinTree :: LinTree -> String
 showLinTree ((an,hl),(l1,t1),(l2,t2),(_l,[])) = unlines ["", an++hl, l1++t1, l2++t2]
 showLinTree ((an,hl),(l1,t1),(l2,t2),(l3,t3)) = unlines ["", an++hl, l1++t1, l2++t2, l3++t3]
 
-
-compareFun :: Grammar -> Grammar -> [Grammar] -> Name -> [Comparison]
-compareFun gr oldgr transgr funname =
-  [ compareTree gr oldgr transgr tree
-  | tree <- treesUsingFun gr (lookupSymbol gr funname) ]
-
 compareTree :: Grammar -> Grammar -> [Grammar] -> Tree -> Comparison
 compareTree gr oldgr transgr t = Comparison {
   funTree = "* " ++ show t
-, linTree = [ ( (absName gr,hl), (langName gr,newLin), (langName oldgr, oldLin), transLin )
+, linTree = [ ( ("** ",hl), (langName gr,newLin), (langName oldgr, oldLin), transLin )
             | ctx <- ctxs
-            , let hl = show (ctx (App (hole c) []))
+            , let hl = show (ctx (App (untypedHole c) []))
             , let transLin = case transgr of
                               []  -> ("","")
                               g:_ -> (langName g, linearize g (ctx t))
@@ -59,63 +51,61 @@ compareTree gr oldgr transgr t = Comparison {
          | sc <- startConcrCats gr
          , cat <- cs ] 
   langName gr = concrLang gr ++ "> "
-  absName gr = (reverse $ drop 3 $ reverse $ concrLang gr) ++ "> "
 
 type Result = String
 
 testFun :: Bool -> Grammar -> [Grammar] -> Cat -> Name -> Result
-testFun debug gr trans startcat funname = 
+testFun debug gr trans startcat funname = -- trace (let show' xs = (unlines $ map showCtx xs) ++ "\n\n"
+                                          --        in concatMap show' [ctxs,commonCtxs,uniqueCtxs] $
+
  let test = testTree debug gr trans
-  in unlines $ 
-      [ test t n ctxs
-      | (n,(t,ctxs)) <- zip [1..] trees_Ctxs ] -- maybe add numbering back at some point?
+  in unlines [ test t n cs -- TODO: maybe add numbering back to testTree?
+             | (n,(t,cs)) <- zip [1..] trees_Ctxs ] 
 
-
-      --[ test t n commonCtxs 
-      -- | (t,n) <- zip reducedTrees [1..]
-      --, not $ null commonCtxs
-      --] ++ 
-      --[ test t n uniqueCtxs
-      -- | (t,n) <- zip allTrees [1..]
-      --, not $ null uniqueCtxs ] 
  where
-  trees_Ctxs = (zip reducedTrees (repeat commonCtxs)) ++ (zip allTrees (repeat uniqueCtxs))
-  
+  trees_Ctxs = [ (t,commonCtxs) | t <- reducedTrees
+               , not $ null commonCtxs ] ++
+               [ (t,uniqueCtxs) | t <- allTrees
+               , not $ null uniqueCtxs ]
+
   (start:_) = ccats gr startcat
-  hl c1 c2 = c1 dummyHole == c2 dummyHole -- :: (Tree -> Tree) -> (Tree -> Tree) -> Bool
-   where dummyHole = App (hole start) [] -- dummy hole, doesn't make any difference what it is!
+  dummyHole = App (untypedHole start) []
+  hl f c1 c2 = f (c1 dummyHole) == f (c2 dummyHole) -- :: (Tree -> Tree) -> (Tree -> Tree) -> Bool
+--  applyHole = hl id -- TODO why doesn't this work for equality of contexts?
+  applyHole = hl show
 
+  goalcats = map (snd.ctyp.top) allTrees :: [ConcrCat] -- these are not coercions (coercions can't be goals)
 
-  goalcats = map (snd.ctyp.top) allTrees :: [ConcrCat] -- these are not coercions
   coercionsThatCoverAllGoalcats = [ (c,fs)
                                   | (c,fs) <- contexts gr start
                                   , all (coerces c) goalcats ]
 
   allTrees = treesUsingFun gr (lookupSymbol gr funname)
-  ctxs = nubBy hl $ concatMap (contextsFor gr start) goalcats :: [Tree->Tree]
+  ctxs = nubBy applyHole $ concatMap (contextsFor gr start) goalcats :: [Tree->Tree]
 
-  (commonCtxs,reducedTrees) = case coercionsThatCoverAllGoalcats of 
-    [] -> ([],[])    -- no coercion covers all goal cats -> all contexts are relevant
+
+  (commonCtxs,reducedTrees) = case coercionsThatCoverAllGoalcats of
+    [] -> ([],[])        -- no coercion covers all goal cats -> all contexts are relevant
     cs -> (cCtxs,rTrees) -- all goal cats coerce into same -> find if there are redundant contexts
    where
     (coe,coercedCtxs) = head coercionsThatCoverAllGoalcats -- TODO: do we need multiple coercions later?
-    cCtxs = intersectBy hl ctxs coercedCtxs 
-    rTrees = [ App newTop subtrees 
+    cCtxs = intersectBy applyHole ctxs coercedCtxs
+    rTrees = [ App newTop subtrees
              | (App tp subtrees) <- take 1 allTrees  --1 should be enough, because *all* goalcats coerce into the same, otherwise we're not in this branch
              , let newTop = tp { ctyp = (fst $ ctyp tp, coe)} ]
-  uniqueCtxs = deleteFirstsBy hl ctxs commonCtxs
+  uniqueCtxs = deleteFirstsBy applyHole ctxs commonCtxs
 
-  showCtx f = show $ f (App (hole start) [])
+  showCtx f = let t = f dummyHole in show t ++ "\t\t\t" ++ showConcrFun gr (top t)
 
   coerces coe cat = (cat,coe) `elem` coercions gr
 
 
 testTree :: Bool -> Grammar -> [Grammar] -> Tree -> Int -> [Tree -> Tree] -> Result
-testTree debug gr tgrs t n ctxs = {-trace (show $ length ctxs) $ -} unlines 
-  [ ("* " ++ show t) 
+testTree debug gr tgrs t n ctxs = unlines
+  [ "* " ++ show t
   , showConcrFun gr w
   , if debug then unlines $ tabularPrint gr t else ""
-  , unlines $ nub $ concat --TODO: get rid of the nub here, there's something wrong with checking the equality of contexts before??
+  , unlines $ concat
        [ [ "** " ++ show m ++ ") " ++ show (ctx (App (hole c) []))
          , langName gr ++ linearize gr (ctx t) 
          ] ++
@@ -127,7 +117,6 @@ testTree debug gr tgrs t n ctxs = {-trace (show $ length ctxs) $ -} unlines
  where
   w = top t
   c = snd (ctyp w)
-
   langName gr = concrLang gr ++ "> "
 
 --------------------------------------------------------------------------------

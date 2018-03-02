@@ -43,6 +43,13 @@ data Tree
   = App { top :: Symbol, args :: [Tree] }
  deriving ( Eq, Ord )
 
+topOf :: Symbol -> Tree -> Maybe Symbol
+topOf symb (App tp []) = Nothing -- Symbol not in the tree (or is the top)
+topOf symb (App tp tr) =
+  if symb `elem` map top tr
+    then Just tp
+    else listToMaybe $ mapMaybe (topOf symb) tr
+
 data AmbTree -- only used as an intermediate structure for parsing
   = AmbApp { atop :: [Symbol], aargs :: [AmbTree] } 
 
@@ -67,6 +74,9 @@ arity = length . fst . ctyp
 
 hole :: ConcrCat -> Symbol
 hole c = Symbol (show c) [] ([], "") ([],c)
+
+untypedHole :: ConcrCat -> Symbol
+untypedHole c = Symbol "∅" [] ([], "") ([],c)
 
 -- grammar
 
@@ -553,7 +563,7 @@ contexts gr top =
                , (t,k) <- fst (ctyp f) `zip` [0..]
                , t == c
                ] ++
-               -- 2) coerces that uncoerce to c
+               -- 2) coercions that uncoerce to c
                [ Left coe
                | (cat,coe) <- coercions gr
                , cat == c
