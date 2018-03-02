@@ -1,15 +1,28 @@
 #/bin/bash
 
-LANG=$1
-DIRTYWORDS=$2
-OPTIMIZEPGF=$3
-if [[ $DIRTYWORDS == "" ]]; then
-	DIRTYWORDS="forbidden-words.txt"
-fi
-if [[ $LANG == "" ]]; then
-	LANG="Eng"
+if [ $# -eq 1 ]; then
+  LANG=$1
+else
+  LANG="Eng"
 fi
 
+if [ $# -eq 2 ]; then
+  OPTIMIZEPGF="--optimize-pgf"
+else
+  OPTIMIZEPGF=""
+fi
+
+if [ $# -eq 3 ]; then
+  DIRTYWORDS=$3
+else
+  DIRTYWORDS="forbidden-words.txt"
+fi
+
+if [ $# -eq 4 ]; then
+  NAME="-n $4"
+else
+  NAME=""
+fi
 
 GRAMMAR="TestLang$LANG"
 GRFILE="grammars/$GRAMMAR.gf"
@@ -25,4 +38,5 @@ for FUN in `cat $DIRTYWORDS`;
 done
 echo " dummy_N ]"  >> $GRFILE  #hack
 
-gf -make $OPTIMIZEPGF --src -gfo-dir /tmp grammars/*.gf
+rm /tmp/*.gfo
+gf -make $OPTIMIZEPGF --src -gfo-dir /tmp $NAME grammars/TestLang*.gf
