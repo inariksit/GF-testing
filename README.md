@@ -53,6 +53,7 @@ Common flags:
                            changed between versions
   -b --treebank=ITEM       Path to a treebank
   -d --debug               Show debug output
+  -w --write-to-file       Write the results in a file (<GRAMMAR>_<FUN>.org)
   -? --help                Display help message
   -V --version             Print version information
 ```
