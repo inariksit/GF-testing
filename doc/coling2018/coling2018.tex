@@ -38,7 +38,7 @@
 % in the camera-ready version and ask you to change it back.
 
 
-\title{Instructions for COLING-2018 Proceedings}
+\title{Automatic test case generation for multilingual grammars}
 
 \author{Inari Listenmaa and Koen Claessen \\
   Department of Computer Science and Engineering \\
@@ -57,19 +57,34 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-  This document contains the instructions for preparing a paper submitted
-  to COLING-2018 or accepted for publication in its proceedings. The document itself
-  conforms to its own specifications, and is therefore an example of
-  what your manuscript should look like. These instructions should be
-  used for both papers submitted for review and for final versions of
-  accepted papers. Authors are asked to conform to all the directions
-  reported in this document.
+  We present a method to generate a set of phrases from a multilingual
+  grammar, intended for a human oracle to look at. This requires a
+  minimal and representative set of sentences, such that all
+  constructions from the grammar are tested with relevant words.
 \end{abstract}
 
+\section{Introduction}
+Grammatical Framework (GF) \cite{ranta2011gfbook} 
+is a framework for building multilingual grammar applications. Its main
+components are a functional programming language for writing grammars
+and a resource library that contains the linguistic details of many
+natural languages.
+A GF program consists of an \emph{abstract syntax} (a set of functions
+and their categories) and a set of one or more
+\emph{concrete syntaxes} which describe how the abstract
+functions and categories are linearized (turned into surface strings) in each
+respective concrete language. The resulting grammar
+describes a mapping between concrete language strings and
+their corresponding abstract trees (structures of function names).
+This mapping is bidirectional---strings can be \emph{parsed} to
+trees, and trees \emph{linearised} to strings.
+As an abstract syntax can have multiple corresponding concrete syntaxes,
+the respective languages can be automatically \emph{translated} from one to the other by
+first parsing a string into a tree and then linearising the obtained tree
+into a new string.
 
-
-
-
+\todo{We test only what the grammar outputs, not positive and negative
+  (sentences that can be parsed / cannot be parsed)}
 
 \section{The problem}
 
@@ -102,8 +117,13 @@ rerun the appropriate test suite.
 \section{Experiences as a grammar writer}
 
 
-GF resource grammars include basic morphology and syntax of a language. GF morphology and lexicon can often be extracted fully or partly from data or existing morphological lexica, but the development of syntactic functions requires intensive human labour, and advanced knowledge on both linguistics and programming.
-Many GF resource grammars are written by non-native speakers, relying on a grammar book and possibly a native informant.
+GF resource grammars include basic morphology and syntax of a
+language. GF morphology and lexicon can often be extracted fully or
+partly from data or existing morphological lexica, but the development
+of syntactic functions requires intensive human labour, and advanced
+knowledge on both linguistics and programming. 
+Many GF resource grammars are written by non-native speakers, relying
+on a grammar book and possibly a native informant. 
 
 %To make the problem more concrete, here is a set of problems, all found in real GF resource grammars.
 
@@ -141,14 +161,23 @@ abstract NounPhrases = {
     this, these, your : Det ;
     good, small, blue : Adj ;
     on, with, without : Prep ;
-}\end{verbatim}
+}
+\end{verbatim}
   \caption{GF grammar for noun phrases}
 \label{fig:exampleGrammar}
 \end{figure}
 
 Figure~\ref{fig:exampleGrammar} shows a small example of a GF
-grammar. The grammar generates noun phrases for a lexicon of eight words (\emph{house, hill, \dots, without}) in four lexical categories, and five functions to construct phrases. 
-\t{CN} stands for common noun, and it can be modified by arbitrarily many adjectives (\t{Adj}), e.g. \emph{small blue house}. A \t{CN} is quantified into a noun phrase (\t{NP}) by adding a determiner (\t{Det}); alternatively, a \t{Det} can also become an independent noun phrase. Finally, we can form an adverb (\t{Adv}) by combining a preposition (\t{Prep}) with an \t{NP}, and those adverbs can modify yet another \t{CN}.
+grammar. The grammar generates noun phrases for a lexicon of eight
+words (\emph{house, hill, \dots, without}) in four lexical categories,
+and five functions to construct phrases.  
+\t{CN} stands for common noun, and it can be modified by arbitrarily
+many adjectives (\t{Adj}), e.g. \emph{small blue house}. A \t{CN} is
+quantified into a noun phrase (\t{NP}) by adding a determiner
+(\t{Det}); alternatively, a \t{Det} can also become an independent
+noun phrase. Finally, we can form an adverb (\t{Adv}) by combining a
+preposition (\t{Prep}) with an \t{NP}, and those adverbs can modify
+yet another \t{CN}. 
 We refer to this grammar throughout the paper.
 
 \subsection{How it works}
@@ -163,21 +192,34 @@ with arguments, such as \t{PrepNP}, then we do the following:
 \item For each argument type (\t{Prep} and \t{NP}), compute the
   set of minimal and representative trees. This is a recursive
   process: to compute the set of trees in \t{NP}, we must consider
-  all functions that create its argument types (\t{Det} and \t{CN}), until we
-  have a set of lexical functions to choose from. 
-\item Take a cross product, prune out redundant combinations, and apply the constructor \t{PrepNP} to the resulting set of arguments. The pruning method will be described later.
+  all functions that create its argument types (\t{Det} and \t{CN}),
+  until we have a set of lexical functions to choose from. 
+\item Take a cross product, prune out redundant combinations, and
+  apply the constructor \t{PrepNP} to the resulting set of
+  arguments. The pruning method will be described later. 
 \end{itemize}
 
 \paragraph{Test cases using \t{AdjCN}} Let us test the function
-\t{AdjCN : Adj $\rightarrow$ CN $\rightarrow$ CN}, and take a Spanish concrete syntax as an example.
+\t{AdjCN : Adj $\rightarrow$ CN $\rightarrow$ CN}, and take a Spanish
+concrete syntax as an example. 
 Firstly, we need a minimal and representative set of arguments of types
-\t{Adj} and \t{CN}. Consider the nouns first: Spanish has a grammatical gender, so in order to be representative, we need an example of both masculine and feminine. Out of the small lexicon, \t{house} (\emph{casa}) is feminine, and \t{hill} (\emph{cerro}) is masculine, so we return those two nouns as the full set of argument trees in \t{CN}.
+\t{Adj} and \t{CN}. Consider the nouns first: Spanish has a
+grammatical gender, so in order to be representative, we need an
+example of both masculine and feminine. Out of the small lexicon,
+\t{house} (\emph{casa}) is feminine, and \t{hill} (\emph{cerro}) is
+masculine, so we return those two nouns as the full set of argument
+trees in \t{CN}. 
 
-Secondly, we consider the adjectives. Most commonly, adjectives follow the noun, e.g. \emph{casa peque\~{n}a} `small house', 
-but some adjectives precede the noun, e.g. \emph{buena casa} `good house'. Thus
-in order to cover the full spectrum of adjective placement, we need one premodifier and one postmodifier adjective. We pick the words \t{good} and \t{small} as the arguments of type \t{Adj}.
+Secondly, we consider the adjectives. Most commonly, adjectives follow
+the noun, e.g. \emph{casa peque\~{n}a} `small house', but some
+adjectives precede the noun, e.g. \emph{buena casa} `good house'. Thus 
+in order to cover the full spectrum of adjective placement, we need
+one premodifier and one postmodifier adjective. We pick the words
+\t{good} and \t{small} as the arguments of type \t{Adj}. 
 
-Now, our full set of test cases are \t{AdjCN} applied to the cross product of \{\stackanchor{\tt \small good}{\tt \small small}\} $\times$ \{ \stackanchor{\tt \small house}{\tt \small hill}\}. 
+Now, our full set of test cases are \t{AdjCN} applied to the cross
+product of \{\stackanchor{\tt \small good}{\tt \small small}\}
+$\times$ \{ \stackanchor{\tt \small house}{\tt \small hill}\}.
 Note that \t{CN} is unspecified for number, because it is still waiting for a
 determiner (e.g. \t{this} or \t{these}) to complete it into an
 \t{NP}. Thus all the test cases contain both singular and plural
@@ -212,48 +254,117 @@ in Figure~\ref{fig:adjAttr}.
 
 \paragraph{Context} 
 
-Now that we have a set of test cases, we create contexts that show all variation within them.
-By \emph{context}, we mean simply a tree in some other category, with a \emph{hole} of type \t{CN}, as shown in Figure~\ref{fig:treesWithHoles}.
-In this grammar, the only category above is \t{NP}, and there is only one way that a \t{CN} can end up in an \t{NP}: by using the function \t{DetCN : Det $\rightarrow$ CN $\rightarrow$ NP}.
+Now that we have a set of test cases, we create contexts that show all
+variation within them. By \emph{context}, we mean simply a tree in
+some other category, with a \emph{hole} of type \t{CN}, as shown in
+Figure~\ref{fig:treesWithHoles}. 
+In this grammar, the only category above is \t{NP}, and there is only
+one way that a \t{CN} can end up in an \t{NP}: by using the function
+\t{DetCN : Det $\rightarrow$ CN $\rightarrow$ NP}. 
 
-Just like before, we start by creating a representative and minimal set of arguments of type \t{Det}. So far the relevant features have been grammatical gender an adjective placement---we have 4 trees with all combinations of \{masculine, feminine\} and \{pre,post\}. The resulting trees have \emph{variable} number, but now we have a category \t{Det} with an inherent number, so we can create the context that picks the string ``casa  peque\~{n}a'', and another that picks ``casas  peque\~{n}as''. By simple combinatorics, we pick the representative set of \t{Det} with one singular and one plural element, e.g. \t{this} and \t{these}, and form two contexts: \verb|DetCN this _| and  \verb|DetCN these _|. We insert the 4 test cases into the holes, and get 8 trees in total: \t{\{DetCN this (good house), \dots, DetCN these (small hill)\}}.
+Just like before, we start by creating a representative and minimal
+set of arguments of type \t{Det}. So far the relevant features have
+been grammatical gender an adjective placement---we have 4 trees with
+all combinations of \{masculine, feminine\} and \{pre,post\}. The
+resulting trees have \emph{variable} number, but now we have a
+category \t{Det} with an inherent number, so we can create the context
+that picks the string ``casa  peque\~{n}a'', and another that picks
+``casas  peque\~{n}as''. By simple combinatorics, we pick the
+representative set of \t{Det} with one singular and one plural
+element, e.g. \t{this} and \t{these}, and form two contexts:
+\verb|DetCN this _| and  \verb|DetCN these _|. We insert the 4 test
+cases into the holes, and get 8 trees in total: \t{\{DetCN this (good
+  house), \dots, DetCN these (small hill)\}}. 
 
 
-The grammar, with only 12-word lexicon and 5 syntactic functions, generates \todo{n} trees up to depth 5\footnote{example of a tree of that depth}. These 8 test cases are enough to test whether the syntactic function \t{AdjCN} is correctly implemented.  
+The grammar, with only 12-word lexicon and 5 syntactic functions,
+generates \todo{n} trees up to depth 5\footnote{example of a tree of that depth}. 
+These 8 test cases are enough to test whether the
+syntactic function \t{AdjCN} is correctly implemented.   
 
-Of course, this test set will not catch if e.g. any of the lexical functions contains a typo, or if there is a more severe bug in the morphological paradigms. But there are easier methods to test for such bugs---our goal is to test the more abstract, syntactic phenomena with as few trees as possible.
+Of course, this test set will not catch if e.g. any of the lexical
+functions contains a typo, or if there is a more severe bug in the
+morphological paradigms. But there are easier methods to test for such
+bugs---our goal is to test the more abstract, syntactic phenomena with
+as few trees as possible. 
 %a bug in the morphological paradigms will go unnoticed, 
 
 
 \paragraph{Pruning}
 
-For the previous example, we did not need any pruning: the cross product of all relevant distinctions produced a minimal and representative set of trees. Now assume we have a larger grammar, which also covers adjectives in a predicative position: e.g. \emph{esta casa es peque\~{n}a} `this house is small' and \emph{esta casa es buena} `this house is good'. The distinction which made us choose \t{small} and \t{good} in the first place is now gone: in predicative position, both adjectives behave the same. Thus, in this larger grammar, when we want to test adjectives, it is necessary to include two examples when in attributive position, but only one when in predicative position. We describe exactly how this works in Section~\ref{sec:details}.
+For the previous example, we did not need any pruning: the cross
+product of all relevant distinctions produced a minimal and
+representative set of trees. Now assume we have a larger grammar,
+which also covers adjectives in a predicative position:
+e.g. \emph{esta casa es peque\~{n}a} `this house is small' and
+\emph{esta casa es buena} `this house is good'. The distinction which
+made us choose \t{small} and \t{good} in the first place is now gone:
+in predicative position, both adjectives behave the same. Thus, in
+this larger grammar, when we want to test adjectives, it is necessary
+to include two examples when in attributive position, but only one
+when in predicative position. We describe exactly how this works in
+Section~\ref{sec:details}. 
 %In total we would get 12 sentences: the 8 shown previously, and 4 
 
 \subsection{Examples of representative and minimal test cases} 
-To make the example more concrete, we list out some phenomena found in real grammars, and how to test their implementation.
+To make the example more concrete, we list out some phenomena found in
+real grammars, and how to test their implementation. 
 
-\paragraph{Preposition contraction in Dutch} Some prepositions should merge with a single determiner or pronoun, e.g. \emph{met~deze} `with this' becomes \emph{hiermee} `herewith', but stay independent when the determiner quantifies a noun, e.g. \emph{met deze huis} `with this house'. When testing \t{PrepNP}, the program should generate one preposition that contracts and one that does not, as well as one \t{NP} that is a single determiner, and one that comes from a noun. 
-In order to catch a bug in the function, or confirm there is none, the program should generate the four trees
-\t{PrepNP} \{ \stackanchor{\tt with}{\tt without} \} \{ \stackanchor{\tt DetNP this}{\tt DetCN this house} \}. 
+\paragraph{Preposition contraction in Dutch} Some prepositions should
+merge with a single determiner or pronoun, e.g. \emph{met~deze} `with
+this' becomes \emph{hiermee} `herewith', but stay independent when the
+determiner quantifies a noun, e.g. \emph{met deze huis} `with this
+house'. When testing \t{PrepNP}, the program should generate one
+preposition that contracts and one that does not, as well as one
+\t{NP} that is a single determiner, and one that comes from a noun.
+In order to catch a bug in the function, or confirm there is none, the
+program should generate the four trees 
+\t{PrepNP} \{ \stackanchor{\tt with}{\tt without} \} 
+           \{ \stackanchor{\tt DetNP this}{\tt DetCN this house} \}. 
 
-\paragraph{Adjective agreement in Estonian} In attributive position, most adjectives agree with nouns in case and number. However, participle adjectives are invariable (singular nominative) as attributes but inflect regularly in a predicative position, and a set of invariable adjectives do not inflect in any position. Furthermore, in 4 of the 14 grammatical cases, even the regular adjectives only agree with the noun in number, but the case is always genitive: e.g.
+\paragraph{Adjective agreement in Estonian} In attributive position,
+most adjectives agree with nouns in case and number. However,
+participle adjectives are invariable (singular nominative) as
+attributes but inflect regularly in a predicative position, and a set
+of invariable adjectives do not inflect in any position. Furthermore,
+in 4 of the 14 grammatical cases, even the regular adjectives only
+agree with the noun in number, but the case is always genitive: e.g. 
 \stackanchor{ \emph{suur-e} \emph{auto-ga}}{\small \emph{big}-\textsc{gen} \emph{car}-\textsc{com}} 
 %\emph{suur-e} \emph{auto-ga}  \emph{big}-\textsc{gen} \emph{car}-\textsc{com} 
 `with a big car'. 
-Thus in order to test adjectives as attributes, we need an example for one of the 10 ``usual'' cases and one of the 4 ``unusual'' cases, one of each type of adjective, and one of each number. 
+Thus in order to test adjectives as attributes, we need an example for
+one of the 10 ``usual'' cases and one of the 4 ``unusual'' cases, one
+of each type of adjective, and one of each number.  
 The following test set creates all the relevant cases:
- \t{PrepNP} \{ \stackanchor{\tt on}{\tt with} \} {\t{(DetCN} \{ \stackanchor{\tt this}{\tt these} \} \t{AdjCN} \{ \stackanchor{\stackanchor{\tt small}{\tt tired}}{\stackanchor{\tt ready}{}} \} {\tt house)}
+ \t{PrepNP} \{ \stackanchor{\tt on}{\tt with} \}
+             {\tt (DetCN} \{ \stackanchor{\tt this}{\tt these} \} 
+             {\tt AdjCN}  \{ \stackanchor{\stackanchor{\tt }{\tt
+                 small}}{\stackanchor{\tt tired}{\tt ready}} \} 
+             {\tt house)}
 
-%To test the whole phenomenon, we would need one more context, where the adjective is in the predicative position `the house is \verb|_|', and one more example adjective---as an attribute, we can lump participles and invariables into one test example, but as a predicative, regular and participles behave the same and differently from invariable.
+%To test the whole phenomenon, we would need one more context, where
+%the adjective is in the predicative position `the house is \verb|_|',
+%and one more example adjective---as an attribute, we can lump
+%participles and invariables into one test example, but as a
+%predicative, regular and participles behave the same and differently
+%from invariable.
 
 
-\paragraph{Determiner placement in Basque} When a number or a possessive pronoun acts as a determiner in a complex noun phrase, it is placed
-between ``heavy'' modifiers, such as adverbials or relative clauses, and the rest of the noun phrase. Demonstrative pronouns, such as \emph{this},
- are placed before all modifiers. Indefinite article goes at the end of the whole noun phrase as an independent word.
-If there is a ``light'' modifier, such as an adjective, the definite article is suffixed to the modifier; otherwise it is suffixed to the noun.
-In order to test the implementation of this phenomenon, we need a subset of the following trees: \\ \\
-\t{DetCN} \{ \stackanchor{\stackanchor{\tts{a}}{\tts{the}}}{\stackanchor{\tts{this}}{\tts{your}}} \} \{ \stackanchor{\tt AdvCN on\_the\_hill}{$\varnothing$} \} \{ \stackanchor{\tt AdjCN small}{$\varnothing$} \}  {\tt house}
+\paragraph{Determiner placement in Basque} When a number (other than 1) or a
+possessive pronoun acts as a determiner in a complex noun phrase, it
+is placed between ``heavy'' modifiers, such as adverbials or relative clauses,
+and the rest of the noun phrase. Demonstrative pronouns, such as \emph{this}, 
+ are placed after all modifiers as an independent word. Number 1,
+ which functions as an indefinite article, acts like demonstratives, but
+ the definite article is a suffix. If there is a ``light'' modifier,
+ such as an adjective, the definite article attaches to the modifier;
+ otherwise it attaches to the noun. In order to test the
+ implementation of this phenomenon, we need a
+subset of the following trees: \\ \\ 
+\t{DetCN} \{
+\stackanchor{\stackanchor{\tts{a}}{\tts{the}}}{\stackanchor{\tts{this}}{\tts{your}}}
+\} \{ \stackanchor{\tt AdvCN on\_the\_hill}{$\varnothing$} \} 
+\{ \stackanchor{\tt AdjCN small}{$\varnothing$} \}  {\tt house} 
 
 
 
@@ -297,6 +408,7 @@ the set would also include ``no horses''.
 \item Cost
   \begin{itemize}
   \item time of generating examples
+  \item how many examples generated -- analysis if they're redundant
   \item time of looking at examples
   \end{itemize}
 
@@ -326,41 +438,7 @@ of words, and generate appropriate pools of words, from which we draw
 example sentences. 
 
 % include your own bib file like this:
-%\bibliographystyle{acl}
-%\bibliography{coling2018}
-
-\begin{thebibliography}{}
-
-\bibitem[\protect\citename{Aho and Ullman}1972]{Aho:72}
-Alfred~V. Aho and Jeffrey~D. Ullman.
-\newblock 1972.
-\newblock {\em The Theory of Parsing, Translation and Compiling}, volume~1.
-\newblock Prentice-{Hall}, Englewood Cliffs, NJ.
-
-\bibitem[\protect\citename{{American Psychological Association}}1983]{APA:83}
-{American Psychological Association}.
-\newblock 1983.
-\newblock {\em Publications Manual}.
-\newblock American Psychological Association, Washington, DC.
-
-\bibitem[\protect\citename{{Association for Computing Machinery}}1983]{ACM:83}
-{Association for Computing Machinery}.
-\newblock 1983.
-\newblock {\em Computing Reviews}, 24(11):503--512.
-
-\bibitem[\protect\citename{Chandra \bgroup et al.\egroup }1981]{Chandra:81}
-Ashok~K. Chandra, Dexter~C. Kozen, and Larry~J. Stockmeyer.
-\newblock 1981.
-\newblock Alternation.
-\newblock {\em Journal of the Association for Computing Machinery},
-  28(1):114--133.
-
-\bibitem[\protect\citename{Gusfield}1997]{Gusfield:97}
-Dan Gusfield.
-\newblock 1997.
-\newblock {\em Algorithms on Strings, Trees and Sequences}.
-\newblock Cambridge University Press, Cambridge, UK.
-
-\end{thebibliography}
+\bibliographystyle{acl}
+\bibliography{bibliography}
 
 \end{document}
