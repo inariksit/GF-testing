@@ -4,7 +4,14 @@
 
 If you want to use the `testLang.sh`, then you should clone this repository into the GF main directory, so that you've got `lib`, `src`, `GF-testing` etc. at the same level. **If you don't want to use it, just clone this repository anywhere.**
 
-`cabal install` for the program. To get grammars in right places, read on:
+### Prerequisites
+
+You should have GF and the library `pgf2` installed.
+
+1) Get the GF sources https://github.com/GrammaticalFramework/GF
+1) Install C runtime: go to the GF `GF/src/runtime/c`, see instructions in INSTALL
+1) Install Haskell bindings (i.e. PGF2): go to `GF/src/runtime/haskell-bind`, do `cabal install`
+
 
 ### If you want to test a resource grammar
 
