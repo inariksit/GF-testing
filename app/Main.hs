@@ -83,7 +83,9 @@ main = do
   let absName = case grammar args of 
                   Just fp -> stripPGF fp --doesn't matter if the name is given with or without ".pgf"
                   Nothing -> "TestLang"
-  let (langName:langTrans) = [ absName ++ t | t <- words (lang args) ]
+  let (langName:langTrans) = case lang args of
+                              []    -> [ absName ] -- will be given a default value later
+                              langs -> [ absName ++ t | t <- words langs ]
 
   grName <- getDataFileName (absName ++ ".pgf")
   gr     <- readGrammar langName grName
