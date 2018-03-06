@@ -11,7 +11,7 @@ abstract NounPhrases = {
     AdvCN : Adv -> CN -> CN ;    -- e.g. "house on the hill"
 
     house, hill, cake : CN ;
-    a, the, this, these, your : Det ;
+    a, theSg, thePl, this, these, your : Det ;
     good, small, blue : Adj ;
     on, from, without : Prep ;
 }
