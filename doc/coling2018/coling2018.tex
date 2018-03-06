@@ -403,6 +403,18 @@ the set would also include ``no horses''.
 
 \section{Evaluation}
 
+How many trees you eliminate -- how many trees would you have to read
+to confirm that you're correct, and how many trees you need to read
+now
+
+We've used the same treebank for all languages
+* Janna's thesis, treebank for Russian (paper in ACL coling 2005)
+* UD treebank, Penn treebank
+
+Check what HPSG, TAG, CCG etc. people use for eval
+Stephan Müller's sentence list testing only weak generative capacity,
+this method is testing strong generative capacity
+
 
 \begin{itemize}
 \item Cost
@@ -421,10 +433,30 @@ the set would also include ``no horses''.
 \end{itemize}
 
 
-\section{Future work}
+\section{Discussion}
+
+We have only concentrated on GF grammars so far, but the method works
+for any grammar formalism that can be compiled into parallel
+multiple CFG (PMCFG) \todo{cite}. The expressive power of PMCFG lies
+between mildly context-sensitive and context-sensitive, and thus any
+grammar formalism that is less expressive can be expressed as a
+PMCFG. This includes CFGs, and mildly context-sensitive formalisms
+such as TAG and CCG \todo{cite}. GF already supports reading grammars
+in labeled BNF format; so testing any existing CFG is a matter of some
+pre-processing.
+
+Some existing formalisms such as HPSG ans LFG are fully
+context-sensitive \todo{cite and find out if there's some subset with
+  nice properties}.
 
 
-Generality -- turn any other grammar formalism into PGF, and you can use this method to test it.
+Theoretical question: two grammars that produce the same language but
+have different grammar rules.
+NounPhrasesEus and NounPhrasesEusBind -- same number of concrete
+categories??? \todo{maybe more interesting statistics to show!}
+
+Language typological implications -- or just grammar engineering implications,
+how many parameters?
 
 
 We plan to look into existing text corpora, and find trees that are
