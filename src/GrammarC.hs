@@ -43,12 +43,20 @@ data Tree
   = App { top :: Symbol, args :: [Tree] }
  deriving ( Eq, Ord )
 
+collapse :: Tree -> [Symbol]
+collapse (App tp as) = tp : concatMap collapse as
+
 topOf :: Symbol -> Tree -> Maybe Symbol
 topOf symb (App tp []) = Nothing -- Symbol not in the tree (or is the top)
 topOf symb (App tp tr) =
   if symb `elem` map top tr
     then Just tp
     else listToMaybe $ mapMaybe (topOf symb) tr
+
+subTree :: Symbol -> Tree -> Maybe Tree
+subTree symb t@(App tp tr) 
+  | symb==tp  = Just t
+  | otherwise = listToMaybe $ mapMaybe (subTree symb) tr
 
 data AmbTree -- only used as an intermediate structure for parsing
   = AmbApp { atop :: [Symbol], aargs :: [AmbTree] } 
@@ -220,7 +228,7 @@ toGrammar pgf langName =
                                 ", using " ++ defName
                       in trace msg defGr
 
-  -- categories and coerces
+  -- categories and coercions
   mkCat tp = cat where (_, cat, _) = PGF2.unType tp
 
   mkExpr (App n []) | not (null s) && all isDigit s =
@@ -690,7 +698,7 @@ forgets gr top =
                , (t,k) <- fst (ctyp f) `zip` [0..]
                , t == c
                ] ++
-               -- 2) coerces that uncoerce to c
+               -- 2) coercions that uncoerce to c
                [ Left coe
                | (cat,coe) <- coercions gr
                , cat == c

@@ -4,6 +4,8 @@ module Lib
     , compareTree
     , Comparison(..)
     , ccats
+    , coerces
+    , uncoerce
     , treesUsingFun
     , showConcrFun
     ) where
@@ -78,7 +80,7 @@ testFun debug gr trans startcat funname = -- trace (let show' xs = (unlines $ ma
 
   coercionsThatCoverAllGoalcats = [ (c,fs)
                                   | (c,fs) <- contexts gr start
-                                  , all (coerces c) goalcats ]
+                                  , all (coerces gr c) goalcats ]
 
   allTrees = treesUsingFun gr (lookupSymbol gr funname)
   ctxs = nubBy applyHole $ concatMap (contextsFor gr start) goalcats :: [Tree->Tree]
@@ -92,13 +94,11 @@ testFun debug gr trans startcat funname = -- trace (let show' xs = (unlines $ ma
     cCtxs = intersectBy applyHole ctxs coercedCtxs
     rTrees = [ App newTop subtrees
              | (App tp subtrees) <- take 1 allTrees  --1 should be enough, because *all* goalcats coerce into the same, otherwise we're not in this branch
+                                                     --TODO: choose the trees using isBetterExampleThan
              , let newTop = tp { ctyp = (fst $ ctyp tp, coe)} ]
   uniqueCtxs = deleteFirstsBy applyHole ctxs commonCtxs
 
   showCtx f = let t = f dummyHole in show t ++ "\t\t\t" ++ showConcrFun gr (top t)
-
-  coerces coe cat = (cat,coe) `elem` coercions gr
-
 
 testTree :: Bool -> Grammar -> [Grammar] -> Tree -> Int -> [Tree -> Tree] -> Result
 testTree debug gr tgrs t n ctxs = unlines
@@ -120,6 +120,19 @@ testTree debug gr tgrs t n ctxs = unlines
   langName gr = concrLang gr ++ "> "
 
 --------------------------------------------------------------------------------
+
+-- Just to be robust if I accidentally use this in wrong order.
+-- There is no danger of two normal categories accidentally being coercions of
+-- each other; `coe' is supposed to start from some number onwards and above that
+-- there are only coercions, and below that only normal categories.
+coerces :: Grammar -> ConcrCat -> ConcrCat -> Bool
+coerces gr coe cat = (cat,coe) `elem` coercions gr || (coe,cat) `elem` coercions gr
+
+
+uncoerce :: Grammar -> ConcrCat -> [ConcrCat]
+uncoerce gr c = case c of
+ CC Nothing _ -> lookupAll (coercions gr) c
+ _            -> [c]
 
 ccats :: Grammar -> Cat -> [ConcrCat]
 ccats gr utt = [ cc
@@ -204,5 +217,5 @@ showConcrFun gr detCN = show detCN ++ " : " ++
                         show np_209
  where (dets_cns,np_209) = ctyp detCN 
 
-lookupAll :: (Eq a) => [(a,b)] -> a -> [b]
-lookupAll kvs key = [ v | (k,v) <- kvs, k==key ]
+lookupAll :: (Eq a) => [(b,a)] -> a -> [b]
+lookupAll kvs key = [ v | (v,k) <- kvs, k==key ]

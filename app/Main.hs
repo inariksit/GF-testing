@@ -9,10 +9,10 @@ import Paths_GF_testing
 
 import Control.Monad ( when )
 import Data.List ( intercalate, groupBy, sortBy, deleteFirstsBy )
-import Data.Maybe ( fromMaybe )
+import Data.Maybe ( fromMaybe, mapMaybe )
 import qualified Data.Set as S
 import qualified Data.Map as M
-
+import GHC.Exts ( the )
 
 import System.Console.CmdArgs hiding ( name, args )
 import qualified System.Console.CmdArgs as A
@@ -30,17 +30,21 @@ data GfTest
   , tree          :: String
   , start_cat     :: Maybe Cat
   , show_cats     :: Bool
+  , show_funs     :: Bool
+  , show_coercions:: Bool
   , concr_string  :: String
 
   -- Information about fields
   , equal_fields  :: Bool
   , empty_fields  :: Bool
   , unused_fields :: Bool
-  , nullable      :: Bool 
+  , nullable      :: Bool
 
   -- Compare to old grammar
   , old_grammar   :: Maybe FilePath
   , only_changed_cats :: Bool
+
+ -- Misc
   , treebank      :: Maybe FilePath
   , debug         :: Bool
   , write_to_file :: Bool
@@ -59,7 +63,9 @@ gftest = GfTest
   , start_cat     = def &= A.typ "Utt"
                         &= A.name "s"   &= help "Use the given category as start category"
   , concr_string  = def &= A.typ "the"  &= help "Show all functions that include given string"
-  , show_cats     = def                 &= help "Show all available categories" 
+  , show_cats     = def                 &= help "Show all available categories"
+  , show_funs     = def                 &= help "Show all available functions"
+  , show_coercions= def                 &= help "Show coercions in the grammar"
   , debug         = def                 &= help "Show debug output"
   , equal_fields  = def &= A.name "q"   &= help "Show fields whose strings are always identical"
   , empty_fields  = def &= A.name "e"   &= help "Show fields whose strings are always empty"
@@ -109,7 +115,9 @@ main = do
               putStrLn $ "Wrote results in " ++ fname
          else putStrLn
 
-
+      uncoerceAbsCat c = case c of
+        CC (Just cat) _ -> cat
+        CC Nothing    _ -> the [ uncoerceAbsCat x | x <- uncoerce gr c ]
   -----------------------------------------------------------------------------
   -- Statistics about the grammar
 
@@ -140,18 +148,30 @@ main = do
 
   -- Show question marks
   when (nullable args) $ do
-    putStrLn "### Question marks:"
+    putStrLn "* Erased trees:"
     sequence_
-      [ do putStrLn ("==> " ++ show c ++ ":")
+      [ do putStrLn ("** " ++ intercalate "," erasedTrees ++ " : " ++ uncoerceAbsCat c)
            sequence_
              [ do putStrLn ("- Tree:  " ++ show t)
                   putStrLn ("- Lin:   " ++ s)
                  -- putStrLn ("- Parse: " ++ show (take 1 $ parse gr s))
+                  putStrLn $ unlines 
+                    [ "- Trans: "++linearize tgr t
+                    | tgr <- grTrans ]
              | t <- ts
              , let s = linearize gr t
+             , let collapse (App tp as) = tp : concatMap collapse as
+             , let erasedSymbs = [ sym | sym <- collapse t, c==snd (ctyp sym) ]
              ]
       | top <- take 1 $ ccats gr startcat
       , (c,ts) <- forgets gr top
+      , let erasedTrees = 
+              concat [ [ show subtree
+                       | sym <- collapse t
+                       , let csym = snd $ ctyp sym
+                       , c == csym || coerces gr c csym
+                       , let Just subtree = subTree sym t ]
+                     | t <- ts ]
       ]
     putStrLn ""
 
@@ -189,8 +209,19 @@ main = do
 
   -----------------------------------------------------------------------------
   -- Show available categories
-  when (show_cats args) $
+  when (show_cats args) $ do
+   putStrLn "* Categories in the grammar:"
    putStrLn $ unlines [ cat | (cat,_,_,_) <- concrCats gr ]
+
+  -- Show available functions
+  when (show_funs args) $ do
+   putStrLn "* Functions in the grammar:"
+   putStrLn $ unlines $ nub [ show s | s <- symbols gr ]
+
+  -- Show coercions in the grammar
+  when (show_coercions args) $ do
+   putStrLn "* Coercions in the grammar:"
+   putStrLn $ unlines [ show cat++"--->"++show coe | (cat,coe) <- coercions gr ]
 
   -- Show all functions that contain the given string 
   -- (e.g. English "it" appears in DefArt, ImpersCl, it_Pron, …)
@@ -215,6 +246,7 @@ main = do
   case function args of
     [] -> return ()
     fs -> let funs = case fs of
+                 --   prefix:"*"  Use wildcards! And make all just be a single *
                     "all" -> nub [ show s | s <- symbols gr, arity s >= 1 ] 
                     _     -> words fs
                in output $ unlines
@@ -241,11 +273,19 @@ main = do
            [ "* " ++ acat
            , show o ++ " concrete categories in the old grammar,"
            , show n ++ " concrete categories in the new grammar."
-           , "** Labels only in old: " ++ intercalate ", " ol
-           , " (" ++ show (length ol) ++ ")"
-           , "** Labels only in new: " ++ intercalate ", " nl 
-           , " (" ++ show (length nl) ++ ")" ]
+           , "** Labels only in old (" ++ show (length ol) ++ "):"
+           , intercalate ", " ol
+           , "** Labels only in new (" ++ show (length nl) ++ "):"
+           , intercalate ", " nl ]
         | (acat, [o,n], ol, nl) <- difcats ] 
+      when (debug args) $ 
+        sequence_
+          [ appendFile ccatChangeFile $ 
+            unlines $
+              ["* All concrete cats in the "++age++" grammar:"]++
+              [ show cats | cats <- concrCats g ]
+          | (g,age) <- [(ogr,"old"),(gr,"new")] ]
+
       putStrLn $ "Created file " ++ ccatChangeFile
 
       --------------------------------------------------------------------------
