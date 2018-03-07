@@ -11,7 +11,6 @@ concrete NounPhrasesEusBind of NounPhrases = open Prelude in {
 --    DetNP : Det -> NP ;          -- e.g. "this"
     DetCN dt cn =
       { s = case dt.pl of {
-	      Suffix => cn.adv ++ cn.s ;
 	      End    => cn.adv ++ cn.s ; 
 	      Mid    => cn.adv ++ dt.s ++ cn.s } ;
 	n = dt.n ;
@@ -31,9 +30,9 @@ concrete NounPhrasesEusBind of NounPhrases = open Prelude in {
     a = det "bat" Sg End ;
     theSg = det (BIND ++ "a") Sg End ;
     thePl = det (BIND ++ "ak") Pl End ;
---    this = det "hau" "honen" "honetatik" Sg End ;
+--    this = det "hau" Sg End ;
 --    these = det "hauek" "hauen" "hauetatik" Pl End ;
-    your = det "zure" Sg Mid ; -- definiteness comes from the suffix
+    your = det "zure" Sg Mid ;
     good = adj "ondo" ;
     small = adj "txiki" ;
     blue = adj "urdin" ;
@@ -47,14 +46,14 @@ concrete NounPhrasesEusBind of NounPhrases = open Prelude in {
   param
     Case = Abs | Ela | Gen ;
     Number = Sg | Pl ;
-    Placement = Mid | End | Suffix ;
+    Placement = Mid | End ;
 
   oper
     NounPhrase   : Type = { s : Str ; det : Str ; n : Number } ;
     CommonNoun   : Type = { s : Str ; adv : Str } ;
     Adjective    : Type = { s : Str } ;
     Postposition : Type = { s : Number => Str } ;
-    Determiner   : Type = { s : Str ; n : Number ; pl : Placement } ; 
+    Determiner   : Type = { s : Str ; n : Number ; pl : Placement } ;
 
     pp : Case -> Str -> Postposition = \c,s ->
       { s = table { Sg => BIND ++ 
