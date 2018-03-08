@@ -8,11 +8,12 @@ import EqRel
 import Paths_GF_testing
 
 import Control.Monad ( when )
-import Data.List ( intercalate, groupBy, sortBy, deleteFirstsBy )
+import Data.List ( intercalate, groupBy, sortBy, deleteFirstsBy, isInfixOf )
 import Data.Maybe ( fromMaybe, mapMaybe )
 import qualified Data.Set as S
 import qualified Data.Map as M
 import GHC.Exts ( the )
+import Debug.Trace
 
 import System.Console.CmdArgs hiding ( name, args )
 import qualified System.Console.CmdArgs as A
@@ -106,11 +107,10 @@ main = do
         ctxs = concat [ contextsFor gr sc c
                       | sc <- ccats gr startcat ]
 
-                        -- Print to stdout or write to a file
-      output = 
+      output = -- Print to stdout or write to a file
        if write_to_file args 
          then \x -> 
-           do let fname = concat [ langName, "_", function args, ".org" ]
+           do let fname = concat [ langName, "_", function args, category args, ".org" ]
               writeFile fname x 
               putStrLn $ "Wrote results in " ++ fname
          else putStrLn
@@ -154,7 +154,6 @@ main = do
            sequence_
              [ do putStrLn ("- Tree:  " ++ show t)
                   putStrLn ("- Lin:   " ++ s)
-                 -- putStrLn ("- Parse: " ++ show (take 1 $ parse gr s))
                   putStrLn $ unlines 
                     [ "- Trans: "++linearize tgr t
                     | tgr <- grTrans ]
@@ -245,13 +244,14 @@ main = do
             | (t,n) <- treesUsingFun gr (functionsByCat gr cat) `zip` [1..]]
   case function args of
     [] -> return ()
-    fs -> let funs = case fs of
-                 --   prefix:"*"  Use wildcards! And make all just be a single *
-                    "all" -> nub [ show s | s <- symbols gr, arity s >= 1 ] 
-                    _     -> words fs
-               in output $ unlines
-                   [ testFun (debug args) gr grTrans startcat f
-                   | f <- funs ]
+    fs -> let funs = if '*' `elem` fs
+                      then let subs = filter (/="*") $ groupBy (\a b -> a/='*' && b/='*') fs
+                            in nub [ f | s <- symbols gr, let f = show s
+                                   , all (`isInfixOf` f) subs ]
+                      else words fs
+           in output $ unlines
+               [ testFun (debug args) gr grTrans startcat f
+               | f <- funs ]
 
 
   -------------------------------------------------------------------------------
@@ -282,7 +282,7 @@ main = do
         sequence_
           [ appendFile ccatChangeFile $ 
             unlines $
-              ["* All concrete cats in the "++age++" grammar:"]++
+              ("* All concrete cats in the "++age++" grammar:"):
               [ show cats | cats <- concrCats g ]
           | (g,age) <- [(ogr,"old"),(gr,"new")] ]
 
