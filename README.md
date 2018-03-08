@@ -112,7 +112,8 @@ matches `hat_N, hate_V2, that_Quant, that_Subj, whatPl_IP` and `whatSg_IP`.
 `gftest -l Eng -f "*hat*u*"`  
 matches `that_Quant` and `that_Subj`.
 
-Special case is `-f *`, which tests all functions in the grammar. (As of 6 March, takes 13 minutes for the English resource grammar, and results in ~40k lines.)
+`-f *`  
+matches all functions in the grammar. (As of 6 March, takes 13 minutes for the English resource grammar, and results in ~40k lines.)
 
 #### `-s`
 
