@@ -44,6 +44,8 @@ Common flags:
   -t --tree="UseN tree_N"  Test the given tree
   -s --start-cat=Utt       Use the given category as start category
      --show-cats           Show all available categories
+     --show-funs           Show all available functions
+     --show-coercions      Show coercions in the grammar
      --concr-string=the    Show all functions that include given string
   -q --equal-fields        Show fields whose strings are always identical
   -e --empty-fields        Show fields whose strings are always empty
@@ -56,9 +58,10 @@ Common flags:
                            changed between versions
   -b --treebank=ITEM       Path to a treebank
   -d --debug               Show debug output
-  -w --write-to-file       Write the results in a file (<GRAMMAR>_<FUN>.org)
+  -w --write-to-file       Write the results in a file (<GRAMMAR>_<FUN/CAT>.org)
   -? --help                Display help message
   -V --version             Print version information
+
 ```
 
 #### `-g`
@@ -72,9 +75,9 @@ Example:
 `gftest -g Foods --show-cats`
 
 
-#### `--show-cats` 
+#### `--show-cats` and `--show-funs`
 
-Shows the available categories.
+Shows the available categories and functions. 
 
 ```
 > gftest -g Phrasebook --show-cats
@@ -101,7 +104,15 @@ Examples:
 `gftest -l "Dut Eng" -f UseN` (no `-g` argument, i.e. uses TestLang.pgf)  
 `gftest -g Phrasebook -l Spa -f "ByTransp ByFoot"`
 
-Special case is `-f all`, which tests all functions in the grammar. (As of 6 March, takes 13 minutes for the English resource grammar, and results in ~40k lines.)
+You can use the wildcard `*`, if you want to match multiple functions. Examples:
+
+`gftest -l Eng -f "*hat*"`  
+matches `hat_N, hate_V2, that_Quant, that_Subj, whatPl_IP` and `whatSg_IP`.
+
+`gftest -l Eng -f "*hat*u*"`  
+matches `that_Quant` and `that_Subj`.
+
+Special case is `-f *`, which tests all functions in the grammar. (As of 6 March, takes 13 minutes for the English resource grammar, and results in ~40k lines.)
 
 #### `-s`
 
