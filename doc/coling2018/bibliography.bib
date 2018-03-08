@@ -679,32 +679,6 @@ url="http://dx.doi.org/10.1007/978-3-642-18275-4_7"
  address = {Stroudsburg, PA, USA},
 } 
 
-%% This is a typo: it is actually published in 2011.
-%% Keeping the old reference so my old files don't break.
-@Book{ranta2010gfbook,
-  author = {Aarne Ranta},
-  title =  {{Grammatical Framework:
-             Programming with Multilingual Grammars}},
-  publisher = {{CSLI Publications}},
-  year = {2011}
-}
-@Book{ranta2011gfbook,
-  author = {Aarne Ranta},
-  title =  {{Grammatical Framework:
-             Programming with Multilingual Grammars}},
-  publisher = {{CSLI Publications}},
-  year = {2011}
-}
-
-@article{ranta2009rgl,
-  author = {A. Ranta},
-  title = {{The GF Resource Grammar Library}},
-  year = 2009,
-  journal = {{Linguistics in Language Technology}},
-  volume = {2},
-  note = {\url{http://elanguage.net/journals/index.php/lilt/article/viewFile/214/158}},
-}
-
 @techreport{taggit,
   title={{Automatic Grammatical Tagging of English}},
   author={Greene, Barbara B. and Rubin, Gerald M.},
@@ -858,6 +832,7 @@ month={September}
 }
 
 
+
 %%%%%%%%%%%%%%%%%%%%%
 %% Testing
 
@@ -880,3 +855,132 @@ month={September}
 } 
  
 %% TODO: find out how HPSG, TAG etc. people test their grammars
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% GF
+
+%% This is a typo: it is actually published in 2011.
+%% Keeping the old reference so my old files don't break.
+@Book{ranta2010gfbook,
+  author = {Aarne Ranta},
+  title =  {{Grammatical Framework:
+             Programming with Multilingual Grammars}},
+  publisher = {{CSLI Publications}},
+  year = {2011}
+}
+@Book{ranta2011gfbook,
+  author = {Aarne Ranta},
+  title =  {{Grammatical Framework:
+             Programming with Multilingual Grammars}},
+  publisher = {{CSLI Publications}},
+  year = {2011}
+}
+
+@article{ranta2009rgl,
+  author = {Aarne Ranta},
+  title = {{The GF Resource Grammar Library}},
+  year = 2009,
+  journal = {{Linguistics in Language Technology}},
+  volume = {2},
+  url = {http://elanguage.net/journals/index.php/lilt/article/viewFile/214/158},
+}
+
+@article{ranta2004gf,
+  title={{Grammatical Framework}},
+  author={Ranta, Aarne},
+  journal={{Journal of Functional Programming}},
+  volume={14},
+  number={2},
+  pages={145--189},
+  year={2004},
+  publisher={Cambridge University Press}
+}
+
+
+@inproceedings{khegai2006rglrussian,
+ author = {Khegai, Janna},
+ title = {GF Parallel Resource Grammars and Russian},
+ booktitle = {Proceedings of the COLING/ACL on Main Conference Poster Sessions},
+ series = {COLING-ACL '06},
+ year = {2006},
+ location = {Sydney, Australia},
+ pages = {475--482},
+ numpages = {8},
+ url = {http://dl.acm.org/citation.cfm?id=1273073.1273135},
+ acmid = {1273135},
+ publisher = {Association for Computational Linguistics},
+ address = {Stroudsburg, PA, USA},
+} 
+
+@phdthesis{khegai2006phd,
+  title={{Language engineering in Grammatical Framework (GF)}},
+  author={Khegai, Janna},
+  year={2006},
+  school={{Chalmers University of Technology}},
+  publisher={{Chalmers University of Technology, Department of Computing Science}}
+}
+
+
+
+@article{seki91pmcfg,
+  author    = {Hiroyuki Seki and
+               Takashi Matsumura and
+               Mamoru Fujii and
+               Tadao Kasami},
+  title     = {{On Multiple Context-Free Grammars}},
+  journal   = {{Theoretical Computer Science}},
+  volume    = {88},
+  number    = {2},
+  pages     = {191--229},
+  year      = {1991},
+  url       = {https://doi.org/10.1016/0304-3975(91)90374-B},
+  doi       = {10.1016/0304-3975(91)90374-B},
+  timestamp = {Sun, 28 May 2017 13:20:06 +0200},
+  biburl    = {https://dblp.org/rec/bib/journals/tcs/SekiMFK91},
+  bibsource = {dblp computer science bibliography, https://dblp.org}
+}
+
+%%%%%%%%%%%%%%%%%%
+%%%% Other grammar formalisms/language resources
+
+@book{butt1999lfg,
+  title={{A Grammar Writer's Cookbook}},
+  author={Butt, Miriam and Holloway King, Tracy and Ni{\~n}o, Mar\'{i}a-Eugenia and Segond, Fr\'{e}d\'{e}rique},
+  publisher={{CSLI Publications Stanford}},
+  year={1999}
+}
+
+
+@inproceedings{nivre2016ud,
+  title={Universal Dependencies v1: A Multilingual Treebank Collection.},
+  author={Nivre, Joakim and de Marneffe, Marie-Catherine and Ginter, Filip and Goldberg, Yoav and Hajic, Jan and Manning, Christopher D. and McDonald, Ryan T. and Petrov, Slav and Pyysalo, Sampo and Silveira, Natalia and others},
+  booktitle="Proceedings of the " # lrec2016,
+  year={2016}
+}
+
+
+@article{joshi1975tag,
+  author    = {Aravind K. Joshi and
+               Leon S. Levy and
+               Masako Takahashi},
+  title     = {{Tree Adjunct Grammars}},
+  journal   = {{Journal of Computer and System Sciences}},
+  volume    = {10},
+  number    = {1},
+  pages     = {136--163},
+  year      = {1975},
+  url       = {https://doi.org/10.1016/S0022-0000(75)80019-5},
+  doi       = {10.1016/S0022-0000(75)80019-5},
+  timestamp = {Sat, 20 May 2017 00:25:53 +0200},
+  biburl    = {https://dblp.org/rec/bib/journals/jcss/JoshiLT75},
+  bibsource = {dblp computer science bibliography, https://dblp.org}
+}
+
+@INPROCEEDINGS{steedman1988ccg,
+    author = {Mark Steedman},
+    title = {Combinators and Grammars},
+    booktitle = {Categorial Grammars and Natural Language Structures},
+    year = {1988},
+    pages = {417--442}
+}

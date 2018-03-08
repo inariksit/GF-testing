@@ -26,6 +26,12 @@
 \usepackage{stackengine}
 
 \def\t#1{\texttt{#1}}
+\def\gf{\textsc{gf}}
+\def\lfg{\textsc{lfg}}
+\def\ccg{\textsc{ccg}}
+\def\tag{\textsc{tag}}
+\def\pmcfg{\textsc{pmcfg}}
+\def\hpsg{\textsc{hpsg}}
 \newcommand{\tts}[1]{{\tt #1}}
 %\newcommand{\tts}[1]{{\tt \small #1}}
 \newcommand{\todo}[1]{{\color{cyan}\textbf{[TODO: }#1\textbf{]}}}
@@ -64,38 +70,16 @@
 \end{abstract}
 
 \section{Introduction}
-Grammatical Framework (GF) \cite{ranta2011gfbook} 
-is a framework for building multilingual grammar applications. Its main
-components are a functional programming language for writing grammars
-and a resource library that contains the linguistic details of many
-natural languages.
-A GF program consists of an \emph{abstract syntax} (a set of functions
-and their categories) and a set of one or more
-\emph{concrete syntaxes} which describe how the abstract
-functions and categories are linearized (turned into surface strings) in each
-respective concrete language. The resulting grammar
-describes a mapping between concrete language strings and
-their corresponding abstract trees (structures of function names).
-This mapping is bidirectional---strings can be \emph{parsed} to
-trees, and trees \emph{linearised} to strings.
-As an abstract syntax can have multiple corresponding concrete syntaxes,
-the respective languages can be automatically \emph{translated} from one to the other by
-first parsing a string into a tree and then linearising the obtained tree
-into a new string.
 
-\todo{We test only what the grammar outputs, not positive and negative
-  (sentences that can be parsed / cannot be parsed)}
+\todo{Something general about why grammars are cool and relevant.}
 
-\section{The problem}
-
-Traditionally, GF grammars are tested by the grammarians themselves,
-much like unit testing. When implementing some feature, such as 
+When implementing some feature, such as 
 relative clauses, the grammarian comes up with a test suite of 
 sentences that include relative clauses, and stores in the form of 
 abstract syntax trees. In principle, a test suite created for one 
 language can easily be reused for another, because the ASTs are 
 identical. Ideally, every time someone touches relative clauses 
-in the any concrete syntax, the trees in the test suite will be 
+in \emph{any} concrete syntax, the trees in the test suite will be 
 linearised with the changed concrete syntax, and verified by someone
 who speaks the language (or compared to the original gold standard, 
 if there is one). This scheme can fail for various reasons: 
@@ -113,9 +97,42 @@ does not realize that it affects relative clauses, and thus does not
 rerun the appropriate test suite. 
 \end{itemize}
 
+We present a method that addresses these problems. Our concrete
+implementation is for a particular grammar formalism, Grammatical
+Framework, but the method is general for any formalism that is at most
+as expressive as {\sc pmcfg} (Parallel Multiple Context-Free Grammar).
 
-\section{Experiences as a grammar writer}
+\section{Grammatical Framework}
+Grammatical Framework (GF) \cite{ranta2004gf} 
+is a framework for building multilingual grammar applications. Its main
+components are a functional programming language for writing grammars
+and a resource library \cite{ranta2009rgl} that contains the linguistic details of many
+natural languages.
+A GF program consists of an \emph{abstract syntax} (a set of functions
+and their categories) and a set of one or more
+\emph{concrete syntaxes} which describe how the abstract
+functions and categories are linearised (turned into surface strings) in each
+respective concrete language. The resulting grammar
+describes a mapping between concrete language strings and
+their corresponding abstract trees (structures of function names).
+This mapping is bidirectional---strings can be \emph{parsed} to
+trees, and trees \emph{linearised} to strings.
+As an abstract syntax can have multiple corresponding concrete syntaxes,
+the respective languages can be automatically \emph{translated} from one to the other by
+first parsing a string into a tree and then linearising the obtained tree
+into a new string.
 
+\todo{this is stolen from Janna's paper 2006--reformulate:}
+\begin{quote} { \em [RGL] Abstract syntax declares universal principles, while language-specific
+parameters are set in concrete syntax. We are not trying to answer the
+general question what constitutes universal grammar and what beyond
+universal grammar differentiates languages from one another. We look
+at GF parallel resource grammars as a way to simplify multilingual
+applications. \dots
+According to the ``division of labor'' principle, resource grammars
+comprise the necessary linguistic knowledge allowing application
+grammarians to concentrate on domain semantics.}
+\end{quote}
 
 GF resource grammars include basic morphology and syntax of a
 language. GF morphology and lexicon can often be extracted fully or
@@ -179,6 +196,10 @@ noun phrase. Finally, we can form an adverb (\t{Adv}) by combining a
 preposition (\t{Prep}) with an \t{NP}, and those adverbs can modify
 yet another \t{CN}. 
 We refer to this grammar throughout the paper.
+
+
+
+\section{Experiences as a grammar writer}
 
 \subsection{How it works}
 
@@ -407,11 +428,26 @@ How many trees you eliminate -- how many trees would you have to read
 to confirm that you're correct, and how many trees you need to read
 now
 
-We've used the same treebank for all languages
-* Janna's thesis, treebank for Russian (paper in ACL coling 2005)
-* UD treebank, Penn treebank
+Traditionally, GF grammars are tested by the grammarians themselves,
+much like unit testing. An example human-written treebank can be found
+in \cite[p.~136--142]{khegai2006phd}. \\
+For testing the coverage of the grammars, we have used UD treebank
+\cite{nivre2016ud} and Penn treebank, to see how much of the
+constructions are covered by the grammar.
 
 Check what HPSG, TAG, CCG etc. people use for eval
+
+\cite[pp.~212--213]{butt1999lfg} describes common methods of testing the
+{\sc lfg} formalism: similarly to \gf, they use a combination of
+human-written test suites meant to cover particular phenomena, and
+external larger corpora to test the coverage. As a difference from \gf
+testing tradition, their human-written test suites include also
+ungrammatical sentences: those that the grammar should \emph{not} be
+able to parse. However, their tests are only meant for monolingual
+grammars, whereas \gf{} tests are for multilingual grammars, so they are
+stored as trees. In other words, \gf{} tests only what the grammar
+outputs, not what it parses.
+
 Stephan Müller's sentence list testing only weak generative capacity,
 this method is testing strong generative capacity
 
@@ -437,37 +473,36 @@ this method is testing strong generative capacity
 
 We have only concentrated on GF grammars so far, but the method works
 for any grammar formalism that can be compiled into parallel
-multiple CFG (PMCFG) \todo{cite}. The expressive power of PMCFG lies
+multiple CFG (PMCFG) \cite{seki91pmcfg}. The expressive power of PMCFG lies
 between mildly context-sensitive and context-sensitive, and thus any
 grammar formalism that is less expressive can be expressed as a
 PMCFG. This includes CFGs, and mildly context-sensitive formalisms
-such as TAG and CCG \todo{cite}. GF already supports reading grammars
-in labeled BNF format; so testing any existing CFG is a matter of some
-pre-processing.
+such as \tag{} \cite{joshi1975tag} and \ccg{} \cite{steedman1988ccg}. GF
+already supports reading context-free grammars in labeled BNF format;
+so testing any existing CFG is a matter of some pre-processing.
 
-Some existing formalisms such as HPSG ans LFG are fully
+Some existing formalisms such as \hpsg{} and \lfg{} are fully
 context-sensitive \todo{cite and find out if there's some subset with
   nice properties}.
 
 
 Theoretical question: two grammars that produce the same language but
 have different grammar rules.
-NounPhrasesEus and NounPhrasesEusBind -- same number of concrete
-categories??? \todo{maybe more interesting statistics to show!}
+NounPhrasesEus and NounPhrasesEusBind -- different number of concrete
+categories, functions are grouped differently, and
+representative+minimal test set is slightly different (smaller in the
+one that uses BIND instead of full forms in inflection tables).
 
-Language typological implications -- or just grammar engineering implications,
-how many parameters?
+We believe this has both language typological and grammar engineering
+implications---there is no way to implement Basque in a way that
+results in as few example sentences as English, but other resource
+grammarians have reported significant differences in complexity
+between implementations---\todo{cite Ramona's Romanian RG} reports a
+200-time reduction in the number of concrete rules after changing the
+implementation of clitics in verb phrases.
 
 
-We plan to look into existing text corpora, and find trees that are
-structurally identical  to those that our program generates as a
-minimal and representative example. As a simplified example, ``a worm
-without winter'', generated by the program, would be identical\footnote{This particular example holds for English, but in another language, the words ``pizza'' and ``worm'', as well as ``winter'' and ``cheese'' may not match in all relevant features---grammatical gender, whether the word starts with a vowel or a consonant, etc. All this information comes from the concrete syntax!} 
-in structure to ``a pizza without cheese'', found in a real text, and
-can thus be substituted for the generated one.   
-Alternatively, we could use statistical information on co-occurrences
-of words, and generate appropriate pools of words, from which we draw
-example sentences. 
+
 
 % include your own bib file like this:
 \bibliographystyle{acl}
