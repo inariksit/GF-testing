@@ -51,7 +51,7 @@ Common flags:
   -e --empty-fields        Show fields whose strings are always empty
   -u --unused-fields       Show fields that never make it into the top
                            category
-  -n --nullable            Show trees that are erased
+  -r --erased-trees        Show trees that are erased
   -o --old-grammar=ITEM    Path to an earlier version of the grammar
      --only-changed-cats   When comparing against an earlier version of a
                            grammar, only test functions in categories that have
@@ -168,6 +168,31 @@ Information about the fields: empty, equal and unused in the top category (speci
 
 ==> V: particle, prefix
 ```
+
+####  `-r`
+
+Show trees that are erased in some function, i.e. a function `F : A -> B -> C` has arguments A and B, but doesn't use one of them in the resulting tree of type C. This is usually a bug.
+
+Example:
+
+`cabal run -- -l "Dut Eng" -r`  
+
+output:
+```
+* Erased trees:
+
+** RelCl (ExistNP something_NP) : RCl
+- Tree:  AdvS (PrepNP with_Prep (RelNP (UsePron it_Pron) (UseRCl (TTAnt TPres ASimul) PPos (RelCl (ExistNP something_NP))))) (UseCl (TTAnt TPres ASimul) PPos (ExistNP something_NP))
+- Lin:   ermee is er iets
+- Trans: with it, such that there is something, there is something
+
+** write_V2 : V2
+- Tree:  AdvS (PrepNP with_Prep (PPartNP (UsePron it_Pron) write_V2)) (UseCl (TTAnt TPres ASimul) PPos (ExistNP something_NP))
+- Lin:   ermee is er iets
+- Trans: with it written there is something
+```
+
+In the first result, an argument of type `RCl` is missing in the tree constructed by `RelNP`, and in the second result, the argument `write_V2` is missing in the tree constructed by `PPartNP`. In both cases, the English linearisation contains all the arguments, but in the Dutch one they are missing. (This bug is already fixed, just showing it here to demonstrate the feature.)
 
 #### `-w`
 

@@ -39,7 +39,7 @@ data GfTest
   , equal_fields  :: Bool
   , empty_fields  :: Bool
   , unused_fields :: Bool
-  , nullable      :: Bool
+  , erased_trees  :: Bool
 
   -- Compare to old grammar
   , old_grammar   :: Maybe FilePath
@@ -71,7 +71,7 @@ gftest = GfTest
   , equal_fields  = def &= A.name "q"   &= help "Show fields whose strings are always identical"
   , empty_fields  = def &= A.name "e"   &= help "Show fields whose strings are always empty"
   , unused_fields = def                 &= help "Show fields that never make it into the top category"
-  , nullable      = def                 &= help "Show trees that are erased"
+  , erased_trees  = def &= A.name "r"   &= help "Show trees that are erased"
   , treebank      = def &= typFile
                         &= A.name "b"   &= help "Path to a treebank"
   , old_grammar   = def &= typFile
@@ -147,7 +147,7 @@ main = do
     putStrLn ""
 
   -- Show question marks
-  when (nullable args) $ do
+  when (erased_trees args) $ do
     putStrLn "* Erased trees:"
     sequence_
       [ do putStrLn ("** " ++ intercalate "," erasedTrees ++ " : " ++ uncoerceAbsCat c)
