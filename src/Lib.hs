@@ -34,7 +34,7 @@ compareTree gr oldgr transgr t = Comparison {
   funTree = "* " ++ show t
 , linTree = [ ( ("** ",hl), (langName gr,newLin), (langName oldgr, oldLin), transLin )
             | ctx <- ctxs
-            , let hl = show (ctx (App (untypedHole c) []))
+            , let hl = show (ctx (App untypedHole []))
             , let transLin = case transgr of
                               []  -> ("","")
                               g:_ -> (langName g, linearize g (ctx t))
@@ -71,33 +71,33 @@ testFun debug gr trans startcat funname = -- trace (let show' xs = (unlines $ ma
                , not $ null uniqueCtxs ]
 
   (start:_) = ccats gr startcat
-  dummyHole = App (untypedHole start) []
-  hl f c1 c2 = f (c1 dummyHole) == f (c2 dummyHole) -- :: (Tree -> Tree) -> (Tree -> Tree) -> Bool
+  dummyHole = App untypedHole []
+  hl f c1 c2 = f (c1 dummyHole) == f (c2 dummyHole)
 --  applyHole = hl id -- TODO why doesn't this work for equality of contexts?
-  applyHole = hl show
+  applyHole = hl show -- :: (Tree -> Tree) -> (Tree -> Tree) -> Bool
 
   goalcats = map (snd.ctyp.top) allTrees :: [ConcrCat] -- these are not coercions (coercions can't be goals)
 
   coercionsThatCoverAllGoalcats = [ (c,fs)
                                   | (c,fs) <- contexts gr start
                                   , all (coerces gr c) goalcats ]
-
-  allTrees = treesUsingFun gr (lookupSymbol gr funname)
+  funs = case lookupSymbol gr funname of
+           [] -> error $ "Function "++funname++" not found"
+           fs -> fs
+  allTrees = treesUsingFun gr funs
   ctxs = nubBy applyHole $ concatMap (contextsFor gr start) goalcats :: [Tree->Tree]
-
 
   (commonCtxs,reducedTrees) = case coercionsThatCoverAllGoalcats of
     [] -> ([],[])        -- no coercion covers all goal cats -> all contexts are relevant
-    cs -> (cCtxs,rTrees) -- all goal cats coerce into same -> find if there are redundant contexts
+    cs -> (cCtxs,rTrees) -- all goal cats coerce into same -> find redundant contexts
    where
     (coe,coercedCtxs) = head coercionsThatCoverAllGoalcats -- TODO: do we need multiple coercions later?
     cCtxs = intersectBy applyHole ctxs coercedCtxs
-    rTrees = [ App newTop subtrees
-             | (App tp subtrees) <- take 1 allTrees  --1 should be enough, because *all* goalcats coerce into the same, otherwise we're not in this branch
-                                                     --TODO: choose the trees using isBetterExampleThan
+    rTrees = concat $ bestExamples (head funs) gr
+              [ [ App newTop subtrees ]
+              | (App tp subtrees) <- allTrees
              , let newTop = tp { ctyp = (fst $ ctyp tp, coe)} ]
   uniqueCtxs = deleteFirstsBy applyHole ctxs commonCtxs
-
   showCtx f = let t = f dummyHole in show t ++ "\t\t\t" ++ showConcrFun gr (top t)
 
 testTree :: Bool -> Grammar -> [Grammar] -> Tree -> Int -> [Tree -> Tree] -> Result

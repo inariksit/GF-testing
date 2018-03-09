@@ -83,8 +83,8 @@ arity = length . fst . ctyp
 hole :: ConcrCat -> Symbol
 hole c = Symbol (show c) [] ([], "") ([],c)
 
-untypedHole :: ConcrCat -> Symbol
-untypedHole c = Symbol "∅" [] ([], "") ([],c)
+untypedHole :: Symbol
+untypedHole = Symbol "∅" [] ([], "") ([], (CC Nothing 99999999))
 
 -- grammar
 
