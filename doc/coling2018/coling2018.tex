@@ -122,7 +122,7 @@ French it would need at least one masculine and one feminine noun.
 \item The list is overly long, with redundant test cases, and human
 testers are not motivated to read through. 
 \item A grammarian makes a change somewhere else in the grammar, and
-does not realize that it affects relative clauses, and thus does not
+does not realise that it affects relative clauses, and thus does not
 rerun the appropriate test suite. 
 \end{itemize}
 
@@ -222,26 +222,25 @@ To illustrate different needs for different languages, we
 take three language-specific phenomena in the scope of our
 small grammar: preposition contraction in Dutch, adjective agreement
 in Estonian and determiner placement in Basque.
+We also address some more general features of \gf{} grammars.
 
-\paragraph{Preposition contraction in Dutch} Some prepositions should
+\subsection{Preposition contraction in Dutch} In Dutch, some prepositions should
 merge with a single determiner or pronoun, e.g. \emph{met~dit} `with
 this' becomes \emph{hiermee} `herewith', but stay independent when the
-determiner quantifies a noun, e.g. \emph{met~dit~huis} `with this
-house'. 
-% Other prepositions, such as \emph{zonder} `without', do not
-% contract with any determiners: \emph{zonder~dit} `without this' and
-% \emph{zonder~dit~huis} `without this house'.
+determiner quantifies a noun, e.g. \emph{met~dit~huis} `with this house'. 
+Other prepositions, such as \emph{zonder} `without', do not
+contract with any determiners: \emph{zonder~dit} `without this' and
+\emph{zonder~dit~huis} `without this house'.
 When testing \t{PrepNP}, we would like to see one preposition that
 contracts and one that does not, as well as one \t{NP} that is a
 single determiner, and one that comes from a noun. In order to catch a
-bug in the function, or confirm there is none, we need exactly four
-trees, such as the following:
+bug in the function, or confirm there is none, we need four trees:
 \t{PrepNP} \{ \stackanchor{\tt with}{\tt without} \} 
            \{ \stackanchor{\tt DetNP this}{\tt DetCN this house} \}. 
 
-\paragraph{Adjective agreement in Estonian} In attributive position,
-most adjectives agree with nouns in case and number. However,
-participles are invariable (singular nominative) as
+\subsection{Adjective agreement in Estonian} In Estonian,
+most adjectives agree with nouns in case and number in an attributive
+position. However, participles are invariable (singular nominative) as 
 attributes but inflect regularly in a predicative position, and a set
 of invariable adjectives do not inflect in any position. Furthermore,
 in 4 of the 14 grammatical cases, even the regular adjectives only
@@ -282,9 +281,9 @@ adjective, and \emph{valmis} `ready' as an invariable.
 one of the 10 ``usual'' cases and one of the 4 ``unusual'' cases, one
 of each type of adjective, and one of each number.  
 The following test set creates all the relevant cases: 
- \t{PrepNP} \{ \stackanchor{\tt on}{\tt with} \}
+ \t{PrepNP} \{ \stackanchor{\tt in}{\tt with} \}
              {\tt (DetCN} \{ \stackanchor{\tt this}{\tt these} \} 
-             {\tt AdjCN}  \{\stackanchor{\tt small}{\tt ready} \} 
+             {\tt AdjCN}  \{\stackanchor{\tt blue}{\tt ready} \} 
              {\tt house)}.
 
 
@@ -296,29 +295,81 @@ because they behave identically, but as a predicative, regular and
 participle adjectives behave the same, and differently from
 invariable. If we want to test specifically adjectives and not
 \t{PrepNP}, we would prefer to see all types in all positions:
- \t{PrepNP} \{ \stackanchor{\tt on}{\tt with} \}
+ \t{PrepNP} \{ \stackanchor{\tt in}{\tt with} \}
              {\tt (DetCN} \{ \stackanchor{\tt this}{\tt these} \} 
-             {\tt AdjCN}  \{\stackanchor{\tt small}{\stackanchor{\tt
+             {\tt AdjCN}  \{\stackanchor{\tt blue}{\stackanchor{\tt
                  ready}{\tt tired}} \} 
              {\tt house)}.
 
-\paragraph{Determiner placement in Basque} When a number (other than 1) or a
-possessive pronoun acts as a determiner in a complex noun phrase, it
-is placed between ``heavy'' modifiers, such as adverbials or relative clauses,
-and the rest of the noun phrase. Demonstrative pronouns, such as \emph{this}, 
- are placed after all modifiers as an independent word. Number 1,
- which functions as an indefinite article, acts like demonstratives, but
- the definite article is a suffix. If there is a ``light'' modifier,
- such as an adjective, the definite article attaches to the modifier;
- otherwise it attaches to the noun. In order to test the
+\subsection{Determiner placement in Basque} In Basque, there are three
+different ways to place a determiner into a noun phrase. When a number
+(other than 1) or a possessive pronoun acts as a determiner in a
+complex noun phrase, it is placed between ``heavy'' modifiers, such as
+adverbials or relative clauses, and the rest of the noun
+phrase. Demonstrative pronouns, such as \emph{this}, are placed after
+all modifiers as an independent word. Number 1, which functions as an
+indefinite article, acts like demonstratives, but the definite article is a suffix. If there is a ``light'' modifier, such as an adjective, the definite article attaches to the modifier; otherwise it attaches to the noun. In order to test the
  implementation of this phenomenon, we need the following trees: \\ \\ 
 \t{DetCN} \{
 \stackanchor{\stackanchor{}{\tts{the}}}{\stackanchor{\tts{this}}{\tts{your}}}
 \} \{ \stackanchor{\tt AdvCN on\_the\_hill}{$\varnothing$} \} 
 \{ \stackanchor{\tt AdjCN small}{$\varnothing$} \}  {\tt house} 
 
+\subsection{General features of \pmcfg: unused, equal,
+  erased or empty fields}
 
-\subsection{How it works}
+Aside from concrete language-dependent phenomena, there are more
+general, engineering questions. For instance, say that our
+concrete type for a \t{CN} in Dutch is an inflection table from case
+to string, we would like to know whether (a) all string fields make it to
+the start category; (b) all fields are distinct; and (c) some fields
+are empty. In Dutch, nominative and accusative are only different for
+pronouns, so for this grammar we would indeed find out that case is
+redundant: all nominative and accusative fields would be
+identical. As grammarians, we could decide to keep the distinction for
+further extension of the grammar---maybe we want to add pronouns in
+the future---or remove it as redundant.
+
+\gf{} has the expressivity of \pmcfg{}, which means that it is
+possible to erase arguments: say that there is a bug, \t{AdjCN : Adj
+  $\rightarrow$ CN  $\rightarrow$ CN} never actually adds the
+adjective to the new \t{CN}, in which case \t{AdjCN blue house} and
+\t{house} are linearised identically. Instead of testing every single
+function, we would like to know if there are any functions in the
+grammar that behave like this.
+
+
+\section{How it works}
+\label{sec:details}
+
+GF grammar compiles into a low-level format called PGF. After the
+compilation, we get one category for each combination of parameters:
+for English adjectives, \texttt{A => A$_{pos}$, A$_{comp}$,
+A$_{superl}$}, and for Spanish, \texttt{A => A$_{pos\times{}sg\times{}masc}$, \dots,
+A$_{superl\times{}pl\times{}fem}$}. 
+
+Suddenly, we have a bunch of new types, and those are different for
+each concrete syntax! The original question ``we need a sample of
+nouns/verbs/… that makes sense'' can be simplified ``we need one
+noun/verb/… of each type''. The types are determined by the parameters
+in the concrete syntax. 
+
+So remember all the hassle when you can't pattern match strings to
+know something, but instead you have to define a parameter? This is
+actually a nice side effect from that: each parameter contributes to a
+new category, so it pays off in generating examples. If the feature is
+important for your grammar---say that in language A, negation is
+simply attaching the word  ``no'' before the verb, and in language B,
+negation changes the word order and the object case. Then in the GF
+grammar for language B, we would need a Boolean \texttt{isNeg} field
+in the relevant categories, which we then pattern match against in
+order to determine the relevant operations. That parameter in the
+abstract category translates into different concrete categories, and
+that way, when we generate example trees, we make sure to include one
+of each. For instance, in language A, we could end up with the trees
+``any horse'' and ``all horses'' when testing NPs, but in language B,
+the set would also include ``no horses''. 
+
 
 \paragraph{Test cases} 
 The basic unit of a test case is a single constructor, and the first step 
@@ -330,8 +381,8 @@ with arguments, such as \t{PrepNP}, then we do the following:
 \item For each argument type (\t{Prep} and \t{NP}), compute the
   set of minimal and representative trees. This is a recursive
   process: to compute the set of trees in \t{NP}, we must consider
-  all functions that create its argument types (\t{Det} and \t{CN}),
-  until we have a set of lexical functions to choose from. 
+  all functions that create its argument types (\t{Det} and \t{CN}).
+%  until we have a set of lexical functions to choose from. 
 \item Take a cross product, prune out redundant combinations, and
   apply the constructor \t{PrepNP} to the resulting set of
   arguments. The pruning method will be described later. 
@@ -361,7 +412,7 @@ $\times$ \{ \stackanchor{\tt \small house}{\tt \small hill}\}.
 Note that \t{CN} is unspecified for number, because it is still waiting for a
 determiner (e.g. \t{this} or \t{these}) to complete it into an
 \t{NP}. Thus all the test cases contain both singular and plural
-variants, and by linearizing these 4 trees, we get the 8 strings shown
+variants, and by linearising these 4 trees, we get the 8 strings shown
 in Figure~\ref{fig:adjAttr}.
 
 \begin{figure}
@@ -446,43 +497,6 @@ to include two examples when in attributive position, but only one
 when in predicative position. We describe exactly how this works in
 Section~\ref{sec:details}. 
 %In total we would get 12 sentences: the 8 shown previously, and 4 
-
-
-\section{Other features that the program reveals: unused, equal,
-  erased, empty}
-
-
-
-\section{Technical details}
-\label{sec:details}
-
-GF grammar compiles into a low-level format called PGF. After the
-compilation, we get one category for each combination of parameters:
-for English adjectives, \texttt{A => A$_{pos}$, A$_{comp}$,
-A$_{superl}$}, and for Spanish, \texttt{A => A$_{pos×sg×masc}$, \dots,
-A$_{superl×pl×fem}$}. 
-
-Suddenly, we have a bunch of new types, and those are different for
-each concrete syntax! The original question ``we need a sample of
-nouns/verbs/… that makes sense'' can be simplified ``we need one
-noun/verb/… of each type''. The types are determined by the parameters
-in the concrete syntax. 
-
-So remember all the hassle when you can't pattern match strings to
-know something, but instead you have to define a parameter? This is
-actually a nice side effect from that: each parameter contributes to a
-new category, so it pays off in generating examples. If the feature is
-important for your grammar---say that in language A, negation is
-simply attaching the word  ``no'' before the verb, and in language B,
-negation changes the word order and the object case. Then in the GF
-grammar for language B, we would need a Boolean \texttt{isNeg} field
-in the relevant categories, which we then pattern match against in
-order to determine the relevant operations. That parameter in the
-abstract category translates into different concrete categories, and
-that way, when we generate example trees, we make sure to include one
-of each. For instance, in language A, we could end up with the trees
-``any horse'' and ``all horses'' when testing NPs, but in language B,
-the set would also include ``no horses''. 
 
 
 \section{Evaluation}
