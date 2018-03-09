@@ -201,6 +201,68 @@ We refer to this grammar throughout the paper.
 
 \section{Experiences as a grammar writer}
 
+
+\subsection{Examples of representative and minimal test cases} 
+To make the example more concrete, we list out some phenomena found in
+real grammars, and how to test their implementation. 
+
+\paragraph{Preposition contraction in Dutch} Some prepositions should
+merge with a single determiner or pronoun, e.g. \emph{met~dit} `with
+this' becomes \emph{hiermee} `herewith', but stay independent when the
+determiner quantifies a noun, e.g. \emph{met dit huis} `with this
+house'. When testing \t{PrepNP}, the program should generate one
+preposition that contracts and one that does not, as well as one
+\t{NP} that is a single determiner, and one that comes from a noun.
+In order to catch a bug in the function, or confirm there is none, the
+program should generate the four trees 
+\t{PrepNP} \{ \stackanchor{\tt with}{\tt without} \} 
+           \{ \stackanchor{\tt DetNP this}{\tt DetCN this house} \}. 
+
+\paragraph{Adjective agreement in Estonian} In attributive position,
+most adjectives agree with nouns in case and number. However,
+participle adjectives are invariable (singular nominative) as
+attributes but inflect regularly in a predicative position, and a set
+of invariable adjectives do not inflect in any position. Furthermore,
+in 4 of the 14 grammatical cases, even the regular adjectives only
+agree with the noun in number, but the case is always genitive: e.g. 
+\stackanchor{ \emph{suur-e} \emph{auto-ga}}{\small \emph{big}-\textsc{gen} \emph{car}-\textsc{com}} 
+%\emph{suur-e} \emph{auto-ga}  \emph{big}-\textsc{gen} \emph{car}-\textsc{com} 
+`with a big car'. 
+Thus in order to test adjectives as attributes, we need an example for
+one of the 10 ``usual'' cases and one of the 4 ``unusual'' cases, one
+of each type of adjective, and one of each number.  
+The following test set creates all the relevant cases:
+ \t{PrepNP} \{ \stackanchor{\tt on}{\tt with} \}
+             {\tt (DetCN} \{ \stackanchor{\tt this}{\tt these} \} 
+             {\tt AdjCN}  \{ \stackanchor{\stackanchor{\tt }{\tt
+                 small}}{\stackanchor{\tt tired}{\tt ready}} \} 
+             {\tt house)}
+
+%To test the whole phenomenon, we would need one more context, where
+%the adjective is in the predicative position `the house is \verb|_|',
+%and one more example adjective---as an attribute, we can lump
+%participles and invariables into one test example, but as a
+%predicative, regular and participles behave the same and differently
+%from invariable.
+
+
+\paragraph{Determiner placement in Basque} When a number (other than 1) or a
+possessive pronoun acts as a determiner in a complex noun phrase, it
+is placed between ``heavy'' modifiers, such as adverbials or relative clauses,
+and the rest of the noun phrase. Demonstrative pronouns, such as \emph{this}, 
+ are placed after all modifiers as an independent word. Number 1,
+ which functions as an indefinite article, acts like demonstratives, but
+ the definite article is a suffix. If there is a ``light'' modifier,
+ such as an adjective, the definite article attaches to the modifier;
+ otherwise it attaches to the noun. In order to test the
+ implementation of this phenomenon, we need a
+subset of the following trees: \\ \\ 
+\t{DetCN} \{
+\stackanchor{\stackanchor{\tts{a}}{\tts{the}}}{\stackanchor{\tts{this}}{\tts{your}}}
+\} \{ \stackanchor{\tt AdvCN on\_the\_hill}{$\varnothing$} \} 
+\{ \stackanchor{\tt AdjCN small}{$\varnothing$} \}  {\tt house} 
+
+
 \subsection{How it works}
 
 \paragraph{Test cases} 
@@ -327,65 +389,9 @@ when in predicative position. We describe exactly how this works in
 Section~\ref{sec:details}. 
 %In total we would get 12 sentences: the 8 shown previously, and 4 
 
-\subsection{Examples of representative and minimal test cases} 
-To make the example more concrete, we list out some phenomena found in
-real grammars, and how to test their implementation. 
 
-\paragraph{Preposition contraction in Dutch} Some prepositions should
-merge with a single determiner or pronoun, e.g. \emph{met~deze} `with
-this' becomes \emph{hiermee} `herewith', but stay independent when the
-determiner quantifies a noun, e.g. \emph{met deze huis} `with this
-house'. When testing \t{PrepNP}, the program should generate one
-preposition that contracts and one that does not, as well as one
-\t{NP} that is a single determiner, and one that comes from a noun.
-In order to catch a bug in the function, or confirm there is none, the
-program should generate the four trees 
-\t{PrepNP} \{ \stackanchor{\tt with}{\tt without} \} 
-           \{ \stackanchor{\tt DetNP this}{\tt DetCN this house} \}. 
-
-\paragraph{Adjective agreement in Estonian} In attributive position,
-most adjectives agree with nouns in case and number. However,
-participle adjectives are invariable (singular nominative) as
-attributes but inflect regularly in a predicative position, and a set
-of invariable adjectives do not inflect in any position. Furthermore,
-in 4 of the 14 grammatical cases, even the regular adjectives only
-agree with the noun in number, but the case is always genitive: e.g. 
-\stackanchor{ \emph{suur-e} \emph{auto-ga}}{\small \emph{big}-\textsc{gen} \emph{car}-\textsc{com}} 
-%\emph{suur-e} \emph{auto-ga}  \emph{big}-\textsc{gen} \emph{car}-\textsc{com} 
-`with a big car'. 
-Thus in order to test adjectives as attributes, we need an example for
-one of the 10 ``usual'' cases and one of the 4 ``unusual'' cases, one
-of each type of adjective, and one of each number.  
-The following test set creates all the relevant cases:
- \t{PrepNP} \{ \stackanchor{\tt on}{\tt with} \}
-             {\tt (DetCN} \{ \stackanchor{\tt this}{\tt these} \} 
-             {\tt AdjCN}  \{ \stackanchor{\stackanchor{\tt }{\tt
-                 small}}{\stackanchor{\tt tired}{\tt ready}} \} 
-             {\tt house)}
-
-%To test the whole phenomenon, we would need one more context, where
-%the adjective is in the predicative position `the house is \verb|_|',
-%and one more example adjective---as an attribute, we can lump
-%participles and invariables into one test example, but as a
-%predicative, regular and participles behave the same and differently
-%from invariable.
-
-
-\paragraph{Determiner placement in Basque} When a number (other than 1) or a
-possessive pronoun acts as a determiner in a complex noun phrase, it
-is placed between ``heavy'' modifiers, such as adverbials or relative clauses,
-and the rest of the noun phrase. Demonstrative pronouns, such as \emph{this}, 
- are placed after all modifiers as an independent word. Number 1,
- which functions as an indefinite article, acts like demonstratives, but
- the definite article is a suffix. If there is a ``light'' modifier,
- such as an adjective, the definite article attaches to the modifier;
- otherwise it attaches to the noun. In order to test the
- implementation of this phenomenon, we need a
-subset of the following trees: \\ \\ 
-\t{DetCN} \{
-\stackanchor{\stackanchor{\tts{a}}{\tts{the}}}{\stackanchor{\tts{this}}{\tts{your}}}
-\} \{ \stackanchor{\tt AdvCN on\_the\_hill}{$\varnothing$} \} 
-\{ \stackanchor{\tt AdjCN small}{$\varnothing$} \}  {\tt house} 
+\section{Other features that the program reveals: unused, equal,
+  erased, empty}
 
 
 
@@ -421,7 +427,6 @@ of each. For instance, in language A, we could end up with the trees
 the set would also include ``no horses''. 
 
 
-
 \section{Evaluation}
 
 How many trees you eliminate -- how many trees would you have to read
@@ -430,17 +435,21 @@ now
 
 Traditionally, GF grammars are tested by the grammarians themselves,
 much like unit testing. An example human-written treebank can be found
-in \cite[p.~136--142]{khegai2006phd}. \\
+in \cite[p.~136--142]{khegai2006phd}.
+
 For testing the coverage of the grammars, we have used UD treebank
 \cite{nivre2016ud} and Penn treebank, to see how much of the
 constructions are covered by the grammar.
+
+\todo{Pick one function, get a treebank, see how exhaustively the function
+is used in the treebank.}
 
 Check what HPSG, TAG, CCG etc. people use for eval
 
 \cite[pp.~212--213]{butt1999lfg} describes common methods of testing the
 {\sc lfg} formalism: similarly to \gf, they use a combination of
 human-written test suites meant to cover particular phenomena, and
-external larger corpora to test the coverage. As a difference from \gf
+external larger corpora to test the coverage. As a difference from \gf{}
 testing tradition, their human-written test suites include also
 ungrammatical sentences: those that the grammar should \emph{not} be
 able to parse. However, their tests are only meant for monolingual
@@ -485,6 +494,10 @@ Some existing formalisms such as \hpsg{} and \lfg{} are fully
 context-sensitive \todo{cite and find out if there's some subset with
   nice properties}.
 
+\todo{Treebanks can complement the tree generation}
+
+\todo{Other analyses: program analysis, compiler warnings,
+  possibilities in GF and not programming languages}
 
 Theoretical question: two grammars that produce the same language but
 have different grammar rules.

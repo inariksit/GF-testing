@@ -1,0 +1,1513 @@
+\documentclass{article}
+\usepackage{scalerel}
+\usepackage{stackengine}
+\usepackage{verbatimbox}
+\usepackage{boxhandler}
+\parindent 0in\parskip 1em
+\newlength\dotscale
+
+\setlength{\dotscale}{.4ex}         % DOTSIZE<---CAN CHANGE THESE
+\def\newdot{\scalerel*{.}{\rule[-\dotscale]{1ex}{\dotscale}}}
+\def\newdot{\scalerel*{.}{\rule{1ex}{\dotscale}}}
+
+% FOR CLOSE-BOXING ARGUMENTS
+\fboxsep=0pt\fboxrule=.6pt
+
+\def\rl{\rule[-.3pt]{2ex}{.6pt}}
+\def\ste{\textsf{stackengine}}
+\def\bs{\texttt{\char'134}}
+\let\vb\verb
+\reversemarginpar
+\marginparwidth 1.6in
+\newcommand\margtt[1]{\marginpar{\hfill\ttfamily#1}}
+\newcommand\margcmd[1]{\marginpar{\hfill\ttfamily\char'134#1}}
+\newcommand\cmd[1]{\texttt{\char'134#1}}
+\def\lapmark{\rule[-.3\baselineskip]{.1ex}{\baselineskip}}
+\def\blmark{\rl\stackengine{-.9ex}{B}{\rule{.35ex}{0pt}L}{U}{l}{F}{T}{S}\rl}
+
+\begin{document}
+
+\begin{center}
+\LARGE The {\ste} Package\\
+\rule{0em}{.7em}\small Highly customized stacking of objects, insets,
+baseline changes, \textit{etc.}\\
+\rule{0em}{2.7em}\large Steven B. Segletes\\
+steven.b.segletes.civ@mail.mil\\
+\rule{0em}{1.7em}\today\\
+\stackengineversionnumber%
+\end{center}
+
+%\tableofcontents
+
+\sffamily%
+A sectional index for this package is found in \S\ref{s:index}.
+
+\rmfamily%
+
+\section{Definitions and Terms}
+
+Before I describe the various commands of this package, it is best for
+you to familiarize yourself with a few terms as used in this package.
+
+\subsection{Short Stacks and Long Stacks\label{s:st}}
+\strutshortanchors{T}
+\def\stacktype{L}
+\Huge\setstackgap{S}{.4ex}
+\setstackgap{L}{2.2ex}\normalsize 
+
+In this package, ``Short'' refers to squeezing the extra space out of
+glyphs comprising the stack, so that the inter-item gap is solely what
+is set.  Likewise, ``Long'' refers to a stack kept at constant
+inter-item baseline spacing.  Let's look at the following two
+examples to see this clearly.
+
+Notice the consistent inter-item gap on a short stack: 
+\Huge
+\Shortstack{{\fbox{t}} {\fbox{y}} {\fbox{k}} {\fbox{e}}}%
+{\quad\setstackgap{S}{\dimexpr.4ex+1.2pt}\Shortstack{t y k e}}
+\normalsize
+
+Notice the consistent inter-baseline spacing on a long stack: 
+\Huge
+\Longstack{{{\rl t}} {{\rl y}} {{\rl k}} {{\rl e}}}%
+{\quad\Longstack{t y k e}}
+\normalsize\\
+
+\begin{sloppypar}
+In this package, the default spacing (\textit{i.e.}, stacklength) for
+the long stack, saved in \vb|\Lstackgap| is the length
+\vb|\normalbaselineskip| (note that \vb|\normalbaselineskip| has the same 
+value as \vb|\baselineskip|, but can be safely used inside a \vb|tabular|
+environment).
+For short stacks, the default stacklength, stored in
+\vb|\Sstackgap|, is 3pt, which corresponds to the same spacing found in
+\TeX's \vb|\shortstack| command.  The default stack type constructed by
+this package is short, denoted by the definition of \vb|\stacktype| as
+``S'' (as opposed to ``L'' for long stacks).  These defaults can be
+changed.
+\end{sloppypar}
+
+\subsection{Baseline}
+\setstackgap{L}{.8\baselineskip}
+\setstackgap{S}{4pt}
+
+The baseline is the horizontal line on which the current (unstacked)
+text is set.  For non-descending letters, the bottom of the letters sit
+upon the baseline.  In this document, we will graphically use the symbol
+{\blmark} to denote the current baseline of the text, as in
+
+\blmark\rl\Shortunderstack{A B C}\rl\rl text continues here
+
+\subsection{(Over)Stacks and Understacks\label{s:osus}}
+
+\setstackgap{L}{.8\baselineskip}
+\setstackgap{S}{4pt}
+In general terms, a stack is built up from the baseline, while an
+understack is built down from the baseline.  
+
+So, for example,
+\Longstack{a b c}
+is a stack, while
+\Longunderstack{a b c}
+is an understack.
+
+With this package, both stacks and understacks can be long or short,
+depending on how the invocation is made.  Sometimes, in this
+documentation, a stack will be called an ``overstack'' in order to avoid
+confusion with ``understack.''
+
+\subsection{Anchors\label{s:anch}}
+
+The term ``anchor'' is used to denote an item in the stack whose
+baseline does not change in the course of the stacking operation.  In
+essence, stacking is done relative to the anchor.
+
+For example, in \Shortstack{a b c}, the letter ``c'' is the anchor.  
+
+In the understack \Shortunderstack{a b c}, ``a'' is the anchor.
+
+\subsection{Alignment\label{s:sal}}
+
+Anyone familiar with \LaTeX{} knows something about the horizontal
+alignment settings ``l'', ``c'' and ``r''.  As pertains to a stack, we
+refer to the alignment of the various rows of the stack, as shown in the
+following examples.
+
+\setstackgap{S}{3pt}\setstackgap{L}{12pt}%
+
+{\centering
+Left: \Shortstack[l]{abcd abc ab a}~~
+Center: \Shortstack[c]{abcd abc ab a}~~
+Right: \Shortstack[r]{abcd abc ab a}
+
+}
+The default alignment within a stack may be set with the
+\vb|\stackalignment| definition, to possible values of \vb|l|,
+\vb|c|, or \vb|r|, denoting left, center, and right alignments,
+respectively.  In addition, a number of the stacking macros provide the
+alignment as an argument or optional argument that can be specified at
+time of invocation.
+
+The {\ste} package defaults to center alignment, unless reset by way of
+the \vb|\stackalignment| definition.
+
+
+\section{Parameter Defaults, Modes, and Macros Provided by \ste}
+
+
+\subsection{Parameter Defaults and How to Set Them\label{s:parms}}
+
+There are several macros that serve to store package default
+definitions.  When a stacking macro does NOT explicitly ask for one of the
+quantities defined by these defaults, it will use the values of these
+parameters to serve as the default value.  However, some stacking macros
+may ask the user to specify an explicit value for any number of these
+parameters in the calling arguments.  In that case, an explicit value
+may be provided or else the macro holding the default value may
+itself be provided as the argument.
+
+Let us first consider the stackgap defaults, associated with short and
+long stacks.  Those stackgaps are actually stored in the \vb|\def|'s
+
+\vb|\Sstackgap|\\
+\vb|\Lstackgap|
+
+The 
+\margcmd{Sstackgap}%
+parameter \vb|\Sstackgap| is the default inter-item gap for any
+stacking command that builds a short stack.  It defaults to 3pt.
+Correspondingly,
+\margcmd{Lstackgap}
+\vb|\Lstackgap| is the inter-item baselineskip for
+any stacking command that builds a long stack.  It defaults to
+\vb|\normalbaselineskip|.  To change these defaults, the following macro
+is provided:
+\margcmd{setstackgap}
+
+\itshape
+\vb|\setstackgap{S}{|inter-item stackgap\vb|}|\\
+\vb|\setstackgap{L}{|inter-item baselineskip\vb|}|
+\upshape
+
+In \margcmd{stackgap}addition, there is the \vb|\stackgap| macro, which
+may be invoked by the user.  This macro will look at the current value
+of \vb|\stacktype| and will output either \vb|\Sstackgap| or
+\vb|\Lstackgap|, depending on whether \vb|\stacktype| is defined as
+``S'' (short) or ``L'' (long).
+
+In addition to these lengths, there are several parameter definitions
+that define default behaviors for those stacking macros when explicit
+values of these settings are not requested.  The parameters, each set
+with a \vb|\def| (or a \vb|\renewcommand|), are
+
+\itshape
+\vb|\def\stackalignment{l| or \vb|c| or \vb|r}|\\
+\vb|\def\quietstack{T| or \vb|F}|\\
+\vb|\def\useanchorwidth{T| or \vb|F}|\\
+\vb|\def\stacktype{S| or \vb|L}|
+\upshape
+
+The parameter \vb|\stackalignment| \margcmd{stackalignment}defaults to
+``c'' (center) and defines the default stacking alignment.  Other
+options include ``l'' (left) and ``r'' (right).  See \S\ref{s:sal} for
+more discussion of this parameter.
+
+The parameter \vb|\quietstack| \margcmd{quietstack}defaults to ``F''
+(false) and determines whether the result of a stacking operation is
+suppressed from the output.  If the output is suppressed by setting this
+parameter to ``T'', the most recent stacking operation may be recovered
+with a \vb|\usebox{\stackedbox}|.  See \S\ref{s:qs} for more discussion
+of this parameter.
+
+The parameter \vb|\useanchorwidth| \margcmd{useanchorwidth}defaults to
+``F'' (false) and indicates that, upon creation, the stack width should
+be taken as the widest element of the stack.  When set to ``T'', the
+stack width, upon creation, is instead taken as the width of the anchor.
+Note that this parameter applies at the time of stack creation and
+cannot be used to retroactively change the characteristics of an
+existing stack.  See \S\ref{s:uaw} for more discussion of this
+parameter.
+
+The parameter \vb|\stacktype| \margcmd{stacktype}defaults to ``S''
+(short stack) and defines the default type of stack to build.  When set
+to ``L'', newly created stacks are, by default, long stacks.  Refer to
+\S\ref{s:st} for a definition of these terms.
+
+For macros that require explicit specification of some of these
+parameters, the parameter token itself (\textit{e.g.},
+\cmd{stackalignment}, \cmd{quietstack}, \textit{etc.}) may be provided
+as the argument, if the default behavior is desired.
+
+\subsection{Stacking Modes\label{s:sm}}
+
+In addition to parameter definitions, there are several {\ste} mode
+settings:
+
+\itshape
+\vb|\stackMath|\\
+\vb|\stackText|\\
+\vb|\strutlongstacks{T| or \vb|F}|\\
+\vb|\strutshortanchors{T| or \vb|F}|\\
+\vb|\setstackEOL{|end-of-line character\vb|}|
+\upshape
+
+By default, this package will assume that the arguments of the stacking
+commands are text.  However, an invocation of \vb|\stackMath| 
+\margcmd{stackMath}will
+change the default so that {\ste} arguments will be processed in inline
+math mode (so-called \vb|\textstyle| math).  Likewise, an invocation
+of \vb|\stackText| 
+\margcmd{stackText}will reset the default processing of arguments to
+text mode.   Both of these modes are global in their scope, so that invocation, 
+even within a macro, will continue to persist until later changed.  If
+you would like to have a single application stacked in math mode, without
+changing the default mode setting, one could use the \vb|\ensurestackMath{}| 
+macro (see \ref{s:esm}).
+
+By default, stacks made by {\ste} are set in unframed boxes that are 
+flush with the top and bottom of the stack.  The \vb|\addstackgap| 
+macro (\S\ref{s:asg}) is one way to add a buffer space above and below a stack.
+Such an approach makes more sense for short stacks, where a constant
+buffer size determines the gap between objects.  But for long stacks, a 
+method involving \vb|\strut|'s makes more sense.  The mode 
+\vb|\strutlongstacks|%
+\margcmd{strutlongstacks}, when set true (\vb|T|), will automatically 
+cause {\ste} to condition each row of a long stack with a \vb|\strut| 
+during its construction (see \S\ref{s:ag} for more details).
+
+The \vb|\strutshortanchors| 
+\margcmd{strutshortanchors}macro (\S\ref{s:sa}) is used to set the mode of how
+two items may be vertically combined into a split short-stack anchor.  
+By default true (\vb|T|), a split short-stack anchor is set so that the 
+middle of the stack gap falls halfway up the height of the \vb|\strut|.  
+This will give the short-stack anchor the appearance of being split 
+relative to text that sits atop the baseline.  When set false, however, 
+any short-stack anchor that is constructed has its gap split across the 
+baseline itself.
+
+Until V3.1 of \ste, the \vb|\Longstack|, \vb|\Shortstack|, 
+\vb|\Longunderstack|, and \vb|\Shortunderstack| macros used,
+exclusively, space tokens as the end-of-line separators between
+rows of these stacks.  Not only is such a syntax atypical of \LaTeX{}, 
+but it can be inconvenient when the items within a stack row
+also contain spaces.  The \vb|\setstackEOL| 
+\margcmd{setstackEOL}macro allows the end-of-line (EOL)
+character to be defined to a more convenient setting, such as \vb|\\|,
+though any character will work.  There is a package option 
+\vb|[usestackEOL]| \margtt{[usestackEOL]\rmfamily\\\raggedleft package
+option} which sets the end-of-line symbol to be used when parsing stack
+arguments to \vb|\\|.  When the stacking EOL is something other than a
+space token, leading and trailing spaces are ignored in the row data for
+the four cited stacking commands, as well as their derivatives 
+\vb|\Centerstack| and \vb|\Vectorstack|.  (Note: other stacking commands
+in the \vb|\stackon| / \vb|\stackunder| family will not ignore, but
+retain spaces in their arguments, since there is no issue associated
+with EOL seperators.)
+
+Note that these five mode-setting commands are not themselves parameters
+to be part of a {\ste} argument, but are instead to be issued as separate
+commands prior to the invocation of a desired stacking macro.
+
+\subsection{Stacking Macros}
+
+\subsubsection{\cmd{stackengine}\label{s:stackeng}}
+
+\begin{sloppypar}
+The basic (and most general) stacking macro provided by this package is
+\vb|\stackengine|.  Nearly all other macros of this package merely
+provide an abbreviated invocation form of this macro, tailored for a
+particular application.  The syntax is:
+\end{sloppypar}
+
+\itshape
+\vb|\stackengine{\Sstackgap| or
+  \vb|\Lstackgap| or
+  \vb|\stackgap| or stacklength%
+  \vb|}|\\
+\vb|            {|anchor\vb|}|\\
+\vb|            {|item\vb|}|\\
+\vb|            {O| or \vb|U}|\\
+\vb|            {\stackalignment| or
+  \vb|l| or
+  \vb|c| or
+  \vb|r}|\\
+\vb|            {\quietstack| or \vb|T| or \vb|F}|\\
+\vb|            {\useanchorwidth| or \vb|T| or \vb|F}|\\
+\vb|            {\stacktype| or \vb|S| or \vb|L}|
+\upshape
+
+There are no optional arguments with \vb|\stackengine|.  The first
+item is a stacking length, which can mean different things depending on
+whether a short- or long-stack is being created, as discussed in
+\S\ref{s:st}.  The second argument is the stack anchor, whose
+baseline does not change.  The third argument is the item stacked
+relative to the anchor.  The fourth argument is either an ``O'' (for a
+normal or overstack) or a ``U'' (for an understack).  The fifth argument
+denotes a left, center, or right alignment of the stack items with the
+use of ``l'', ``c'', or ``r''.  The sixth argument is either a ``T'' or
+``F'' to denote whether the resulting stack is NOT printed (``T''
+denotes ``do NOT print'').  The seventh argument, also a ``T'' or an
+``F'', denotes when ``T'' that the width of the whole stack is to be
+taken as the width of the anchor.  Otherwise, the width of the stack
+conforms to the width of the widest item in the stack.  The final
+argument is defined as either an ``S'' or an ``L'' to denote whether a
+short stack or a long stack is being requested.
+
+While none of the arguments to \vb|\stackengine| have default values,
+there are various definitions in the package that store default values.
+When one wishes a stack to possess certain default properties, these
+default definitions may be passed as the values for the respective
+arguments to \vb|\stackengine|.  Arguments 1, 5, 6, 7, and 8 each
+possess a corresponding parameter containing the default variable.  So,
+for example,
+
+\begin{verbatim}
+\stackengine{\stackgap}{A}{BC}{O}{\stackalignment}
+            {\quietstack}{\useanchorwidth}{\stacktype}
+\end{verbatim}
+
+will stack the letters ``BC'' over ``A'' using the default values of
+\vb|\stackalignment|, \vb|\quietstack|, \vb|\useanchorwidth|,
+and \vb|\stacktype|.  In addition, the stackgap will be set to
+\vb|\Sstackgap| if \vb|\stacktype| is ``S'' or to \vb|\Lstackgap|
+if \vb|\stacktype| is ``L''.  Alternately, the  same stack could be 
+forced to be a long stack with right-alignment and be typeset using
+
+\begin{verbatim}
+\stackengine{\Lstackgap}{A}{BC}{O}{r}{F}{\useanchorwidth}{L}
+\end{verbatim}
+\vspace{-0.8ex}
+
+While the stacking macros in the following sections offer the convenience 
+of a condensed syntax, which can be useful within your document, it may be
+preferable to use the \vb|\stackengine| macro to create your own
+stacking macros, since one can achieve the stacking result without 
+having to modify the package defaults.
+
+\subsubsection{\cmd{stackon} and \cmd{stackunder}\label{s:sou}}
+
+The \vb|\stackon| and \vb|\stackunder| macros are abbreviated forms
+of \vb|\stackengine| in which the default values of parameters are
+taken.  The only exception is the stacklength, which may be provided as
+an optional argument.
+
+\itshape
+\vb|\stackon[|stacklength%
+  \vb|]{|anchor%
+  \vb|}{|item
+  \vb|}|\\
+\vb|\stackunder[|stacklength%
+  \vb|]{|anchor%
+  \vb|}{|item
+  \vb|}|
+\upshape
+
+In the case of \vb|\stackon|, an (over)stack is created, whereas an
+understack is created with \vb|\stackunder|.  With both of these
+commands, the anchor is the first mandatory argument, and the item to be
+stacked above or below it is the second mandatory argument.\vspace{-0.8ex}
+
+\subsubsection{\cmd{Shortstack} and \cmd{Longstack}\label{s:sls}}
+
+The \vb|\Shortstack| and \vb|\Longstack| commands are stacking commands
+that allow more than two stacking rows to be specified at once.  The
+items of a stack are provided, by default, in a space-separated list, as
+follows:
+
+\itshape
+\vb|\Shortstack[|alignment%
+  \vb|]{|item %
+  \vb|{|it em%
+  \vb|} {\|item%
+  \vb|} $|item%
+  \vb|$| ... anchor%
+  \vb|}|\\
+\vb|\Longstack[|alignment%
+  \vb|]{|item %
+  \vb|{|it em%
+  \vb|} {\|item%
+  \vb|} $|item%
+  \vb|$| ... anchor%
+  \vb|}|
+\upshape
+
+The first item is at the top of the stack, farthest from the baseline,
+while the last item is the anchor of the stack.  If an item (the
+contents of a single row) contains spaces, enclose the item in braces.
+If the item ends with a macro, enclose the item in braces. 
+If used in a mixed text/math mode (see \S\ref{s:mm} for more
+details), math items may be enclosed within dollar-sign delimiters.  As of 
+V3.2, these commands have been made robust and their arguments need
+not be \verb|\protect|ed.
+
+The alignment may be specified as an optional argument, with other
+parameters taken by their defaults.  The stacklength is taken as
+\vb|\stackgap|, which will depend on the value of \vb|\stacktype|.
+
+To give an example of the braced syntax described above,
+the stack\\
+\vb|\Shortstack[r]{a {b c} {\P} $\beta^2$ ANCHOR}|
+will produce
+\Shortstack[r]{a {b c} {\P} $\beta^2$ ANCHOR}.  Note that the use of the
+math delimiter (\vb|$|) in the \vb|\Shortstack| argument was needed
+only if the stack contains both inline math as well as text elements.
+If the stack is to contain only math-mode elements, then math arguments
+can be made the default:\\
+\vb|\stackMath|%
+\vb|\Shortunderstack[c]{{\alpha} {\beta} {\gamma}}|\\
+yielding
+\stackMath
+\Shortunderstack[c]{{\alpha} {\beta} {\gamma}}\.
+\stackText
+
+As of V3.1 of \ste, the user may define the the argument to 
+\vb|\Longstack|, \vb|\Shortstack|, \vb|\Longunderstack|, and
+\vb|\Shortunderstack| with a row separator different than a space.
+The \vb|[usestackEOL]| package option will make the EOL character within
+these stacking commands a \vb|\\| character instead of a space.  Here
+are an example of equivalent stack arguments for two different EOL
+characters:
+
+Space EOL:~~~~\vb|{a {b c} {\P} $\beta^2$ ANCHOR}|\\
+\vb|\\| EOL:~~~~~~~~\,\vb|{a \\ b c \\ \P \\ $\beta^2$ \\ ANCHOR}|
+
+Note that leading and trailing spaces surrounding the \verb|\\| are ignored 
+for rows in the second
+case.  The \vb|\setstackEOL| macro allows any arbitrary character to be
+set as the ``EOL'' character (for the purposes of parsing these
+stacking macros).
+
+\subsubsection{\cmd{Shortunderstack} and \cmd{Longunderstack}\label{s:slus}}
+
+The \vb|\Shortunderstack| and \vb|\Longunderstack| commands are the
+understacking equivalents of \vb|\Shortstack| and \vb|\Longstack|.
+
+\itshape
+\vb|\Shortunderstack[|alignment%
+  \vb|]{|anchor item %
+  \vb|{|it em%
+  \vb|} {\|item%
+  \vb|} $|item%
+  \vb|$| ...%
+  \vb|}|\\
+\vb|\Longunderstack[|alignment%
+  \vb|]{|anchor item %
+  \vb|{|it em%
+  \vb|} {\|item%
+  \vb|} $|item%
+  \vb|$| ...%
+  \vb|}|
+\upshape
+
+The caveats to the specification of the space-separated list of items is
+the same as that mentioned above for \vb|\Shortstack| and
+\vb|\Longstack|.
+
+Note that the items are still specified from the top downward.
+In the case of understacks; however, that means that the anchor is the
+first item specified, while the last item in the list is farthest below
+the baseline.
+
+\subsubsection{Top and bottom lapping macros\label{s:lapdef}}
+
+\tclap{\smash{Top}}and \bclap{bottom}~lapping is achievable through the creation of various
+long stacks.  The syntax is the same for all six of the macros provided.
+The six names differentiate whether the lap is to the top (t) or the
+bottom (b) of the calling point, and whether it should appear to the
+left (l), centered (c), or to the right (r) of the calling location.
+The long-stacklength may be provided as an optional argument.
+
+\itshape
+\vb|\tllap[|stacklength\vb|]{|item\vb|}|\\
+\vb|\tclap[|stacklength\vb|]{|item\vb|}|\\
+\vb|\trlap[|stacklength\vb|]{|item\vb|}|\\
+\vb|\bllap[|stacklength\vb|]{|item\vb|}|\\
+\vb|\bclap[|stacklength\vb|]{|item\vb|}|\\
+\vb|\brlap[|stacklength\vb|]{|item\vb|}|
+\upshape
+
+See \S\ref{s:lap} for more information and examples of use for
+these lapping commands.  If trying to remember the names of all these
+lapping commands is too tedious for you, two functionally identical
+macros have been introduced:
+
+\itshape
+\vb|\toplap[|stacklength\vb|]{|lap H-direction\vb|}{|item\vb|}|\\
+\vb|\bottomlap[|stacklength\vb|]{|lap H-direction\vb|}{|item\vb|}|
+\upshape
+
+The names are simpler to remember, but they require, as their first
+mandatory argument, the horizontal direction of lapping (l, c, or r),
+while the material to be lapped is now in the second mandatory argument.
+\vspace{-0.8ex}
+
+\subsubsection{\cmd{stackanchor}\label{s:sanc}}
+
+The \vb|\stackanchor| macro is one way to create a stack where the
+baseline is split between two items in the stack.  The syntax is
+
+\itshape
+\vb|\stackanchor[|stackgap%
+  \vb|]{|top item%
+  \vb|}{|bottom item%
+  \vb|}|
+\upshape
+
+The stacking gap may be provided as an optional argument.  All other
+parameters taken are the defaults.  There are subtle differences in the
+way a short stack anchor versus a long stack anchor is split.
+One should consult \S\ref{s:sa} for a description of how the
+stack is constructed.
+
+If a short stack is being created with a split anchor, the
+\vb|\strutshortanchors{}| mode setting will determine whether the split 
+occurs at the mid-height of the strutbox (``T'') or whether it will 
+occur about the baseline (``F'').
+
+If a long stack is to be created with a split anchor, it is best to
+formulate and \vb|\savestack| both the upper portion (with a stack)
+and the lower portion (with an understack), and then \vb|\stackanchor|
+the two parts together.  Alternately, one could use the 
+\vb|\Centerstack| macro (\S\ref{s:csvs}).
+
+\subsubsection{\cmd{Centerstack} and the math variants of 
+  \cmd{Vectorstack}\label{s:csvs}}
+
+The macro \cmd{Centerstack} produces a type of \cmd{Longstack} that is 
+vertically centered about the mid-strut above the baseline.  In essence, 
+it is like a \cmd{stackanchor} version of a \cmd{Longstack}.  Additionally, 
+it is locally processed with the mode \cmd{strutlongstacks} set as 
+\verb|T|, so as to ensure
+the proper vertical centering.  
+
+The \vb|\Centerstack| macro has a math-mode equivalent called 
+\cmd{Vectorstack}, in which the stacking argument 
+is automatically processed in math mode, regardless if whether the \cmd{stackMath} 
+mode is currently active.
+
+The syntax is the same as \vb|\Longstack|, except that the anchor is
+not specified, but results naturally from the centering operation:
+
+\itshape
+\vb|\Centerstack[|alignment%
+  \vb|]{|item %
+  \vb|{|it em%
+  \vb|} {\|item%
+  \vb|} $|item%
+  \vb|$| ... item%
+  \vb|}|\\
+\vb|\Vectorstack[|alignment%
+  \vb|]{|item %
+  \vb|{|it em%
+  \vb|} {\|item%
+  \vb|}| ... item%
+  \vb|}|
+\upshape
+
+One of the main purposes of providing this vertically centered stack is
+to be compatible with mathematical bracketing commands embodied in 
+the use of the \LaTeX{} syntax \vb|\left(...\right)|, which require 
+vertically centered material.  To this end, there
+are several variants of \vb|\Vectorstack| macro that are for specific
+use in mathmode.  Here are examples of all of these macros demonstrated:
+
+{\centering
+\Centerstack{p q r s}
+\Vectorstack{p q r s}
+$\parenVectorstack{p q r s}$
+$\bracketVectorstack{p q r s}$
+$\braceVectorstack{p q r}$
+$\vertVectorstack{p q r}$.\par}
+which are, respectively,\\
+\vb|\Centerstack{p q r s}|\\
+\vb|\Vectorstack{p q r s}|\\
+\vb|$\parenVectorstack{p q r s}$|\\
+\vb|$\bracketVectorstack{p q r s}$|\\
+\vb|$\braceVectorstack{p q r}$.|\\
+\vb|$\vertVectorstack{p q r}$.|
+
+
+\subsubsection{\cmd{ensurestackMath}\label{s:esm}}
+
+The macro \vb|\ensurestackMath{}| macro is used to force its argument
+(a stacking command) to be processed in math mode, without setting 
+the global default stacking 
+mode to math mode (otherwise accomplished via \vb|\stackMath|). Note 
+that this macro does \textbf{not} ensure that
+all elements of its argument are processed in math mode (\textit{i.e.}, 
+it does not use, nor is it a replacement for \vb|\ensuremath|), but 
+only that stacking macros are processed in math mode.
+
+\subsubsection{\cmd{abovebaseline} and \cmd{belowbaseline}\label{s:abb}}
+
+The macros \vb|\abovebaseline| and \vb|\belowbaseline| also creates the
+means to shift an item's baseline.  The syntax is
+
+\itshape
+\vb|\abovebaseline[|stackgap\vb|]{|item\vb|}|\\
+\vb|\belowbaseline[|stackgap\vb|]{|item\vb|}|
+\upshape
+
+where the stackgap defines the stackgap distance.  In a long stack, it
+will define the upward (for \vb|\abovebaseline|) or downward shift
+(for \vb|\belowbaseline|) of the baseline of the item.  In a short
+stack, it will define the upward/downward vertical gap between the
+original baseline and the bottom/top of the shifted item.
+
+For long stacks, a negative stackshift for \vb|\belowbaseline| will
+produce the same result as the corresponding positive stackshift for
+\vb|\abovebaseline|.  But this will not be the case for short stacks.
+One should consult \S\ref{s:bbl} for more details.
+
+This command can also be employed to redefine the baseline of graphical
+objects, which can provide a useful technique to achieve horizontal
+alignment with other objects.  Negative stack gaps are valid (see
+\S\ref{s:bbl} for examples).  While these macros will carry slightly 
+more processing overhead than a simple \vb|\raisebox|, it may be the 
+case that specifying the shift in terms of the baseline, rather than 
+with respect to the current configuration, may make for more 
+streamlined logic.
+
+\subsubsection{\cmd{stackinset}\label{s:iis}}
+
+The macro \vb|\stackinset| is for insetting
+smaller items (\textit{e.g.}, images or text) inside of a larger background
+items (\textit{e.g.}, images or text).  The syntax is
+
+\itshape
+\vb|\stackinset{|H-align%
+  \vb|}{|H-offset%
+  \vb|}{|V-align%
+  \vb|}{|V-offset%
+  \vb|}{|inset item%
+  \vb|}{|anchor item\vb|}|
+\upshape
+
+In addition to providing the inset and background items as the last two
+arguments, the inset may be vertically and horizontally offset relative
+to various references.  The first argument \textit{H-align}, is either
+an \vb|l|, \vb|c|, or \vb|r|, indicating whether the horizontal offset
+is relative to the left, center, or right of the anchor.  The second
+argument is a length corresponding to the actual horizontal offset, 
+relative to the horizontal alignment.  For \vb|l| and \vb|c| alignments, 
+a positive horizontal offset is rightward, whereas it is leftward for
+a \vb|r| alignment.
+
+In the case of vertical measures, the third argument, \textit{V-align}, 
+can have values of \vb|t|, \vb|c|, or \vb|b|, corresponding to top,
+center, and bottom, respectively.  The fourth argument is a length
+corresponding to the vertical offset from the alignment location.
+For \vb|b| and \vb|c| alignments, a positive vertical offset is upward,
+whereas it is downward for a \vb|t| alignment.
+
+For horizontal and vertical offsets, negative lengths are allowed.
+However, this macro is always executed with the \vb|\usestackanchor| 
+parameter set as true (meaning that the resultant stack will be the
+horizontal size of the anchor, even if the inset spills outside of it).
+
+While this command was designed with inlaid images in mind (see
+\S\ref{s:ii}), there is nothing that prevents its use to inlay
+character glyphs upon each other, as in 
+\stackinset{c}{}{c}{-.25ex}{*}{O}, accomplished with
+\vb|\stackinset{c}{}{c}{-.25ex}{*}{O}|.
+
+\subsubsection{\cmd{addstackgap}\label{s:asg}}
+\def\stacktype{S}
+
+The \vb|\addstackgap| macro provides a user-requested feature to add a
+specified gap above and below an object.  The syntax is
+
+\itshape
+  \vb|\addstackgap[|%
+  stackgap%
+  \vb|]{|%
+  item%
+  \vb|}|
+\upshape
+
+When a stack is otherwise created, it by default will vertically extend
+from the top of the top-most item in the stack to the bottom of the
+bottom-most item in the stack, but with no extra gap applied.  Depending
+on how the user employs that stack, there may not be enough vertical gap
+between the stack and its adjacent objects.  This macro will apply a
+fixed gaplength (either specified or, by default, an amount given by
+\vb|\Sstackgap|) above and below the argument of the macro.  Negative
+gaps will have no effect on the vertical extent of the item.
+
+Here's an example of a stack, before and after \vb|\addstackgap| is
+applied, framed for clarity:
+\vb|\stackon{g}{a}|: \fbox{\stackon{g}{a}} versus
+\vb|\addstackgap{\stackon{g}{a}}| \fbox{\addstackgap{\stackon{g}{a}}}.
+This macro provides a slightly different result than the
+\vb|\strutlongstacks| mode described in \S\ref{s:sm}.  For more details
+of the comparison, see \S\ref{s:ag}.
+
+\subsubsection{\cmd{hsmash}\label{s:hsm}}
+\def\stacktype{L}
+
+The macro \vb|\hsmash| is a horizontal version of the popular
+\vb|\smash| macro:
+
+\itshape
+  \vb|\hsmash{|item\vb|}|
+\upshape
+
+In this case, the result is centered over its zero-width anchor
+position.  If one wanted left or right aligned versions of this macro,
+the existing \LaTeX{} macros \vb|\rlap| and \vb|\llap| would suffice.
+
+The primary utility of this macro is in applying \vb|\hsmash| to an
+object (often wider than the \vb|\textwidth|), in order to extend the
+object into the margins in a controllable manner, such as in the case of
+these items below:
+
+{\centering\hsmash{\fbox{\stackon[3pt]{%
+  \rule{1.1\textwidth}{.1ex}}{wide object}}}\par}
+
+\hsmash{\rule{5ex}{1ex}}\hfill\hsmash{\rule{2ex}{0ex}\rule{5em}{1ex}}
+
+\subsubsection{\cmd{savestack}\label{s:ss}}
+
+The macro \vb|\savestack| provides a means to save an intermediate
+result (in a box that can be recalled with the specified macro) without
+printing it.  Its syntax is
+
+\itshape
+\vb|\savestack{|macro token\vb|}{|stacking operation\vb|}|
+\upshape
+
+The macro token is a backslashed name that you can later use to recall
+the boxed intermediate result.  The stacking operation is the
+intermediate result you wish to save in a box without printing.  Reasons
+why this might be a useful macro are described in \S\ref{s:svs}.
+
+Note that while \vb|\savestack| is designed to save an intermediate
+stacking operation in a box, the reality is that you can use this macro
+to save any sequence of boxable output, even if it is not a stacking
+operation.  So, for example, \vb|\savestack{\mymacro}{\fbox{A}}| can
+later be recalled with an invocation of \vb|\mymacro|, to yield
+\fboxsep=1pt\savestack{\mymacro}{\fbox{A}}\mymacro.\fboxsep=0pt
+
+\section{Making a Stack in Stages}
+
+There are times where one needs to make a stack in several consecutive
+steps.  In order to do so, there are several ways, detailed below.  
+
+\subsection{Suppressing Output\label{s:qs}}
+
+One can define \vb|\quietstack| as \vb|T| to suppress output.  Then, the
+intermediate stack can be passed as an argument to the next stacking
+operation with a \vb|\usebox{\stackedbox}|.  That same \vb|\usebox|
+may be used to output the final stack, as long as \vb|\quietstack|
+remains defined as ``T''.  Otherwise, \vb|\quietstack| must again be
+defined ``F'' (false) to re-enable automatic output.
+
+\subsection{Saving a Stack without Printing It\label{s:svs}}
+
+Perhaps a quicker and better way is to use the package's
+\vb|\savestack| macro, of the form
+\itshape\vb|\savestack{|macro token\vb|}{|stacking operation\vb|}|
+\upshape.  This will perform the stacking operation and place it into
+the supplied token (without printing it), so that the intermediate stack
+can be passed to the subsequent stacking operation by executing the
+token macro.
+
+For example,
+\begin{verbatim}
+\savestack{\pdq}{\Longstack[r]{6 5 4 {3 3}}}%
+\Longstack[l]{{\pdq} 2 1 0}%
+\end{verbatim}
+
+would first place ``\Longstack[r]{6 5 4 {3 3}}'' into \vb|\pdq|, without
+printing it, in a right-aligned fashion, with the ``3 3'' on the
+baseline.  Then, the second \vb|\Longstack| would place the first stack
+atop of the ``2'' in a left-aligned fashion.  The resulting stack would
+look as follows, with the ``0'' on the final baseline.
+
+\savestack{\pdq}{\Longstack[r]{6 5 4 {3 3}}}%
+\Longstack[l]{{\pdq} 2 1 0}
+\rl\rl\blmark%
+
+\section{Choosing the Anchor Element\label{s:cae}}
+
+Nearly all stacking done with the \textsf{stackengine} package has 
+a designated anchor element.  The baseline of the anchor does not 
+change.  Instead, the other items are placed relative to the anchor.
+By adding items at first above and then below the anchor, any
+arbitrary stack can be built around the anchor.
+
+\def\stackalignment{r}
+\setstackgap{S}{2pt}\setstackgap{L}{12pt}%
+Here is a Longstack/understack example:
+\savestack{\pdq}{\Longstack{3 2 1 0}}%
+\Longunderstack[r]{{\pdq} -1 -2 -3 -4 -5}
+that was achieved as follows:
+
+\begin{verbatim}
+\savestack{\pdq}{\Longstack{3 2 1 0}}%
+\Longunderstack[r]{{\pdq} -1 -2 -3 -4 -5}
+\end{verbatim}
+
+In the first stack, ``0'' is the anchor of \vb|\pdq|.  In the second
+stack, \vb|\pdq| is the anchor (which means that ``0'' remains the
+anchor of the composite stack).
+
+\section{Top and Bottom Lapping\label{s:lap}}
+\def\stackalignment{c}
+\def\stacktype{L}%
+\setstackgap{L}{\baselineskip}
+Top and bottom lapping can be accomplished with a long stack, using a null
+item as the anchor, and \vb|\useachorwidth| set to \vb|T|.  This
+technique is encoded in six \vb|\|\textit{xy}\vb|lap| commands,
+where \textit{x} can be \vb|t| or \vb|b| (for ``top'' and
+``bottom,'' respectively) and \textit{y} can be \vb|l|, \vb|c|, or
+\vb|r| (for ``left,'' ``center,'' and ``right,'' respectively).  Note
+that this \textit{y} is not the same as the \vb|\stackalignment|, but
+rather refers to the direction where the lapped item is placed relative
+to the lap invocation.
+
+For illustration only, laps will be shown at a \textit{visible} lapmark
+(given by \lapmark~), defining the point of invocation.  In these
+examples, I lap a \vb|\parbox| above or below the selected location.
+
+\begin{myverbbox}{\bll}\bllap\end{myverbbox}
+\begin{myverbbox}{\brl}\brlap\end{myverbbox}
+\begin{myverbbox}{\tll}\tllap\end{myverbbox}
+\begin{myverbbox}{\trl}\trlap\end{myverbbox}
+\begin{myverbbox}{\bcl}\bclap\end{myverbbox}
+\begin{myverbbox}{\tcl}\tclap\end{myverbbox}
+For example here\lapmark%
+\bllap{\parbox[t]{.7in}{this is a bottom-left lap \bll}}
+or el\lapmark%
+\brlap{\parbox[t]{.8in}{this is a bottom-right lap \brl}}%
+se here, or else I can put it here\lapmark%
+\tllap{\parbox[b]{.7in}{this is a top-left lap \tll}}
+or here\lapmark%
+\trlap{\parbox[b]{.7in}{this is a top-right lap \trl}}%
+.\
+
+Of course, I can per\lapmark
+\bclap{\fbox{\parbox[t]{1.1in}{this is a bottom-center lap \bcl}}}%
+form center lapping, as we\lapmark%
+\tclap{\fbox{\parbox[b]{1.1in}{this is a top-center lap \tcl}}}%
+ll.
+To see, for example, how the above was achieved, the last lap in the
+prior sentence was achieved by invoking
+
+\vb|\tclap{\fbox{\parbox[b]{1.1in}{this is a top-center lap \tcl}}}|
+
+in the middle of the word ``well.''  (Note that \vb|\tcl| is a box
+containing the verbatim text ``\tcl,'' created with the
+\textsf{verbatimbox} package.)
+
+Note that \vb|\toplap| and \vb|\bottomlap| have also been introduced
+as macros that are functionally identical to these six lapping commands.
+While requiring an extra argument, their names may be easier for you to
+remember.  See \S\ref{s:lapdef}.\vspace{-1ex}
+
+\section{Shifting the Anchor's Baseline} 
+
+By default, the baseline of the anchor becomes the baseline of the
+stack.  If one wanted the stack baseline to \textbf{not} conform to
+the baseline of any of the individual stacked items, something needs
+to change.  If one quantitatively knows the shift desired, a simple
+\vb|\raisebox| could be used to vertically shift the anchor, after
+(or possibly prior to) stacking.  There are also some other options
+provided by the package.
+
+\subsection{The \cmd{stackanchor} Macro for ``L'' and ``S'' Stack Types%
+\label{s:sa}}
+
+If one would like the anchor's baseline to be ``midway'' between two
+vertically arrayed items, the \vb|\stackanchor| macro attempts to
+provide that capability for both ``L'' and ``S'' stack types, though the
+definitions of ``midway'' are different for each.  The macro
+\vb|\stackanchor| works for two-item stacks in both ``L'' and ``S''
+stack types, as shown below.
+
+In the case on a long stack, what is satisfied is that the baseline of
+the anchor is made equidistant from the baselines of the two respective
+items comprising the stacked anchor.
+
+\def\stacktype{L}%
+
+\Large
+\def\stackalignment{r}%
+\setstackgap{L}{.8\baselineskip}%
+\blmark%
+\rl\rl
+\stackanchor{\rl\rl\rl\rl top\rl}{\rl L-bottom\rl}%
+\rl\rl%
+\blmark
+\normalsize
+
+In the case of a short stack, the middle of the inter-item gap is
+vertically located at the center of the font's \vb|\strutbox|, so that
+the middle of the stackgap would be at the same vertical level as the
+middle of parentheses, were they located on the original baseline.
+
+\Large
+\blmark\rl\rl%
+\def\rls{\rule[.5\ht\strutbox-.5\dp\strutbox]{2ex}{.1pt}}%
+\rls%
+\def\stackalignment{l}%
+\def\stacktype{S}\setstackgap{S}{1ex}%
+\savestack{\pdq}{\stackanchor{\fbox{top}}{\fbox{S-bottom}}}%
+\pdq%
+\rls%
+(Mid-strut)%
+\rl\rl\blmark
+\def\stackalignment{c}%
+\normalsize%
+
+If one does not want to have the short-stack gap split at the mid-strut
+height, but rather at the baseline, the \vb|\strutshortanchors{F}| mode
+may be set prior to the \vb|\stackanchor| invocation.
+
+\strutshortanchors{F}%
+\Large
+\blmark\rl\rl%
+\def\stackalignment{l}%
+\def\stacktype{S}%
+\savestack{\pdq}{\stackanchor{\fbox{top}}{\fbox{S-bottom}}}%
+\pdq%
+\rl\rl\blmark
+\def\stackalignment{c}%
+\normalsize%
+\strutshortanchors{T}%
+
+The \vb|\strutshortanchors| mode will only affect short stacks
+(\vb|\stacktype| ``S''), since long stacks do not use a strut as part
+of the \vb|\stackanchor| definition.
+
+For stackanchors with more than two rows, one should compose the top
+portion with a stack and the bottom portion with an understack, and
+then, finally, shift the anchor by applying \vb|\stackanchor| to these
+two ``substacks.''
+
+\Large
+\setstackgap{S}{1ex}%
+\savestack{\upperstack}{\Shortstack{{over text} {\fbox{top}}}}
+\savestack{\lowerstack}{\Shortstack{{\fbox{S-bottom}} {under text}}}
+\blmark\rl\rl\rls%
+\stackanchor{\upperstack}{\lowerstack}%
+\rls(Mid-strut)
+\normalsize
+
+\subsection{\cmd{belowbaseline} for Moving the Anchor's
+Baseline\label{s:bbl}}
+
+The command \vb|\belowbaseline| is intended to be used to set an item,
+such as a stack anchor, below the baseline (this discussion is equally
+valid for the macro \vb|\abovebaseline|, but in the opposite sense).
+The macro accomplishes this task by stacking the item below a null
+object.  However, \vb|\useanchorwidth| is temporarily set to \vb|F| so
+that the stacked object takes on the width of the under-placed object.
+
+The command can be used with both stacktypes.  With \vb|\stacktype|
+``S'', the optional argument will denote the stackgap below the baseline
+(default \vb|\Sstackgap|),
+
+\Large
+\setstackgap{S}{6pt}%
+\def\stacktype{S}%
+Short stacktype\rl\rl\belowbaseline[0pt]{\fbox{0pt below baseline}}%
+\rl\belowbaseline{\fbox{6pt}}\rl\belowbaseline[-6pt]{\fbox{-6pt}}\rl\rl
+\normalsize
+
+When used with \vb|\stacktype| ``L'', the optional length denotes
+the distance to the baseline of the understacked object (default
+\vb|\Lstackgap|).
+
+\Large
+\setstackgap{L}{18pt}%
+\def\stacktype{L}%
+Long stacktype\rl\rl\belowbaseline[0pt]{\fbox{0pt below baseline}}%
+\rl\belowbaseline{\fbox{18pt}}\rl\belowbaseline[-19pt]{\fbox{-18pt}}\rl
+\normalsize
+
+As the above images show, there is nothing to prevent the use of
+negative numbers being used to raise the the object above the baseline.
+But care must be taken, since a \vb|\belowbaseline| with a negative
+shift will not necessarily equal the \vb|\abovebaseline| with the
+corresponding positive shift (that equality only holds for long stacks).
+To better appreciate the meaning of negative baseline shifts, we
+compare, below, negative shifts for \vb|\belowbaseline| to
+\vb|\abovebaseline| with the corresponding positive argument.
+
+\Large
+\def\stacktype{S}%
+Short stacktype\rl\rl\belowbaseline[-6pt]{\fbox{-6pt below}}%
+\rl\abovebaseline[6pt]{\fbox{6pt above}}\rl\rl\blmark%
+\normalsize
+
+\Large
+\def\stacktype{L}%
+Long stacktype\rl\rl\belowbaseline[-6pt]{\fbox{-6pt below}}%
+\rl\abovebaseline[6pt]{\fbox{6pt above}}\rl\rl\blmark%
+\normalsize
+
+The \vb|\belowbaseline| command is also useful for forcing objects,
+such as images, to be top-aligned.  This can be a useful feature when
+trying to achieve a desired horizontal alignment of disparate elements in
+tabular columns.
+
+\vb|\def\stacktype{S}\belowbaseline[0pt]{\imgi}|\\
+\vb|\belowbaseline[-\ht\strutbox]{\imgi}|:
+
+\def\stacktype{S}
+\def\imgi{\includegraphics[width=0.87in]{example-image}}
+\rl\blmark\rl\rl\belowbaseline[0pt]{\imgi}\rl\rl
+\belowbaseline[-\ht\strutbox]{\imgi}\rl\rl%
+\fbox{\parbox[t]{1.8cm}{\raggedright A parbox with [t] alignment}}%
+\rl\rl\blmark\rl
+
+\section{Negative Stack Gap\label{s:nsg}}
+\def\stacktype{S}
+\setstackgap{S}{-1.2pt}
+\setlength{\dotscale}{1.ex}
+A negative gap can be used to overlap things.  For example, \newdot plus
+``i'' can make, when the stack gap is suitably negative, the following:
+
+~\hfill\scalebox{3}{\stackon{i}{\newdot}}\hfill~
+
+Note that the use of a negative stack gap for a two-item stack is
+actually very similar to the \vb|\stackinset| macro described in
+\S\ref{s:iis} and \S\ref{s:ii}.  The issue of negative stackgaps is also
+discussed in \S\ref{s:bbl}.
+
+\section{The {\cmd{useanchorwidth}} Option\label{s:uaw}}
+\setstackgap{S}{-1.2pt}
+\setlength{\dotscale}{1.ex}
+
+Because\newdot has width larger than the dot glyph itself (we box its
+extent here: \fbox{\newdot}), stacking it could otherwise be a problem.
+For example, th\stackon{i}{\newdot}s uses the whole stackwidth to set
+the dotted-i in its place. 
+\def\useanchorwidth{T} 
+On the other hand, when \vb|\useanchorwidth| is defined as \vb|T|,
+``th\stackon{i}{\newdot}s'' uses only the anchor width to set the stack
+(where the ``i'' is the anchor).  
+
+Below, we show an \vb|\fbox| around the dotted i, clearly
+demonstrating that the dot does not influence the width of the
+stack when \vb|\useanchorwidth| is defined as ``T''.
+
+\fboxrule=0.2pt
+\hfill 
+\scalebox{3}{th\fbox{\stackon{i}{\newdot}}s}%
+\hfill~
+\normalsize
+\def\useanchorwidth{F} 
+\fboxrule=0.6pt
+
+\section{Adding Gap Above and Below a Stack\label{s:ag}}
+\setstackgap{L}{\baselineskip}
+
+By default, a stack is vertically clipped with no gap as in these
+two \vb|\Longstack| examples:
+\fbox{\Longstack{A G}}
+\fbox{\Longstack{a g}}
+
+This package provides two ways to conveniently add gaps above and below
+a stack.  For any type of stack (short or long), the \vb|\addstackgap|
+macro (\S\ref{s:asg}) adds a fixed amount of gap above and below a
+completed object.  Alternately, during the construction of long stacks,
+the \vb|\strutlongstacks| mode (\S\ref{s:sm}) will automatically employ
+struts in each row of a long stack during its construction.  However,
+these two approaches are not equivalent:
+
+\vb|\addstackgap[3pt]{}|:
+\fbox{\addstackgap[3pt]{\Longstack{A G}}}
+\fbox{\addstackgap[3pt]{\Longstack{a g}}}
+~~~~\vb|\strutlongstacks{T}|:
+\strutlongstacks{T}
+\fbox{\Longstack{A G}}
+\fbox{\Longstack{a g}}
+\strutlongstacks{F}
+
+Make sure you use the one that best applies to your situation.
+
+\section{Image Insets\label{s:ii}}
+\setstackgap{L}{18pt}%
+
+The command \vb|\stackinset| allows images to be
+stacked atop one another, to produce the effect of an inset image.  In
+addition to specifying the two images, the effect can be tailored by
+specifying the vertical and horizontal offset of the inset image.
+
+\def\imgi{\includegraphics[width=0.87in]{example-image}}
+\def\imgii{\includegraphics[width=0.3in]{example-image}}
+\savestack{\imga}{\stackinset{r}{3pt}{t}{2pt}{\imgii}{\imgi}}
+\savestack{\imgb}{\stackinset{l}{3pt}{b}{2pt}{\imgii}{\imgi}}
+\imga~~~~\imgb
+\def\stackalignment{c}
+
+The last figure was obtained with
+\vb|\stackinset{l}{3pt}{b}{2pt}{\imgii}{\imgi}|,
+showing that \vb|\imgii| was offset 2pt from the bottom and 3pt from
+the left edge of \vb|\imgi|.
+
+The syntax of \vb|\stackinset| allows for a convenient nesting of
+figure text labels.  For example,
+
+\begin{verbatim}
+\stackinset{l}{ .1in}{b}{.2in}{Note 1}{%
+\stackinset{r}{ .1in}{t}{.2in}{Note 2}{%
+\stackinset{c}{-.5in}{c}{.4in}{Note 3}{%
+\stackinset{r}{ .8in}{b}{.6in}{Note 4}{%
+\stackinset{r}{ .1in}{c}{.0in}{\imgi}{%
+\includegraphics[width=3in]{example-image}%
+}}}}}
+\end{verbatim}
+
+gives the following result:\begin{verbbox}[\small]\stackinset\end{verbbox}
+
+\bxfigure[ht]
+{An example of \theverbbox}
+{%
+\stackinset{l}{ .1in}{b}{.2in}{Note 1}{%
+\stackinset{r}{ .1in}{t}{.2in}{Note 2}{%
+\stackinset{c}{-.5in}{c}{.4in}{Note 3}{%
+\stackinset{r}{ .8in}{b}{.6in}{Note 4}{%
+\stackinset{r}{ .1in}{c}{.0in}{\imgi}{%
+\includegraphics[width=3.0in]{example-image}%
+}}}}}%
+}
+
+\clearpage
+\section{Stacking for Subfiguring and Baseline Manipulation\label{s:bm}}
+
+The stacking commands provide a convenient way to underset a subfigure
+notation under the corresponding image.  Furthermore, because of the
+flexibility of the stacking commands, the baselines of the subfigures
+can be manipulated in many ways, which may come in handy depending on
+how you are choosing to lay out your subfigures.
+
+Examples of this are shown in figure~\ref{fg:subs}. 
+
+%
+\setstackgap{S}{3pt}\def\stacktype{S}%
+\begin{myverbbox}{\figa}\stackon{(a)}{\imga}\end{myverbbox}%
+\begin{myverbbox}{\figb}\stackunder{\imgb}{(b)}\end{myverbbox}%
+\begin{myverbbox}[\small]{\figc}
+\Shortstack{{\imgi} (c1) {} {\imgi} (c2)}
+\end{myverbbox}%
+\begin{myverbbox}%
+{\figd}\belowbaseline[0pt]{\stackunder{\imgi}{(d)}}\end{myverbbox}%
+\def\CaptionJustification{\raggedright}%
+\bxfigure[ht]
+{Image stacking with stacktype ``S'', stack gap set to 3pt and using: 
+(a)~\figa, (b)~\figb, (c)~\figc, and (d)~\figd\label{fg:subs}}
+{\blmark\rl\rl%
+\stackon{(a)}{\imga}~~
+\stackunder{\imgb}{(b)}~~
+\Shortstack{{\imgi} (c1) {} {\imgi} (c2)}~~
+\belowbaseline[0pt]{\stackunder{\imgi}{(d)}}
+}%
+
+\section{Nested Stacking Commands\label{s:nsc}}
+
+The macros \vb|\Shortstack|, \vb|\Longstack|, and the corresponding
+understack macros are set up to conveniently stack multiple objects
+using a space separated argument list.  Because of parsing constraints
+on the space-separated list, however (see \S\ref{s:mm}), there may be
+times that you would prefer building stacks by way of nesting the more
+primitive stacking macros.
+
+Nesting can be accomplished, but some care must be taken, in the case of
+long stacks.  But first, let us see the ways in which nesting may be
+applied for short stacks:\\
+
+\def\stacktype{S}\setstackgap{S}{3pt}
+\vb|\stackunder{1}{\stackunder{2}{\stackunder{3}{\stackunder{4}{5}}}}|\\
+\vb|\stackunder{\stackunder{\stackunder{\stackunder{1}{2}}{3}}{4}}{5}|\\
+\vb|\stackon{1}{\stackon{2}{\stackon{3}{\stackon{4}{5}}}}|\\
+\vb|\stackon{\stackon{\stackon{\stackon{1}{2}}{3}}{4}}{5}|
+
+will produce the following: 
+\stackunder{1}{\stackunder{2}{\stackunder{3}{\stackunder{4}{5}}}}
+\stackunder{\stackunder{\stackunder{\stackunder{1}{2}}{3}}{4}}{5}
+\stackon{1}{\stackon{2}{\stackon{3}{\stackon{4}{5}}}}
+\stackon{\stackon{\stackon{\stackon{1}{2}}{3}}{4}}{5} \blmark
+
+In these cases, the nesting could be applied on either the first or the
+second argument of the \vb|\stackunder| or \vb|\stackon| commands,
+with the same end result.
+
+In the case of long stacks however, employing the identical methodology
+gives a different, at first unexpected, result:
+\def\stacktype{L}\setstackgap{L}{\baselineskip}
+\stackunder{1}{\stackunder{2}{\stackunder{3}{\stackunder{4}{5}}}}
+\stackunder{\stackunder{\stackunder{\stackunder{1}{2}}{3}}{4}}{5}
+\stackon{1}{\stackon{2}{\stackon{3}{\stackon{4}{5}}}}
+\stackon{\stackon{\stackon{\stackon{1}{2}}{3}}{4}}{5} \blmark
+
+In this case, nesting the second argument works as hoped, but nesting
+the first argument does not.  The reason for this ``failure'' stems
+not from a failure of logic, but an enforcement of it.  It stems from the
+very definition of a long stack, in which the baseline of the second
+argument is placed \vb|\LStackgap| below or above the baseline of the
+first argument.  By nesting the first argument, all the second arguments
+are placed \vb|\Lstackgap| from the unchanging stack baseline (thus
+overlapping), and not relative to the current top or bottom of the
+nested stack.
+
+Therefore, to nest long stacks, only the second argument of the
+stackengine may be nested.
+
+\section{Math Mode and Mixed Mode Usage\label{s:mm}}
+\def\useanchorwidth{F}
+\setstackgap{S}{1pt}\def\stacktype{S} 
+
+As of V3.0, the {\ste} package was extended to allow its arguments to be
+processed, by default, using inline math-mode (\vb|\textstyle| math).
+The math-mode default is brought about with an invocation of
+\vb|\stackMath|, which can be later reversed via \vb|\stackText|.
+
+Except in circumstances that require the particular features of this
+package, {\ste} may not be the best package for math mode
+since there are many packages that already cater directly to the need to
+stack and align mathematical objects.  However, if there is a need to
+use {\ste} there, because of its particular facility with
+stacking gaps and alignment, there are several hints to remember.
+
+\textsc{Hints for use in math mode:} (operating under \vb|\stackMath|)
+\stackMath
+
+\begin{enumerate}
+
+\item Arguments to stacking commands are only taken in math mode, by
+default, following the invocation of the \vb|\stackMath| macro.
+
+\item The \vb|\stackMath| and \vb|\stackText| macros are not to be
+used within stacking arguments, but are invoked prior to stacking, to
+set the default manner in which stacking arguments are subsequently
+processed.
+
+\item As described in \S\ref{s:sls}, if the math argument has spaces in
+a command which uses space-separated lists, or if the argument ends in a
+macro, the argument must be enclosed in braces.
+
+\vb|\(y = \Shortstack{{a + b} {\odot} b} x\)|:\hfill
+\(y = \Shortstack{{a + b} {\odot} b} x\)
+
+\item In math mode, the \vb|\stackanchor| command seems to preserve
+the math axis better with an ``S'' \vb|\stacktype|, rather than type
+``L''.
+
+\end{enumerate}
+
+\textsc{Hints for using math in text mode:} (operating under \vb|\stackText|)
+\stackText
+
+%SAVE FOR FUTURE USE
+\begin{verbbox}[]
+\savestack{\a}{\(\sqrt{a + b}\)}
+\savestack{\dash}{- - - - -}
+\(y = \stackunder{\stackon{\dash}{\a}}{$b$} x\)
+\end{verbbox}
+
+\begin{enumerate}
+
+\item Stacking commands from this package can be used in math mode, but
+will set their arguments as text, 
+
+\vb|\( y = \stackunder{a}{+} x\)|:\hfill
+\( y = \stackunder{a}{+} x\)
+
+\item To set an argument in math style, it must be set between math
+delimiters.
+
+\vb|\( y = \stackunder{$a$}{+} x\)|:\hfill
+\( y = \stackunder{$a$}{+} x\)
+
+\item To set a particular stack completely in math style, without globally setting the mode with a \verb|\stackMath|, one can use \verb|\ensurestackMath{}|.
+
+\item If not using \verb|\ensurestackMath|, each space-separated item of the argument to \vb|\Shortstack|,
+\vb|\Longstack|, and the corresponding understacks must each be enclosed
+in their own set of math delimiters (either \verb|$...$| or \verb|\(...\)|).
+
+\vb|\(y = \Shortstack{$a$ . $b$} x\)|:\hfill
+\(y = \Shortstack{$a$ . $b$} x\)
+
+\item For more complex items, the \vb|\savestack| command can be used
+to save an intermediate math expression (even if it isn't actually a
+stack).
+
+\theverbbox:\hfill
+\savestack{\a}{\(\sqrt{a + b}\)}
+\savestack{\dash}{- - - - -}
+\addvbuffer[\the\baselineskip]{\(y = \stackunder{\stackon{\dash}{\a}}{$b$} x\)}
+
+\end{enumerate}
+
+\section{Deprecated Features\label{s:df}}
+
+There are several definitions and macros from earlier versions of the 
+{\ste} package that are still fully functional, but are discouraged 
+because of more preferable alternatives.  They have been omitted from the
+current documentation, except for mention here.  They are:
+
+\begin{itemize}
+\item \vb|\def\usestackstrut{T/F}|.  This definition is fully replaced 
+by the mode setting given by the \vb|\strutshortanchors{T/F}| macro.
+The new name is less ambiguous and the macro form is chosen vis-\`a-vis
+the \vb|\def| form, because the macro represents a \textbf{mode} of
+stack construction, rather than an argument parameter.
+
+\item \vb|\bottominset| and \vb|\topinset|.  These
+macros are subsumed by the much more versatile \vb|\stackinset| macro.
+The replacement offers insets relative to not only the top and bottom,
+but also the mid-height of the anchor.  It also provides the capability 
+to horizontally place the inset relative to the center of the anchor,
+in addition to the left or the right.  Most importantly, the placement
+of the anchor as the last argument of \vb|\stackinset| means that the
+syntax for nested insets is much more readable vis-\`a-vis the nested
+syntax for \vb|\bottominset| and \vb|\topinset|.
+\end{itemize}
+
+\section{Backward Compatibility\label{s:bc}}
+
+The author of this package profoundly apologizes for the fact that the
+syntax of this package changed between versions 1.0 and 2.0 of this
+package.  
+
+In\margcmd{setstackgap} version 1.0 of this package, stackgaps could be
+directly defined by setting the \LaTeX{} lengths \vb|\Sstackgap| and
+\vb|\Lstackgap|.  The problem with this approach is that, under fontsize
+changes, these stackgaps were not automatically updated to reflect the
+new fontsize.  As of V2.0, that deficiency was remedied.  The syntax
+that replaces these length specifications is
+
+\itshape
+\vb|  \setstackgap{S}{|inter-item stackgap\vb|}|\\
+\vb|  \setstackgap{L}{|inter-item baselineskip\vb|}|  .
+\upshape
+
+Thus, \vb|\Sstackgap| and \vb|\Lstackgap| are no longer lengths (but
+instead \vb|\def|s), and cannot be set via the \vb|\Sstackgap=...|
+or \vb|\setlength{\Sstackgap}{...}| syntax.  It is these settings
+which will need to be revised to modernize older code.
+
+While\margtt{[oldsyntax]} not encouraged, the V1.0 syntax may be
+recovered via
+
+\vb|  \usepackage[oldsyntax]{stackengine}|
+
+If you retain the ``oldsyntax'' setting, you must remember that
+\textsf{stackengine} will honor your specified gap sizes
+(\vb|\Sstackgap| and \vb|\Lstackgap|) at the time of their
+\textbf{definition}, rather than at the time of their
+\textbf{invocation}.  Thus, if \vb|\Sstackgap| is specified as 0.7ex
+when the text is \vb|\normalsize|, the gap length is set in a
+\vb|\normalsize| font, even if the fontsize is later changed.  To
+overcome this behavior, the stackgap must be redefined at the new
+fontsize, or better still, \vb|[oldsyntax]| usage needs to be
+relegated.
+
+\clearpage
+\section{Acknowledgements}
+
+I would like to thank Prof. Enrico Gregorio at tex.stackexchange for
+assisting in numerous ways to make this package better:
+
+\begin{itemize}
+
+\item by providing  three lines of code to strip a leading 
+backslash from an argument:\\
+\vb|http://tex.stackexchange.com/questions/42318/|\\
+\vb|removing-a-backslash-from-a-character-sequence|
+
+\item in making the
+transition from the deficient V1.0 syntax as painless as possible:\\
+\vb|http://tex.stackexchange.com/questions/123443/|\\
+\vb|defining-a-length-that-scales-with-fontsize-changes/123470#123470|
+
+\item and in helping to make the parsing routines of this package robust:\\
+\vb|http://tex.stackexchange.com/questions/137298/|\\
+\vb|centering-breaks-fragile-command-is-there-a-fix/137314#137314|
+
+\end{itemize}
+
+Thanks also to Dr. David Carlisle for explaining the need for argument
+expansion in certain situations:\\
+\vb|http://tex.stackexchange.com/questions/131581/|\\
+\vb|parsing-rows-and-tab-characters/131594#131594|
+
+Finally, I extend my thanks to Per Starb\"ack, for 
+his unsolicited but gratefully accepted edit of the V3.21
+package documentation, which corrected numerous typographical errors.
+
+\section{Sectional index of \textsf{stackengine} definitions, modes, 
+  \& macros\label{s:index}}
+
+{\small
+\begin{tabular}{lll}
+Definition, Mode, or Macro & \S\ Defined & \S\ Used\\
+\hline
+\cmd{abovebaseline}&\ref{s:abb}&\ref{s:bbl}\\
+\cmd{addstackgap}&\ref{s:asg}&\ref{s:sou}, \ref{s:ag}\\
+\cmd{bclap}&\ref{s:lapdef}&\ref{s:lap}\\
+\cmd{belowbaseline}&\ref{s:abb}&\ref{s:bbl}\\
+\cmd{bllap}&\ref{s:lapdef}&\ref{s:lap}\\
+\cmd{bottomlap}&\ref{s:lapdef}&\ref{s:lap}\\
+\cmd{braceVectorstack}&\ref{s:csvs}&\\
+\cmd{bracketVectorstack}&\ref{s:csvs}&\\
+\cmd{brlap}&\ref{s:lapdef}&\ref{s:lap}\\
+\cmd{Centerstack}&\ref{s:csvs}&\ref{s:sanc}\\
+\cmd{ensurestackMath}&\ref{s:esm}&\ref{s:sm}, \ref{s:mm}\\
+\cmd{hsmash}&\ref{s:hsm}&\\
+\cmd{Longstack}&\ref{s:sls}&\ref{s:st}, \ref{s:osus}, \ref{s:sm}, \ref{s:slus}, 
+  \ref{s:csvs}, \ref{s:svs}, \ref{s:cae}, \ref{s:ag}, \ref{s:nsc},
+  \ref{s:mm}\\
+\cmd{Longunderstack}&\ref{s:slus}&\ref{s:osus}, \ref{s:sm}, \ref{s:cae},
+  \ref{s:nsc}, \ref{s:mm}\\
+\cmd{Lstackgap}&\ref{s:parms}&\ref{s:st}, \ref{s:stackeng}, \ref{s:bbl},
+  \ref{s:nsc}, \ref{s:bc}\\
+\cmd{parenVectorstack}&\ref{s:csvs}&\\
+\cmd{quietstack}&\ref{s:parms}&\ref{s:stackeng}, \ref{s:qs}\\
+\cmd{savestack}&\ref{s:ss}&\ref{s:sanc}, \ref{s:svs}, \ref{s:cae},
+  \ref{s:mm}\\
+\cmd{setstackEOL}&\ref{s:sm}&\ref{s:sls}\\
+\cmd{Shortstack}&\ref{s:sls}&\ref{s:st}, \ref{s:osus}, \ref{s:anch},
+  \ref{s:sal}, \ref{s:sm}, \ref{s:slus},  \ref{s:sa}, \ref{s:bm}, \ref{s:nsc},
+  \ref{s:mm}\\
+\cmd{Shortunderstack}&\ref{s:slus}&\ref{s:st}, \ref{s:osus}, \ref{s:anch},
+  \ref{s:sm}, \ref{s:sls}, \ref{s:nsc}, \ref{s:mm}\\
+\cmd{Sstackgap}&\ref{s:parms}&\ref{s:st}, \ref{s:stackeng}, \ref{s:asg},
+  \ref{s:bbl}, \ref{s:bc}\\
+\cmd{stackalignment}&\ref{s:parms}&\ref{s:sal}, \ref{s:stackeng},
+  \ref{s:cae}, \ref{s:lap}\\
+\cmd{stackanchor}&\ref{s:sanc}&\ref{s:csvs}, \ref{s:iis}, \ref{s:sa},
+  \ref{s:mm}\\
+\cmd{stackengine}&\ref{s:stackeng}&\ref{s:sou}\\
+\cmd{stackgap}&\ref{s:parms}&\ref{s:stackeng}, \ref{s:sls}\\
+\cmd{stackinset}&\ref{s:iis}&\ref{s:nsg}, \ref{s:ii}, \ref{s:df}\\
+\cmd{stackMath}&\ref{s:sm}&\ref{s:sls}, \ref{s:esm}, \ref{s:mm}\\
+\cmd{stackon}&\ref{s:sou}&\ref{s:asg}, \ref{s:nsg}, \ref{s:uaw}, \ref{s:bm},
+  \ref{s:nsc}, \ref{s:mm}\\
+\cmd{stackText}&\ref{s:sm}&\ref{s:mm}\\
+\cmd{stacktype}&\ref{s:parms}&\ref{s:st}, \ref{s:stackeng}, \ref{s:sls},
+  \ref{s:sa}, \ref{s:bbl}, \ref{s:bm}, \ref{s:mm}\\
+\cmd{stackunder}&\ref{s:sou}&\ref{s:bm}, \ref{s:nsc}, \ref{s:mm}\\
+\cmd{strutlongstacks}&\ref{s:sm}&\ref{s:csvs}, \ref{s:asg}, \ref{s:ag}\\
+\cmd{strutshortanchors}&\ref{s:sm}&\ref{s:sanc}, \ref{s:sa}, \ref{s:df}\\
+\cmd{tclap}&\ref{s:lapdef}&\ref{s:lap}\\
+\cmd{tllap}&\ref{s:lapdef}&\ref{s:lap}\\
+\cmd{toplap}&\ref{s:lapdef}&\ref{s:lap}\\
+\cmd{trlap}&\ref{s:lapdef}&\ref{s:lap}\\
+\cmd{useanchorwidth}&\ref{s:parms}&\ref{s:stackeng}, \ref{s:bbl}, \ref{s:uaw}\\
+\cmd{Vectorstack}&\ref{s:csvs}&\\
+\cmd{vertVectorstack}&\ref{s:csvs}&\\
+\end{tabular}
+}
+
+\section{Code Listing}
+
+\verbfilenobox[\footnotesize]{stackengine.sty}
+
+\end{document}
+
+
+
