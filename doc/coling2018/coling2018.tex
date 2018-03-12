@@ -130,7 +130,33 @@ We present a method that addresses these problems. Our concrete
 implementation is for a particular grammar formalism, Grammatical
 Framework, but the method is general for any formalism that is at most
 as expressive as parallel multiple context-free grammars ({\sc
-  pmcfg}). % (Parallel Multiple Context-Free Grammar).
+  pmcfg}). This includes grammar formalisms such as Tree-Adjoining
+Grammar (\tag) \cite{joshi1975tag} and Combinatorial Categorial
+Grammar (\ccg) \cite{steedman1988ccg}.
+
+\begin{itemize}
+\item The base for a test case is a single syntactic function. Given a
+  grammar and a category, the program can extract all functions that
+  produce or use the given category.
+\item The tests cases are automatically generated for each different
+  language. If there is a parameter of gender or noun class in the
+  grammar, then the program is guaranteed to choose an example of each
+  of them.
+\item When some feature doesn't matter, the test cases are pruned: for
+  example, in English we need to test a reflexive construct with every
+  person, number and gender (``he sees himself'', ``she sees herself''
+  and ``it sees itself''), but with a non-reflexive object, it is
+  enough to test with only one 3rd person subject, because the verb
+  forms, agreement and other details are identical.
+\item The grammar is a collection of grammatical categories, syntactic
+  functions and a lexicon, and everything is interconnected. By
+  changing e.g. the category of prepositions, the changes are
+  propagated to several functions, e.g. for building adjuncts (``in
+  the house'') and complements (``believe in something''). This is
+  all part of the grammar, and the chain of effects can be
+  automatically traced. 
+\end{itemize}
+
 
 \section{Grammatical Framework}
 Grammatical Framework (\gf) \cite{ranta2004gf} 
