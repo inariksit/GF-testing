@@ -1,6 +1,7 @@
 concrete NounPhrasesEus of NounPhrases = open Prelude in {
 
   lincat
+    TopNP = SS ;
     NP = NounPhrase ;
     CN = CommonNoun ;
     Adj = Adjective ;
@@ -8,7 +9,8 @@ concrete NounPhrasesEus of NounPhrases = open Prelude in {
     Prep = Postposition ;
 
   lin
---    DetNP : Det -> NP ;          -- e.g. "this"
+    topNP np = ss (linNP np) ;
+    DetNP det = det ; -- only relevant for Dutch
     DetCN dt cn =
       { s = \\c => case dt.pl of {
 	      Suffix => cn.adv ++ cn.s ! Def dt.n c ;
@@ -28,11 +30,12 @@ concrete NounPhrasesEus of NounPhrases = open Prelude in {
     theSg = suffix Sg ;
     thePl = suffix Pl ;
 --    this = det "hau" "honen" "honetatik" Sg End ;
---    these = det "hauek" "hauen" "hauetatik" Pl End ;
+    these = det "hauek" "hauen" "hauetatik" Pl End ;
     your = det "zure" "zure" "zure" Sg Mid ; -- definiteness comes from the suffix
     good = adj "ondo" ;
     small = adj "txiki" ;
     blue = adj "urdin" ;
+    ready = adj "gertu" ;
     on = { s = "gainean" ; c = Gen } ;
     from = { s = [] ; c = Ela } ;
     without = { s = "gabe" ; c = Abs } ;

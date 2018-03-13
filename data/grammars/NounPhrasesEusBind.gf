@@ -1,6 +1,7 @@
 concrete NounPhrasesEusBind of NounPhrases = open Prelude in {
-
+  flags startcat = TopNP ;
   lincat
+    TopNP = SS ;
     NP = NounPhrase ;
     CN = CommonNoun ;
     Adj = Adjective ;
@@ -8,7 +9,8 @@ concrete NounPhrasesEusBind of NounPhrases = open Prelude in {
     Prep = Postposition ;
 
   lin
---    DetNP : Det -> NP ;          -- e.g. "this"
+    topNP np = ss (linNP np) ;
+    DetNP det = det ** { det = [] } ; -- only relevant for Dutch
     DetCN dt cn =
       { s = case dt.pl of {
 	      End    => cn.adv ++ cn.s ; 
@@ -31,11 +33,12 @@ concrete NounPhrasesEusBind of NounPhrases = open Prelude in {
     theSg = det (BIND ++ "a") Sg End ;
     thePl = det (BIND ++ "ak") Pl End ;
 --    this = det "hau" Sg End ;
---    these = det "hauek" "hauen" "hauetatik" Pl End ;
+    these = det "hauek" Pl End ;
     your = det "zure" Sg Mid ;
     good = adj "ondo" ;
     small = adj "txiki" ;
     blue = adj "urdin" ;
+    ready = adj "gertu" ;
     on = pp Gen "gainean" ;
     from = pp Ela [] ;
     without = pp Abs "gabe" ;
@@ -68,15 +71,8 @@ concrete NounPhrasesEusBind of NounPhrases = open Prelude in {
 		       Ela => "etatik" } ++ s } 
       } ;
 
- -- table { Sg => BIND ++ "a" ++ s ;
- -- 		       Pl => BIND ++ "ak" ++ s } ;
- -- 	Gen => table { Sg => BIND ++ "aren" ++ s ;
- -- 		       Pl => BIND ++ "en" ++ s } ;
- -- 	Ela => table { Sg => BIND ++ "tik" ++ s ;
- -- 		       Pl => BIND ++ "etatik" ++ s } ;
-
-    cn  : Str -> CommonNoun = \s -> { s = s ; adv = [] } ;
-    adj : Str -> Adjective  = \s -> { s = s } ;
+    cn  : Str -> CommonNoun = \s -> ss s ** { adv = [] } ;
+    adj : Str -> Adjective  = ss ;
 
     det : Str -> Number -> Placement -> Determiner = \hau,n,p ->
      { s = hau ; n = n ; pl = p } ;
