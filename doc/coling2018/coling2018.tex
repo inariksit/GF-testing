@@ -353,13 +353,20 @@ adjective, and \emph{valmis} `ready' as an invariable.
 %\emph{suur-e} \emph{auto-ga}  \emph{big}-{\sc sg.gen} \emph{car}-\textsc{com} `with a big car'. 
 \noindent Thus in order to test adjectives as attributes, we need an example for
 one of the 10 ``usual'' cases and one of the 4 ``unusual'' cases, one
-of each type of adjective, and one of each number.  
+of each type of adjective, and one of each number. Since we are
+interested in adjectives, choosing \t{AdjCN} as the base sounds
+reasonable---but that only creates an inflection table, so we must
+think of a context too. Just like in English, number comes from the
+determiner, so we need to wrap the CN \t{DetCN} with two different 
+
 The following test set creates all the relevant cases: 
  \t{PrepNP} \{ \stackanchor{\tt in}{\tt with} \}
              {\tt (DetCN} \{ \stackanchor{\tt this}{\tt these} \} 
              {\tt AdjCN}  \{\stackanchor{\tt blue}{\tt ready} \} 
              {\tt house)}.
 
+In fact, this is exactly the test set that we would get, if we chose
+\t{PrepNP} as the base. 
 
 If we wanted to test \emph{adjectives} exhaustively, we would need one more context, where
 the adjective is in the predicative position: e.g. `the house is \verb|_|'.
@@ -389,28 +396,23 @@ indefinite article, acts like demonstratives, but the definite article is a suff
 \} \{ \stackanchor{\tt AdvCN on\_the\_hill}{$\varnothing$} \} 
 \{ \stackanchor{\tt AdjCN small}{$\varnothing$} \}  {\tt house} 
 
-\subsection{General features of \pmcfg: unused, equal,
-  erased or empty fields}
+\subsection{??}
 
-Aside from concrete language-dependent phenomena, there are more
-general, engineering questions. For instance, say that our
-concrete type for a \t{CN} in Dutch is an inflection table from case
-to string, we would like to know whether (a) all string fields make it to
-the start category; (b) all fields are distinct; and (c) some fields
-are empty. In Dutch, nominative and accusative are only different for
-pronouns, so for this grammar we would indeed find out that case is
-redundant: all nominative and accusative fields would be
-identical. As grammarians, we could decide to keep the distinction for
-further extension of the grammar---maybe we want to add pronouns in
-the future---or remove it as redundant.
+The grammar, with only 15-word lexicon and 5 syntactic functions,
+generates over 10,000 %17,574
+trees up to depth 5\footnote{e.g. {\tt DetCN the (AdvCN (PrepNP on (DetCN
+    the (AdjCN small hill)) (AdjCN blue house))}}
+% \\ Example of a tree of size 5: `the blue house on the small hill'}.
+These 8 test cases are enough to test whether the
+syntactic function \t{AdjCN} is correctly implemented.   
 
-\gf{} has the expressivity of \pmcfg{}, which means that it is
-possible to erase arguments: say that there is a bug, \t{AdjCN : Adj
-  $\rightarrow$ CN  $\rightarrow$ CN} never actually adds the
-adjective to the new \t{CN}, in which case \t{AdjCN blue house} and
-\t{house} are linearised identically. Instead of testing every single
-function, we would like to know if there are any functions in the
-grammar that behave like this.
+Of course, this test set will not catch if e.g. any of the lexical
+functions contains a typo, or if there is a more severe bug in the
+morphological paradigms. But there are easier methods to test for such
+bugs---our goal is to test the more abstract, syntactic phenomena with
+as few trees as possible. 
+
+We need all these trees
 
 
 \section{How it works}
@@ -540,22 +542,6 @@ cases into the holes, and get 8 trees in total: \t{\{DetCN this (good
   house), \dots, DetCN these (small hill)\}}. 
 
 
-The grammar, with only 15-word lexicon and 5 syntactic functions,
-generates over 10,000 %17,574
-trees up to depth 5\footnote{e.g. {\tt DetCN the (AdvCN (PrepNP on (DetCN
-    the (AdjCN small hill)) (AdjCN blue house))}}
-% \\ Example of a tree of size 5: `the blue house on the small hill'}.
-These 8 test cases are enough to test whether the
-syntactic function \t{AdjCN} is correctly implemented.   
-
-Of course, this test set will not catch if e.g. any of the lexical
-functions contains a typo, or if there is a more severe bug in the
-morphological paradigms. But there are easier methods to test for such
-bugs---our goal is to test the more abstract, syntactic phenomena with
-as few trees as possible. 
-%a bug in the morphological paradigms will go unnoticed, 
-
-
 \paragraph{Pruning}
 
 For the previous example, we did not need any pruning: the cross
@@ -572,7 +558,30 @@ when in predicative position. We describe exactly how this works in
 Section~\ref{sec:details}. 
 %In total we would get 12 sentences: the 8 shown previously, and 4 
 
+\section{General features of \pmcfg: unused, equal,
+  erased or empty fields}
 
+\todo{rewrite/restructure/merge into something?}
+
+Aside from concrete language-dependent phenomena, there are more
+general, engineering questions. For instance, say that our
+concrete type for a \t{CN} in Dutch is an inflection table from case
+to string, we would like to know whether (a) all string fields make it to
+the start category; (b) all fields are distinct; and (c) some fields
+are empty. In Dutch, nominative and accusative are only different for
+pronouns, so for this grammar we would indeed find out that case is
+redundant: all nominative and accusative fields would be
+identical. As grammarians, we could decide to keep the distinction for
+further extension of the grammar---maybe we want to add pronouns in
+the future---or remove it as redundant.
+
+\gf{} has the expressivity of \pmcfg{}, which means that it is
+possible to erase arguments: say that there is a bug, \t{AdjCN : Adj
+  $\rightarrow$ CN  $\rightarrow$ CN} never actually adds the
+adjective to the new \t{CN}, in which case \t{AdjCN blue house} and
+\t{house} are linearised identically. Instead of testing every single
+function, we would like to know if there are any functions in the
+grammar that behave like this.
 \section{Evaluation}
 
 How many trees you eliminate -- how many trees would you have to read
