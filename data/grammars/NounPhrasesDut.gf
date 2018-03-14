@@ -27,8 +27,8 @@ concrete NounPhrasesDut of NounPhrases = open Prelude in {
     hill = { s = table { _ => table { Sg => "heuvel" ; Pl => "heuvels" } } ; g = Utr } ;
     your = detSg "jouw" "jouw" "het jouwe" Def ;
     a = detSg "een" "een" "een" Indef ;
-    theSg = detSg "de" "het" "het" Def ;
-    thePl = detPl "de" "de" "de" Def ;
+    theSg = detSg "de" "het" "het" Def ** { contr = <True,"er"> };
+    thePl = detPl "de" "de" "de" Def ** { contr = <True,"er"> };
     this = detSg "deze" "dit" "dit" Def ** { contr = <True,"hier"> } ;
     these = detPl "deze" "deze" "deze" Def ** { contr = <True,"hier"> } ;
     good = adj "goed" "goede" ;
