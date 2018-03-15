@@ -606,6 +606,82 @@ function, we would like to know if there are any functions in the
 grammar that behave like this.
 \section{Evaluation}
 
+\begin{table}[]
+\centering
+\begin{tabular}{|lll|ll|ll|ll|}
+\hline
+\multicolumn{3}{|r}{Concrete grammar $\rightarrow$}             & \multicolumn{2}{|c}{Dutch} & \multicolumn{2}{|c}{Basque} & \multicolumn{2}{|c|}{Estonian} \\
+$\downarrow$ Abstract grammar & \#funs+lex & \#trees                       &
+                                                                 \#total     & \#uniq    & \#total     & \#uniq     & \#total      & \#uniq      \\ \hline
+Noun phrases     & 5+15          & \textgreater{}10,000          & 21          & 18          & 33          & 27           & 40           & 36            \\
+Phrasebook       & 130+160         & \textgreater{}480,000         & 2006        & 1892        & 2808        & 2650         & 1513         & 1314          \\
+Resource grammar & 217+446         & \textgreater{}500 billion & 59316       & 51145       &             &              & 60600        & 38517        \\
+\hline
+\end{tabular}
+\caption{Generating test cases for all syntactic functions}
+\label{results}
+\end{table}
+
+In order to evaluate our method, we generate test cases for grammars
+in varying sizes and for several languages. Table~\ref{results} shows
+the number of trees generated in total for all syntactic functions in
+the grammar. Note that we do not consider this an optimal way of
+testing a whole grammar from scratch---we are planning to improve our
+tool to create intentionally trees that test several functions at
+once. 
+We introduce the grammars and comment on the results in the following sections.
+
+\subsection{Grammars}
+
+The first grammar is the toy example introduced earlier in this
+article; NounPhrases with 5 syntactic functions and 15 words in the
+lexicon.
+The second grammar is a mid-sized application grammar: Phrasebook
+\cite{ranta2010phrasebook}, with 42 categories such as \t{Person,
+  Currency, Price} and \t{Nationality}, 160-word lexicon and 130
+syntactic functions. As opposed to the trees that we have seen so far,
+which are very generic and only contain syntactic information, the
+trees in the Phrasebook are much more semantic: for example, the
+abstract tree for the sentence ``how far is the bar?'' in the
+Phrasebook is \t{PQuestion (HowFar (ThePlace Bar))}, in contrast to the
+resource grammar tree {\tt \small UttQS (UseQCl (TTAnt TPres ASimul)
+  PPos (QuestIComp (CompIAdv (AdvIAdv how\_IAdv (PositAdvAdj far\_A)))
+  (DetCN (DetQuant DefArt NumSg) (UseN bar\_N))))} for the same
+sentence. Limiting up to depth 3\footnote{Application grammars are usually
+much more compact than resource grammars, hence depth 3 covers already
+a lot of relevant trees.}, the Phrasebook grammar produces over
+480,000 trees.
+
+% \footnote{For the resource grammar, depth
+%   3 would be quite small and leave out many completely natural
+%   phrases, but the abstract syntax of application grammars is often
+%   much more compact.} 
+
+The third grammar is a restricted version of the GF resource grammar,
+with 84 categories, 217 syntactic functions and 446 words in the
+lexicon. Since all the languages did not have a complete
+implementation, we simply took the subset of functions that was
+common, and removed manually a couple of rare constructions and words
+that are potentially distracting. However, we should not limit the
+lexicon too much, because we may miss important distinctions 
+in some languages. This subset of the resource grammar produces
+hundreds of billions of trees up to depth 5.
+%: say, animate and inanimate nouns, ending in front vowel and back vowel.
+
+For the smaller grammars, all languages took just
+seconds to run. For the resource grammar, Dutch and Estonian finished in
+3--4 minutes on a 1,7 GHz MacBook Air with 8 GB RAM. Several other
+languages, such as English, Swedish, \todo{Hindi, Bulgarian, ...} also
+needed only a few minutes. However, the Basque resource grammar is
+noticeably more complex, and creating test trees for all functions
+took several hours. We ran the experiment in smaller batches, and
+noticed a lot of variance: functions that handle e.g. noun phrases,
+adjectives and adverbs ran in a few minutes, but functions involving
+verb phrases would take an hour. This is not surprising: Basque verbs
+agree with subject, object and indirect object,
+
+For the resource grammar, we used a restricted version of 679 functions
+
 How many trees you eliminate -- how many trees would you have to read
 to confirm that you're correct, and how many trees you need to read
 now
