@@ -611,7 +611,7 @@ grammar that behave like this.
 \begin{tabular}{|lll|ll|ll|ll|}
 \hline
 \multicolumn{3}{|r}{Concrete grammar $\rightarrow$}             & \multicolumn{2}{|c}{Dutch} & \multicolumn{2}{|c}{Basque} & \multicolumn{2}{|c|}{Estonian} \\
-$\downarrow$ Abstract grammar & \#funs+lex & \#trees                       &
+$\downarrow$ Abstract grammar & \#funs+lex & \#relevant trees  &
                                                                  \#total     & \#uniq    & \#total     & \#uniq     & \#total      & \#uniq      \\ \hline
 Noun phrases     & 5+15          & \textgreater{}10,000          & 21          & 18          & 33          & 27           & 40           & 36            \\
 Phrasebook       & 130+160         & \textgreater{}480,000         & 2006        & 1892        & 2808        & 2650         & 1513         & 1314          \\
@@ -626,31 +626,43 @@ In order to evaluate our method, we generate test cases for grammars
 in varying sizes and for several languages. Table~\ref{results} shows
 the number of trees generated in total for all syntactic functions in
 the grammar. Note that we do not consider this an optimal way of
-testing a whole grammar from scratch---we are planning to improve our
-tool to create intentionally trees that test several functions at
-once. 
+testing a whole grammar from scratch---this gives merely a baseline
+reduction from all possible trees up to a reasonable depth.
 We introduce the grammars and comment on the results in the following sections.
 
 \subsection{Grammars}
 
 The first grammar is the toy example introduced earlier in this
 article; NounPhrases with 5 syntactic functions and 15 words in the
-lexicon.
-The second grammar is a mid-sized application grammar: Phrasebook
+lexicon. We wrote the concrete syntaxes from scratch for each of the
+languages.
+
+The second grammar is a mid-size application grammar: Phrasebook
 \cite{ranta2010phrasebook}, with 42 categories such as \t{Person,
   Currency, Price} and \t{Nationality}, 160-word lexicon and 130
-syntactic functions. As opposed to the trees that we have seen so far,
-which are very generic and only contain syntactic information, the
-trees in the Phrasebook are much more semantic: for example, the
-abstract tree for the sentence ``how far is the bar?'' in the
-Phrasebook is \t{PQuestion (HowFar (ThePlace Bar))}, in contrast to the
-resource grammar tree {\tt \small UttQS (UseQCl (TTAnt TPres ASimul)
-  PPos (QuestIComp (CompIAdv (AdvIAdv how\_IAdv (PositAdvAdj far\_A)))
+functions with arguments. As opposed to the trees that we have seen so far,
+which only contain syntactic information, the trees in the Phrasebook
+are much more semantic: for example, the abstract tree for the
+sentence ``how far is the bar?'' in the Phrasebook is \t{PQuestion
+  (HowFar (ThePlace Bar))}, in contrast to the resource grammar tree
+{\tt \small UttQS (UseQCl (TTAnt TPres ASimul) PPos (QuestIComp
+  (CompIAdv (AdvIAdv how\_IAdv (PositAdvAdj far\_A))) 
   (DetCN (DetQuant DefArt NumSg) (UseN bar\_N))))} for the same
-sentence. Limiting up to depth 3\footnote{Application grammars are usually
+sentence. Limiting up to depth 3, the Phrasebook grammar produces over
+480,000 trees\footnote{Application grammars are usually
 much more compact than resource grammars, hence depth 3 covers already
-a lot of relevant trees.}, the Phrasebook grammar produces over
-480,000 trees.
+a lot of relevant trees.}. All three concrete syntaxes were
+implemented using their respective resource grammars; thus if some
+Phrasebook function has a bug, say ``Spaniard restaurant'' instead of
+``Spanish restaurant'', the problem could be in either grammar.
+In the first case, the resource grammar contains both ``Spanish'' and
+``Spaniard'' in correct places, but the application grammarian has
+chosen a wrong function.
+In the second case, the application grammarian has used a correct
+function from the resource grammar, but the resource grammar function
+itself has a bug; maybe it only contains ``Spaniard'' and no
+``Spanish'', or the functions are swapped.
+
 
 % \footnote{For the resource grammar, depth
 %   3 would be quite small and leave out many completely natural
@@ -664,35 +676,72 @@ implementation, we simply took the subset of functions that was
 common, and removed manually a couple of rare constructions and words
 that are potentially distracting. However, we should not limit the
 lexicon too much, because we may miss important distinctions 
-in some languages. This subset of the resource grammar produces
-hundreds of billions of trees up to depth 5.
+in some languages\footnote{To give a hypothetical example, some language may
+have a bug that shows up only in animate nouns which end in a
+consonant other than \emph{r}}. This subset of the resource grammar
+produces hundreds of billions of trees up to depth 5.
 %: say, animate and inanimate nouns, ending in front vowel and back vowel.
 
+\subsection{Results}
+
+\paragraph{Execution time} We ran all the experiments on a MacBook Air with 1,7 GHz processor and 8 GB RAM.
 For the smaller grammars, all languages took just
 seconds to run. For the resource grammar, Dutch and Estonian finished in
-3--4 minutes on a 1,7 GHz MacBook Air with 8 GB RAM. Several other
-languages, such as English, Swedish, \todo{Hindi, Bulgarian, ...} also
-needed only a few minutes. However, the Basque resource grammar is
-noticeably more complex, and creating test trees for all functions
-took several hours. We ran the experiment in smaller batches, and
-noticed a lot of variance: functions that handle e.g. noun phrases,
-adjectives and adverbs ran in a few minutes, but functions involving
-verb phrases would take an hour. This is not surprising: Basque verbs
-agree with subject, object and indirect object,
+3--4 minutes,
+ Several other languages, such as English, Swedish, \todo{Hindi, Bulgarian, ...} also
+needed only a few minutes. 
+However, the Basque resource grammar is noticeably more complex, and
+creating test trees for all functions took several hours. We ran the
+experiment in smaller batches, and noticed a lot of variance:
+functions that handle e.g. noun phrases, adjectives and adverbs ran in
+a few minutes, but a function involving verb phrases could take an
+hour just by itself. This is not surprising: Basque verbs agree with
+subject, object and indirect object, 
 
-For the resource grammar, we used a restricted version of 679 functions
+\paragraph{Finding bugs} 
+We read through the test sentences of the small grammar in all the
+three languages. 
+For Dutch we had a native speaker; for Estonian a fluent non-native,
+and for Basque, a beginner. None of the three grammars had been tested
+
+\todo{up to line 1977, 11 minutes, finish tomorrow}
+
+On the one hand, test cases based on a single function help to narrow
+down the bug: 
+
+as it happens, the tree \t{ACitizen She Indian} had the
+wrong form for Indian; one that only works as an attribute, not as a
+nationality. (Similar error would be to say e.g. ``a Spaniard
+restaurant''.)
+
+
+Many of the Phrasebook examples felt repetitive, because a lot of
+actions, which would be in the lexicon in the resource grammar, were
+actually functions with arguments: contrast  \t{Pred She (Compl Like
+  Pizza)} with more general functions \t{Pred} and \t{Compl}, to
+\t{Like She Pizza}. The latter is useful for more freedom
+
+
+For the \todo{2000?} sentences in Estonian, it took __ minutes for a
+fluent non-native speaker to read through and mark suspicious-looking constructs
+
+smaller grammars, we read through all the example sentences
+we are planning to improve our tool to create intentionally trees that test several functions at once. 
 
 How many trees you eliminate -- how many trees would you have to read
 to confirm that you're correct, and how many trees you need to read
 now
 
-Traditionally, GF grammars are tested by the grammarians themselves,
-much like unit testing. An example human-written treebank can be found
-in \cite[p.~136--142]{khegai2006phd}.
+\subsection{State of the art}
 
-For testing the coverage of the grammars, we have used UD treebank
-\cite{nivre2016ud} and Penn treebank, to see how much of the
-constructions are covered by the grammar.
+Traditionally, GF grammars are tested by the grammarians themselves,
+much in the way described in the introduction of this article. An example
+human-written treebank can be found in \cite[p.~136--142]{khegai2006phd}.
+For testing the coverage of the grammars, grammarians have used
+treebanks such as the UD treebank \cite{nivre2016ud} and Penn treebank
+\todo{cite}, and for testing morphology, various open-source resources
+have been used, such as morphological lexica from the Apertium
+project \todo{cite}.
 
 \todo{Pick one function, get a treebank, see how exhaustively the function
 is used in the treebank.}
@@ -714,21 +763,21 @@ Stephan Müller's sentence list testing only weak generative capacity,
 this method is testing strong generative capacity
 
 
-\begin{itemize}
-\item Cost
-  \begin{itemize}
-  \item time of generating examples
-  \item how many examples generated -- analysis if they're redundant
-  \item time of looking at examples
-  \end{itemize}
+% \begin{itemize}
+% \item Cost
+%   \begin{itemize}
+%   \item time of generating examples
+%   \item how many examples generated -- analysis if they're redundant
+%   \item time of looking at examples
+%   \end{itemize}
 
-\item Effect
-  \begin{itemize}
-  \item compare against other methods -- what methods?
-  \item For application grammars, if you're writing them from scratch, it is actually pretty feasible to just gt the hell out of it as you write. But this doesn't work for bigger grammars.
-  \item Morphology can be tested efficiently againts any existing morphological analyser. I've used Apertium for Dutch and Basque.
-  \end{itemize}
-\end{itemize}
+% \item Effect
+%   \begin{itemize}
+%   \item compare against other methods -- what methods?
+%   \item For application grammars, if you're writing them from scratch, it is actually pretty feasible to just gt the hell out of it as you write. But this doesn't work for bigger grammars.
+%   \item Morphology can be tested efficiently againts any existing morphological analyser. I've used Apertium for Dutch and Basque.
+%   \end{itemize}
+% \end{itemize}
 
 
 \section{Discussion}
