@@ -407,7 +407,7 @@ we need the following 12 trees:  \\
 \{ \stackanchor{\tt AdjCN small}{$\varnothing$} \}  {\tt house} 
 
 \subsection{??}
-
+\label{sec:wishlist_comments}
 The grammar, with only 15-word lexicon and 5 syntactic functions,
 generates over 10,000 %17,574
 trees\footnote{e.g. {\tt DetCN the (AdvCN (PrepNP on
@@ -598,23 +598,27 @@ adjective to the new \t{CN}, in which case \t{AdjCN blue house} and
 \t{house} are linearised identically. Instead of testing every single
 function, we would like to know if there are any functions in the
 grammar that behave like this.
-\section{Evaluation}
 
-\begin{table}[]
-\centering
-\begin{tabular}{|lll|ll|ll|ll|}
-\hline
-\multicolumn{3}{|r}{Concrete grammar $\rightarrow$}             & \multicolumn{2}{|c}{Dutch} & \multicolumn{2}{|c}{Basque} & \multicolumn{2}{|c|}{Estonian} \\
-$\downarrow$ Abstract grammar & \#funs+lex & \#reasonable trees  &
-                                                                 \#total     & \#uniq    & \#total     & \#uniq     & \#total      & \#uniq      \\ \hline
-Noun phrases     & 5+15          & \textgreater{}10,000          & 21          & 18          & 33          & 27           & 40           & 36            \\
-Phrasebook       & 130+160         & \textgreater{}480,000         & 2006        & 1892        & 2808        & 2650         & 1513         & 1314          \\
-Resource grammar & 217+446         & \textgreater{}500 billion & 59316       & 51145       &             &              & 60600        & 38517        \\
-\hline
-\end{tabular}
-\caption{Generating test cases for all syntactic functions}
-\label{results}
-\end{table}
+\section{Use Cases and Evaluation}
+
+Here is a typical use for the tool. We have a grammar, which could be
+of any size, and in any stage of maturity. We pick a single function,
+and generate test cases for it.
+
+To cover the whole grammar, the simplest strategy is to generate test
+cases for all functions. However, that often leads to redundant trees:
+as we noted in Section~\ref{sec:wishlist_comments}, the trees that
+we needed to test \t{AdjCN} in Estonian were in fact exactly the same
+trees we needed to test \t{PrepNP}. The tool is completely
+deterministic, that is, it chooses always the same subtree to
+represent a particular feature. On the one hand, this makes the task
+monotonous for the evaluator, but on the other hand, it makes it
+clearer to see the redundancy: if we have already shown a set of trees
+for \t{PrepNP}, we do not need to show them again for \t{AdjCN}.
+
+As future work, we are planning to add a separate mode for testing the
+whole grammar from scratch: create intentionally trees that test
+several functions at once.
 
 In order to evaluate our method, we generate test cases for grammars
 of varying sizes, using the three languages presented earlier: Dutch,
@@ -630,13 +634,33 @@ Dutch or Estonian, and there are several clitics that attach to the
 verb (although the grammar implementation only includes \todo{how
   many}). 
 
-Table~\ref{results} shows
-the number of trees generated in total for all syntactic functions in
-the grammar. Note that we do not consider this an optimal way of
-testing a whole grammar from scratch---this gives merely a baseline
+Table~\ref{results} shows the number of generated trees for 
+in total for all syntactic functions in
+the grammar. 
+
+For the smaller grammar, we just report the total number of generated
+trees, and for the resource grammar, a few different functions and
+finally the total number. Note that we do not consider this an optimal way of
+testing a whole resource grammar from scratch---the number of trees is
+way too high to be feasible, and the envisioned use case is
+this gives merely a baseline
 reduction from all possible trees up to a reasonable depth.
 We introduce the grammars and comment on the results in the following sections.
-
+\begin{table}[]
+\centering
+\begin{tabular}{|lll|ll|ll|ll|}
+\hline
+\multicolumn{3}{|r}{Concrete grammar $\rightarrow$}             & \multicolumn{2}{|c}{Dutch} & \multicolumn{2}{|c}{Basque} & \multicolumn{2}{|c|}{Estonian} \\
+$\downarrow$ Abstract grammar & \#funs+lex & \#reasonable trees  &
+                                                                 \#total     & \#uniq    & \#total     & \#uniq     & \#total      & \#uniq      \\ \hline
+Noun phrases     & 5+15          & \textgreater{}10,000          & 21          & 18          & 33          & 27           & 40           & 36            \\
+Phrasebook       & 130+160         & \textgreater{}480,000         & 2006        & 1892        & 2808        & 2650         & 1513         & 1314          \\
+Resource grammar & 217+446         & \textgreater{}500 billion & 59316       & 51145       &             &              & 60600        & 38517        \\
+\hline
+\end{tabular}
+\caption{Generating test cases for all syntactic functions}
+\label{results}
+\end{table}
 \subsection{Grammars}
 
 The first grammar is the toy example introduced earlier in this
@@ -663,15 +687,14 @@ sentence. Limiting up to depth 3, the Phrasebook grammar produces over
 much more compact than resource grammars, hence depth 3 covers already
 a lot of relevant trees.}. All three concrete syntaxes were
 implemented using their respective resource grammars; thus if some
-Phrasebook function has a bug, say ``Spaniard restaurant'' instead of
-``Spanish restaurant'', the problem could be in either grammar.
-In the first case, the resource grammar contains both ``Spanish'' and
-``Spaniard'' in correct places, but the application grammarian has
-chosen a wrong function.
-In the second case, the application grammarian has used a correct
-function from the resource grammar, but the resource grammar function
-itself has a bug; maybe it only contains ``Spaniard'' and no
-``Spanish'', or the functions are swapped.
+Phrasebook function has a bug, say it produces ``Spaniard restaurant''
+instead of ``Spanish restaurant'', the problem could be in either grammar.
+In the first case, the resource grammar contains both \t{spanish\_A} ``Spanish'' and
+\t{spaniard\_N} ``Spaniard'', but the application grammarian has
+chosen the wrong function.
+In the second case, the application grammarian has correctly chosen
+\t{spanish\_A} from the resource grammar, but that word itself is
+linearised wrongly into ``Spaniard''.
 
 
 % \footnote{For the resource grammar, depth
@@ -698,8 +721,8 @@ produces hundreds of billions of trees up to depth 5.
 For the smaller grammars, all languages took just
 seconds to run. For the resource grammar, Dutch and Estonian finished in
 3--4 minutes,
- Several other languages, such as English, Swedish, \todo{Hindi, Bulgarian, ...} also
-needed only a few minutes. 
+% Several other languages, such as English, Swedish, \todo{Hindi,
+% Bulgarian, ...} also needed only a few minutes. 
 However, the Basque resource grammar is noticeably more complex, and
 creating test trees for all functions took several hours. We ran the
 experiment in smaller batches, and noticed a lot of variance:
@@ -708,11 +731,19 @@ a few minutes, but a function involving verb phrases could take an
 hour just by itself. This is not surprising: Basque verbs agree with
 subject, object and indirect object, 
 
+\paragraph{Generated trees} 
+
+We report two numbers: total number of trees, and unique trees. 
+
+
 \paragraph{Finding bugs} 
 We read through the test sentences of the small grammar in all the
 three languages. 
 For Dutch we had a native speaker; for Estonian a fluent non-native,
 and for Basque, a beginner. None of the three grammars had been tested
+systematically before---\cite{listenmaa_kaljurand2014} report testing
+the morphological paradigms extensively against existing resources,
+and for the syntactic functions, a test treebank of a few hundred trees.
 
 \todo{up to line 1977, 11 minutes, finish tomorrow}
 
@@ -732,11 +763,10 @@ actually functions with arguments: contrast  \t{Pred She (Compl Like
 \t{Like She Pizza}. The latter is useful for more freedom
 
 
-For the \todo{2000?} sentences in Estonian, it took __ minutes for a
+For the 1314 sentences in Estonian, it took \todo{n} minutes for a
 fluent non-native speaker to read through and mark suspicious-looking constructs
 
 smaller grammars, we read through all the example sentences
-we are planning to improve our tool to create intentionally trees that test several functions at once. 
 
 How many trees you eliminate -- how many trees would you have to read
 to confirm that you're correct, and how many trees you need to read
