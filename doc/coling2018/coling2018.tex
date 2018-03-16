@@ -64,11 +64,10 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-We present a method for finding errors in formalized natural language grammars, by automatically an systematically generating test cases that are intended to be judged by a human oracle. The method works on a per-construction basis; given a construction from the grammar, it generates a finite but complete set of test sentences (typically tens or hundreds), where that construction is used in all possible ways. We contrast our method against using a corpus or a treebank, where no such completeness guarantees can be made. Our method is language-independent and is implemented for the grammar formalism PMCFG, and thus also works for MCFG and CFG.
+We present a method for finding errors in formalized natural language grammars, by automatically and systematically generating test cases that are intended to be judged by a human oracle. The method works on a per-construction basis; given a construction from the grammar, it generates a finite but complete set of test sentences (typically tens or hundreds), where that construction is used in all possible ways. We contrast our method against using a corpus or a treebank, where no such completeness guarantees can be made. Our method is language-independent and is implemented for the grammar formalism PMCFG, but also works for weaker grammar formalisms.
 \end{abstract}
 
 \section{Introduction}
-
 
 Grammar engineering has a lot in common with software
 engineering. Analogous to a program specification, we use
@@ -87,15 +86,14 @@ test the coverage of the grammar: how many sentences are successfully parsed.
 However, often we want information beyond numbers: do the rules we
 wrote for relative clauses correctly accept all relative clauses and
 nothing else? In other words, we are interested in the strong
-generative capacity \todo{cite Chomsky} of the grammar, i.e. combinations
+generative capacity \todo{chomsky1963} of the grammar, i.e. combinations
 of a string and its structural description.
 
-The workflow we want to optimise is the following. Suppose a
+Here is an example of a typical situation we want to improve. Suppose a
 grammarian implements relative clauses, and then comes up with a test
 suite of sentences with their analyses. The next grammarian implements
 relative clauses for another language, and adapts the test set to the
-new language.
-Ideally, every time someone touches relative clauses 
+new language. Every time someone touches relative clauses 
 in any language, the test suite will be rerun and verified by
 someone who knows the language, or compared to the original gold standard, 
 if there is one. This scheme can fail for various reasons: 
@@ -120,21 +118,15 @@ does not realise that it affects relative clauses, and thus does not
 rerun the appropriate test suite. 
 \end{itemize}
 
-We present a method that addresses these problems. Our concrete
-implementation is for a particular grammar formalism, Grammatical
-Framework, but the method is general for any formalism that is at most
-as expressive as parallel multiple context-free grammars ({\sc
-  pmcfg}). This includes grammar formalisms such as Tree-Adjoining
-Grammar (\tag) \cite{joshi1975tag} and Combinatorial Categorial
-Grammar (\ccg) \cite{steedman1988ccg}.
-Our tool improves on the four weak points in the following way:
+We present a method that addresses these problems, by designing a tool that can automatically generate test cases, given a grammar and a syntactic function that we want to test. Our tool improves on the four weak points in the following way:
 
 \begin{itemize}
-\item The base for a test case is a single syntactic function, applied
+\item The set of test cases consists of the syntactic function, applied
   to all relevant arguments and the result is placed in all relevant
   contexts (``relevant'' is defined in
-  Section~\ref{sec:details}). Given a grammar and a category, the
-  program can extract all functions that produce or use the given category. 
+  Section~\ref{sec:details}).
+  %Given a grammar and a category, the
+  %program can extract all functions that produce or use the given category. 
 \item The tests cases are automatically generated for each different
   language. If there is a parameter of gender or noun class in the
   grammar, then the program is guaranteed to choose an example of each
@@ -157,6 +149,7 @@ Our tool improves on the four weak points in the following way:
   automatically traced. 
 \end{itemize}
 
+Our concrete implementation is for a particular grammar formalism, namely parallel multiple context-free grammars ({\sc pmcfg}) \cite{seki91pmcfg}, which is the core formalism used by Grammatical Framework (GF \cite{ranta2004gf}). However, the method works for any formalism that is at most as expressive as PMCFG, including formalisms such as Tree-Adjoining Grammar (\tag) \cite{joshi1975tag} and Combinatorial Categorial Grammar (\ccg) \cite{steedman1988ccg}.
 
 \section{Grammatical Framework}
 Grammatical Framework (\gf) \cite{ranta2004gf} 

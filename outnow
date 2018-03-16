@@ -1,0 +1,47 @@
+Preprocessing library for GF-testing-0.1.0.0..
+Building library for GF-testing-0.1.0.0..
+Preprocessing executable 'GF-testing-exe' for GF-testing-0.1.0.0..
+Building executable 'GF-testing-exe' for GF-testing-0.1.0.0..
+Running GF-testing-exe...
+### play_V : V_156
+
+- UseCl (TTAnt TFut ASimul) PPos (GenericCl (UseV (V_156)))
+  --> men zal [(V_156)] [(V_156)] [(V_156)]
+  --> men zal spelen
+
+- UseCl (TTAnt TPres ASimul) PPos (GenericCl (ProgrVP (UseV (V_156))))
+  --> men is aan het [(V_156)]
+  --> men is aan het spelen
+
+- UseCl (TTAnt TPres ASimul) PPos (PredVP (UsePron i_Pron) (UseV (V_156)))
+  --> ik [(V_156)] [(V_156)] [(V_156)]
+  --> ik speel
+
+- UseCl (TTAnt TPres ASimul) PPos (PredVP (UsePron youSg_Pron) (UseV (V_156)))
+  --> je [(V_156)] [(V_156)] [(V_156)]
+  --> je speelt
+
+- UseCl (TTAnt TPres ASimul) PPos (PredVP (UsePron youPol_Pron) (UseV (V_156)))
+  --> u [(V_156)] [(V_156)] [(V_156)]
+  --> u speelt
+
+- UseCl (TTAnt TPres ASimul) PPos (GenericCl (UseV (V_156)))
+  --> men [(V_156)] [(V_156)] [(V_156)]
+  --> men speelt
+
+- UseCl (TTAnt TPres ASimul) PPos (PredVP (ConjNP or_Conj (BaseNP everybody_NP (UsePron i_Pron))) (UseV (V_156)))
+  --> alle of ik [(V_156)] [(V_156)] [(V_156)]
+  --> alle of ik spelen
+
+- UseCl (TTAnt TPast ASimul) PPos (GenericCl (UseV (V_156)))
+  --> men [(V_156)] [(V_156)] [(V_156)]
+  --> men speelde
+
+- UseCl (TTAnt TPast ASimul) PPos (PredVP (ConjNP or_Conj (BaseNP everybody_NP (UsePron i_Pron))) (UseV (V_156)))
+  --> alle of ik [(V_156)] [(V_156)] [(V_156)]
+  --> alle of ik speelden
+
+- UseCl (TTAnt TPres AAnter) PPos (GenericCl (UseV (V_156)))
+  --> men heeft [(V_156)] [(V_156)] [(V_156)]
+  --> men heeft gespeeld
+
