@@ -149,7 +149,7 @@ We present a method that addresses these problems, by designing a tool that can 
   automatically traced. 
 \end{itemize}
 
-Our concrete implementation is for a particular grammar formalism, namely parallel multiple context-free grammars ({\sc pmcfg}) \cite{seki91pmcfg}, which is the core formalism used by Grammatical Framework (GF \cite{ranta2004gf}). However, the method works for any formalism that is at most as expressive as PMCFG, including formalisms such as Tree-Adjoining Grammar (\tag) \cite{joshi1975tag} and Combinatorial Categorial Grammar (\ccg) \cite{steedman1988ccg}.
+Our concrete implementation is for a particular grammar formalism, namely parallel multiple context-free grammars ({\sc pmcfg}) \cite{seki91pmcfg}, which is the core formalism used by the Grammatical Framework (\gf \cite{ranta2004gf}). However, the method works for any formalism that is at most as expressive as PMCFG, including formalisms such as Tree-Adjoining Grammar (\tag) \cite{joshi1975tag} and Combinatorial Categorial Grammar (\ccg) \cite{steedman1988ccg}.
 
 \section{Grammatical Framework}
 Grammatical Framework (\gf) \cite{ranta2004gf} 
@@ -246,7 +246,7 @@ string.
 \label{fig:exampleGrammar}
 \end{figure}
 
-Figure~\ref{fig:exampleGrammar} shows a small example of a GF
+Figure~\ref{fig:exampleGrammar} shows a small example of a GF abstract
 grammar. The grammar generates noun phrases for a lexicon of 15
 words (\emph{a, the, \dots, without}) in four lexical categories,
 and five functions to construct phrases. \t{CN} stands for common
@@ -262,25 +262,9 @@ adverb (\t{Adv}) by combining a preposition (\t{Prep}) with an \t{NP},
 and those adverbs can modify yet another \t{CN}. 
 We refer to this grammar throughout the paper.
 
-
-
-\section{Grammarian's wishlist}
-
-To illustrate different needs for different languages, we
-take three language-specific phenomena in the scope of our
+As examples that help illustrate different testing needs for different languages, let us take three language-specific phenomena in the scope of our
 small grammar: preposition contraction in Dutch, adjective agreement
-in Estonian and determiner placement in Basque. We take a single
-function as a base, and describe all combinations arguments that are
-needed to test the function. If the result of the function is an
-inflection table rather than a fully specified result, then we need
-several \emph{contexts} to squeeze out all the different forms.
-For example, a \t{CN} in English is open for number---\t{house} is
-really a table \{\t{Sg =>} \emph{``house''} \t{; Pl =>} \emph{``houses''}\}, and
-applying a determiner chooses the right form: \t{DetCN this house}
-linearises to \emph{this house} and \t{DetCN these house} linearises
-to \emph{these houses}. 
-
-
+in Estonian and determiner placement in Basque.
 
 \subsection{Preposition contraction in Dutch} In Dutch, some prepositions should
 merge with a single determiner or pronoun, e.g. \emph{met~dit} `with
@@ -399,16 +383,27 @@ we need the following 12 trees:  \\
 \} \{ \stackanchor{\tt AdvCN on (DetCN the hill)}{$\varnothing$} \} 
 \{ \stackanchor{\tt AdjCN small}{$\varnothing$} \}  {\tt house} 
 
-\subsection{??}
+
+\subsection{Using our tool} We have seen that, in order to test whether or not we have implemented a linguistic phenomenon correctly, we take a single function as a base, and describe all combinations arguments that are
+needed to test the function. If the result of the function is an
+inflection table rather than a fully specified result, then we need
+several \emph{contexts} to squeeze out all the different forms.
+For example, a \t{CN} in English is open for number---\t{house} is
+really a table \{\t{Sg =>} \emph{``house''} \t{; Pl =>} \emph{``houses''}\}, and
+applying a determiner chooses the right form: \t{DetCN this house}
+linearises to \emph{this house} and \t{DetCN these house} linearises
+to \emph{these houses}. 
+
 \label{sec:wishlist_comments}
 The grammar, with only 15-word lexicon and 5 syntactic functions,
 generates over 10,000 %17,574
 trees\footnote{e.g. {\tt DetCN the (AdvCN (PrepNP on
 (DetCN a (AdjCN small hill)) (AdjCN blue house))} `the blue house on a
 small hill'}  up to depth 5. 
-However, we can test complex morphosyntactic phenomena just with a set
-of 4, 8 or 12 trees, depending on the complexity of the language. As
-mentioned previously, the base of a test case is one syntactic
+However, as we have seen in the examples above, we can test complex morphosyntactic phenomena just with a set
+of 4, 8 or 12 trees, depending on the complexity of the language.
+
+As mentioned previously, the base of a test case is one syntactic
 function, but often the same sentence ends up showcasing several
 functions. In the Estonian example, we start from \t{AdjCN} 
 and end up in a context formed by \t{PrepNP}---in fact, these 8 trees
@@ -421,8 +416,6 @@ misspellings, or more systematic bugs in the morphological
 paradigms. But there are easier methods to test for such bugs---our 
 goal is to test the more abstract, syntactic phenomena with as few
 trees as possible.  
-
-
 
 \section{How it works}
 \label{sec:details}
