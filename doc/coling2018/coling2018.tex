@@ -468,7 +468,6 @@ in Figure~\ref{fig:adjAttr}.
 
 \begin{figure}
 \centering
-\begin{minipage}{.5\textwidth}
 \centering
 \begin{tabular}{| l | l |}
 \hline
@@ -482,13 +481,6 @@ in Figure~\ref{fig:adjAttr}.
 \end{tabular}
 \caption{Agreement and placement of adjectives in attributive position}
 \label{fig:adjAttr}
-\end{minipage}%
-\begin{minipage}{.5\textwidth}
-  \centering
-  \todo{A picture of trees with holes}
- \caption{Trees with a hole of type \t{CN}}
-\label{fig:treesWithHoles}
-\end{minipage}
 \end{figure}
 
 \paragraph{Enumerate contexts} The third and last enumeration we perform when generating test cases is to generate all possible \emph{uses} of a function. After we provide a function with arguments, we need to put the result into a context, so that we can generate a single string from the result (a sentence). We do this for all trees we have generated so far.
@@ -496,8 +488,7 @@ in Figure~\ref{fig:adjAttr}.
 The important thing here is that the generated set of contexts shows all the possible different ways the tree can be used. For a test tree with an inflection table of size 4, we would generate 4 different sentences in which each of the 4 inflections is used.
 
 By \emph{context}, we mean a tree in
-the start category, with a \emph{hole} of type \t{CN}, as shown in
-Figure~\ref{fig:treesWithHoles}. A tree of type \t{CN} can be plugged into the hole to form a tree in the start category. In this grammar, the only category above \t{CN} is \t{NP}, and there is only
+the start category, with a \emph{hole} of type \t{CN}. A tree of type \t{CN} can be plugged into the hole to form a tree in the start category. In this grammar, the only category above \t{CN} is \t{NP}, and there is only
 one way that a \t{CN} can end up in an \t{NP}: by using the function
 \t{DetCN : Det $\rightarrow$ CN $\rightarrow$ NP}. 
 
