@@ -29,9 +29,11 @@
 
 \def\t#1{\texttt{#1}}
 \def\gf{\textsc{gf}}
+\def\pgf{\textsc{pgf}}
 \def\lfg{\textsc{lfg}}
 \def\ccg{\textsc{ccg}}
 \def\tag{\textsc{tag}}
+\def\cfg{\textsc{cfg}}
 \def\pmcfg{\textsc{pmcfg}}
 \def\hpsg{\textsc{hpsg}}
 \newcommand{\tts}[1]{{\tt #1}}
@@ -48,24 +50,19 @@
 
 \title{Automatic systematic test case generation for producing reliable grammars}
 
-\author{Inari Listenmaa and Koen Claessen \\
-  Department of Computer Science and Engineering \\
-  University of Gothenburg and Chalmers University of Technology \\
-  Gothenburg, Sweden \\
-  {\tt inari@chalmers.se, koen@chalmers.se} }
-%\\\And
-%  Koen Claessen \\
-%  Department of Computer Science and Engineering \\
-%  Chalmers University of Technology \\
-%  Gothenburg, Sweden \\
- % {\tt koen@chalmers.se} \\}
+% \author{Inari Listenmaa and Koen Claessen \\
+%   Department of Computer Science and Engineering \\
+%   University of Gothenburg and Chalmers University of Technology \\
+%   Gothenburg, Sweden \\
+%   {\tt inari@chalmers.se, koen@chalmers.se} }
+
 
 \date{}
 
 \begin{document}
 \maketitle
 \begin{abstract}
-We present a method for finding errors in formalized natural language grammars, by automatically and systematically generating test cases that are intended to be judged by a human oracle. The method works on a per-construction basis; given a construction from the grammar, it generates a finite but complete set of test sentences (typically tens or hundreds), where that construction is used in all possible ways. We contrast our method against using a corpus or a treebank, where no such completeness guarantees can be made. Our method is language-independent and is implemented for the grammar formalism PMCFG, but also works for weaker grammar formalisms.
+We present a method for finding errors in formalized natural language grammars, by automatically and systematically generating test cases that are intended to be judged by a human oracle. The method works on a per-construction basis; given a construction from the grammar, it generates a finite but complete set of test sentences (typically tens or hundreds), where that construction is used in all possible ways. We contrast our method against using a corpus or a treebank, where no such completeness guarantees can be made. Our method is language-independent and is implemented for the grammar formalism \pmcfg{}, but also works for weaker grammar formalisms.
 \end{abstract}
 
 \section{Introduction}
@@ -115,7 +112,7 @@ French it would need at least one masculine and one feminine noun.
 \item The list is overly long, with redundant test cases, and human
 testers are not motivated to read through. 
 \item A grammarian makes a change somewhere else in the grammar, and
-does not realise that it affects relative clauses, and thus does not
+does not realize that it affects relative clauses, and thus does not
 rerun the appropriate test suite. 
 \end{itemize}
 
@@ -150,25 +147,28 @@ We present a method that addresses these problems, by designing a tool that can 
   automatically traced. 
 \end{itemize}
 
-Our concrete implementation is for a particular grammar formalism, namely parallel multiple context-free grammars ({\sc pmcfg}) \cite{seki91pmcfg}, which is the core formalism used by the Grammatical Framework (\gf) \cite{ranta2004gf}. However, the method works for any formalism that is at most as expressive as PMCFG, including formalisms such as Tree-Adjoining Grammar (\tag) \cite{joshi1975tag} and Combinatorial Categorial Grammar (\ccg) \cite{steedman1988ccg}.
+Our concrete implementation is for a particular grammar formalism, namely parallel multiple context-free grammars ({\sc pmcfg}) \cite{seki91pmcfg}, which is the core formalism used by the Grammatical Framework (\gf) \cite{ranta2004gf}. However, the method works for any formalism that is at most as expressive as \pmcfg{}, including formalisms such as Tree-Adjoining Grammar (\tag) \cite{joshi1975tag} and Combinatorial Categorial Grammar (\ccg) \cite{steedman1988ccg}.
 
 \section{Grammatical Framework} \label{sec:gf}
 Grammatical Framework (\gf) \cite{ranta2004gf} 
 is a framework for building multilingual grammar applications. Its main
 components are a functional programming language for writing grammars
 and a resource library \cite{ranta2009rgl}, which, as of March 2018,
-contains the linguistic details of 40 natural languages. \gf{} has
-been used in several projects \todo{Ask Aarne how to boast about \gf} and
-is super cool.
+contains the linguistic details of 40 natural languages. The library
+has had over 50 contributors, and it consists of 1900 program modules and 3
+million lines of code. \gf{} is well suited for creating
+domain-specific systems: examples include mathematics
+\cite{caprotti2006webalt}, legal documents \cite{camilleri2017} and
+information extraction \cite{Safwat-EtAl:2015:iiWAS}.
 
 A \gf{} grammar consists of an \emph{abstract syntax}, which is a set
 of grammatical categories and functions between them, and one or more
 \emph{concrete syntaxes}, which describe how the abstract functions
-and categories are linearised, i.e. turned into surface strings. The
+and categories are linearized, i.e. turned into surface strings. The
 resulting grammar describes a mapping between concrete language
 strings and their corresponding abstract trees. This mapping is
 bidirectional---strings can be \emph{parsed} to trees, and trees
-\emph{linearised} to strings. As an abstract syntax can have multiple
+\emph{linearized} to strings. As an abstract syntax can have multiple
 corresponding concrete syntaxes, the respective languages can be
 automatically \emph{translated} from one to the other by first parsing
 a string into a tree and then linearising the obtained tree into a new
@@ -179,7 +179,7 @@ string.
 % parameters are set in concrete syntax. We are not trying to answer the
 % general question what constitutes universal grammar and what beyond
 % universal grammar differentiates languages from one another. We look
-% at GF parallel resource grammars as a way to simplify multilingual
+% at \gf{} parallel resource grammars as a way to simplify multilingual
 % applications. \dots
 % According to the ``division of labor'' principle, resource grammars
 % comprise the necessary linguistic knowledge allowing application
@@ -243,11 +243,11 @@ string.
 %     in, on, with, without : Prep ; 
 % }
 % \end{verbatim}
-  \caption{GF grammar for noun phrases}
+  \caption{\gf{} grammar for noun phrases}
 \label{fig:exampleGrammar}
 \end{figure}
 
-Figure~\ref{fig:exampleGrammar} shows a small example of a GF abstract
+Figure~\ref{fig:exampleGrammar} shows a small example of a \gf{} abstract
 grammar. The grammar generates noun phrases for a lexicon of 15
 words (\emph{a, the, \dots, without}) in four lexical categories,
 and five functions to construct phrases. \t{CN} stands for common
@@ -329,7 +329,7 @@ adjective, and \emph{valmis} `ready' as an invariable.
 \noindent Since we are interested in adjectives, choosing \t{AdjCN} as
 the base sounds reasonable---but that only creates an inflection
 table, so we must think of a context too. Just like in English, number
-comes from the determiner, so we need to wrap the CN in a \t{DetCN}
+comes from the determiner, so we need to wrap the \t{CN} in a \t{DetCN}
 with two determiners of different number, for instance \t{this} and
 \t{these}. But we still need an example for one of the 10 cases with
 normal agreement, such as inessive (in something), and one of the 4
@@ -337,17 +337,18 @@ cases with restricted agreement, such as comitative (with something).
 These cases correspond to the English prepositions \emph{in} and \emph{with},
 so in this abstract syntax we can use \t{PrepNP} with the arguments
 \t{in} and \t{with}. This is another showcase of the abstraction level
-of GF: in the English concrete syntax, \t{Prep} contains a string
+of \gf{}: in the English concrete syntax, \t{Prep} contains a string
 such as `in' or `with', and \t{PrepNP} concatenates the string from its
 \t{Prep} argument into the resulting adverb, but in Estonian, \t{Prep}
 contains a case, and \t{PrepNP} chooses that case from its \t{NP} argument.
 The following set of 8 trees creates all the relevant
-distinctions\footnote{If the grammar covered predicative
-constructions, we would need a participle in the test set. As an
-attribute, we do not need both participles and invariables,
-because they behave identically, but as a predicative, regular and
-participle adjectives behave the same, and differently from
-invariable.}: 
+distinctions:
+% \footnote{If the grammar covered predicative
+% constructions, we would need a participle in the test set. As an
+% attribute, we do not need both participles and invariables,
+% because they behave identically, but as a predicative, regular and
+% participle adjectives behave the same, and differently from
+% invariable.}: 
  \t{PrepNP} \{ \stackanchor{\tt in}{\tt with} \}
              {\tt (DetCN} \{ \stackanchor{\tt this}{\tt these} \} 
              {\tt AdjCN}  \{\stackanchor{\tt blue}{\tt ready} \} 
@@ -385,15 +386,17 @@ we need the following 12 trees:  \\
 \{ \stackanchor{\tt AdjCN small}{$\varnothing$} \}  {\tt house} 
 
 
-\subsection{Using our tool} We have seen that, in order to test whether or not we have implemented a linguistic phenomenon correctly, we take a single function as a base, and describe all combinations arguments that are
-needed to test the function. If the result of the function is an
-inflection table rather than a fully specified result, then we need
-several \emph{contexts} to squeeze out all the different forms.
-For example, a \t{CN} in English is open for number---\t{house} is
-really a table \{\t{Sg =>} \emph{``house''} \t{; Pl =>} \emph{``houses''}\}, and
-applying a determiner chooses the right form: \t{DetCN this house}
-linearises to \emph{this house} and \t{DetCN these house} linearises
-to \emph{these houses}. 
+\subsection{Using our tool} We have seen that, in order to test
+whether or not we have implemented a linguistic phenomenon correctly,
+we take a single function as a base, and describe all combinations of
+arguments that are needed to test the function. If the result of the
+function is an inflection table rather than a fully specified result,
+then we need several \emph{contexts} to squeeze out all the different
+forms. For example, a \t{CN} in English is open for number---\t{house}
+is really a table \{\t{Sg =>} \emph{``house''} \t{; Pl =>}
+\emph{``houses''}\}, and applying a determiner chooses the right form:
+\t{DetCN this house} linearizes to \emph{this house} and \t{DetCN
+  these house} linearizes to \emph{these houses}. 
 
 \label{sec:wishlist_comments}
 The grammar, with only 15-word lexicon and 5 syntactic functions,
@@ -421,12 +424,16 @@ trees as possible.
 \section{How the tool works}
 \label{sec:details}
 
-A GF grammar compiles into a low-level format called PGF (``Portable Grammar Format''), which is processed by our tool. For each category in the original grammar, the GF compiler introduces a new category in the PGF for each combination of parameters. For example for English adjectives, we get \texttt{A => A$_{pos}$, A$_{comp}$,
-A$_{superl}$}, and for Spanish, \texttt{A => A$_{pos\times{}sg\times{}masc}$, \dots, A$_{superl\times{}pl\times{}fem}$}. 
+A \gf{} grammar compiles into a low-level format called \pgf{}
+(``Portable Grammar Format''), which is processed by our tool. For
+each category in the original grammar, the \gf{} compiler introduces a
+new category in the \pgf{} for each combination of parameters. For
+example for English adjectives, we get ${\tt A \Rightarrow \{ \tt A_{pos}, A_{comp}, A_{superl}}$\}, and for Spanish,
+${\tt A \Rightarrow \{ A_{pos\times{}sg\times{}masc}, \dots, A_{superl\times{}pl\times{}fem}}$\}. 
 
-This compilation step can dramatically increase the number of categories of the grammar, but it also removes the need for dealing with these parameters explicitly when we generate test cases. Instead, each syntactic function from the original grammar turns into multiple syntactic functions into the PGF -- one for each combination of parameters of its arguments.
+This compilation step can dramatically increase the number of categories of the grammar, but it also removes the need for dealing with these parameters explicitly when we generate test cases. Instead, each syntactic function from the original grammar turns into multiple syntactic functions into the \pgf{} -- one for each combination of parameters of its arguments.
 
-We now describe the generation of test cases for a given syntactic function. We assume that all test cases are trees with the same start (top-level) category, such as \t{NP} in our example grammar, or \t{S} (for sentence) for more general grammars. The requirement is that the start category is linearized as one string only. (In a PMCFG, categories in general can be linearized to vectors of strings, which is perhaps unsuitable for test cases that are presented to a human.)
+We now describe the generation of test cases for a given syntactic function. We assume that all test cases are trees with the same start (top-level) category, such as \t{NP} in our example grammar, or \t{S} (for sentence) for more general grammars. The requirement is that the start category is linearized as one string only. (In a \pmcfg{}, categories in general can be linearized to vectors of strings, which is perhaps unsuitable for test cases that are presented to a human.)
 
 \paragraph{Enumerate functions} As we explained before, each syntactic function turns into multiple versions, one for each combination of parameters of its arguments. We test each of these versions seperately. This enumeration is the main reason we see several test cases in the examples in Section~\ref{sec:gf}.
 
@@ -496,7 +503,7 @@ one way that a \t{CN} can end up in an \t{NP}: by using the function
 Let us return to our running example. So far the relevant features have
 been grammatical gender an adjective placement---we have 4 trees with
 all combinations of \{masculine, feminine\} and \{pre,post\}. The
-resulting trees have \emph{variable} number, and we need to generate contexts that specify that number. In the PGF, the function \t{DetCN} actually comes in two versions: one for singular and one for plural determiners. Both of these use their arguments in different ways (different strings from the hole appear in the result). So, both versions of \t{DetCN} lead to one context each. The final contexts are \verb|DetCN this _| and  \verb|DetCN these _|. Note that we do not have to enumerate all possible first arguments to \t{DetCN}. We insert the 4 test
+resulting trees have \emph{variable} number, and we need to generate contexts that specify that number. In the \pgf{}, the function \t{DetCN} actually comes in two versions: one for singular and one for plural determiners. Both of these use their arguments in different ways (different strings from the hole appear in the result). So, both versions of \t{DetCN} lead to one context each. The final contexts are \verb|DetCN this _| and  \verb|DetCN these _|. Note that we do not have to enumerate all possible first arguments to \t{DetCN}. We insert the 4 test
 cases into the holes, and get 8 trees in total: \t{\{DetCN this (good
   house), \dots, DetCN these (small hill)\}}. 
 
@@ -512,14 +519,11 @@ made us choose \t{small} and \t{good} in the first place is now gone:
 in predicative position, both adjectives behave the same. Thus, in
 this larger grammar, when we want to test adjectives, it is necessary
 to include two examples when in attributive position, but only one
-when in predicative position. We describe exactly how this works in
-Section~\ref{sec:details}. 
-%In total we would get 12 sentences: the 8 shown previously, and 4 
+when in predicative position. 
+
 
 \section{General features of \pmcfg: unused, equal,
   erased or empty fields}
-
-\todo{rewrite/restructure/merge into something?}
 
 Aside from concrete language-dependent phenomena, there are more
 general, engineering questions a grammar writer may ask. For instance, say that our
@@ -538,7 +542,7 @@ the future---or remove it as redundant.
 possible to erase arguments: say that there is a bug, \t{AdjCN : Adj
   $\rightarrow$ CN  $\rightarrow$ CN} never actually adds the
 adjective to the new \t{CN}, in which case \t{AdjCN blue house} and
-\t{house} are linearised identically. Instead of testing every single
+\t{house} are linearized identically. Instead of testing every single
 function, we would like to know if there are any functions in the
 grammar that behave like this.
 
@@ -560,10 +564,9 @@ In Dutch, the words \emph{hill} and \emph{house} have different
 genders, and the word \emph{yours} has to agree in gender 
 with the antecedent: \emph{(de) heuvel naast de jouwe} and \emph{(het)
   huis naast het jouwe}. The test cases reveal a bug, where \t{DetNP your} 
-picks a gender too soon: always the neuter form, instead of leaving
-gender open in an inflection table. We implement a fix by adding
-gender as a parameter to the \t{Adv} type, and have \t{AdvCN} choose
-the correct form based on the gender of the \t{CN}. 
+picks a gender too soon, instead of leaving it open in an inflection
+table. We implement a fix by adding gender as a parameter to the
+\t{Adv} type, and have \t{AdvCN} choose the correct form based on the gender of the \t{CN}. 
 
 After implementing the fix, we run a second test case generation: this
 time, not meant for human eyes, but just to compare the old and new
@@ -594,16 +597,6 @@ pointing to a house. So we do another round of modifications, compute
 the difference (to the original grammar or to the intermediate), and
 see if something else broke.
 
-Note that generating test cases to all trees often leads to redundant
-trees---as we noted in Section~\ref{sec:wishlist_comments}, the trees
-that are needed to test \t{AdjCN} in Estonian are exactly the same
-trees we need to test \t{PrepNP}, even though the functions are
-seemingly separate. However, when our goal is just to compare the
-strings and return the ones that differ, generating test cases for
-each function is no problem. 
-As future work, we are planning to add a separate mode for testing the
-whole grammar from scratch: intentionally create trees that test
-several functions at once.
 
 % The tool is completely
 % deterministic, that is, it chooses always the same subtree to
@@ -654,13 +647,11 @@ families, and cover a wide range of grammatical complexity. Dutch, an
 Indo-European language, has fairly simple nominal and verbal
 morphology, but the rules for handling word order, prefixes and
 particles in verb phrases are somewhat intricate. Estonian and Basque
-both have rich morphology, each featuring 14 nominal cases. However, Basque
-verbs are significantly more complex---verbs agree with subject, object
-and indirect object. This combined with all the tenses and moods, as
-well as possible object cases, blows up the number of trees a
-lot. Contrary to our expectations, we found Dutch and Estonian
-behaving similarly to each other and Basque way out there, both in
-execution time and examples generated.
+both have rich morphology, each featuring 14 nominal cases, but Basque
+verb morphology is much more complex, with agreement in subject,
+object and indirect object. Contrary to our expectations, we found
+Dutch and Estonian behaving similarly to each other and Basque
+significantly worse, both in execution time and examples generated.
 
 Table~\ref{results} shows the number of generated trees for 
 in total for all syntactic functions in the three grammars, and
@@ -695,34 +686,31 @@ sentence ``how far is the bar?'' in the Phrasebook is \t{PQuestion
 sentence. Limiting up to depth 3, the Phrasebook grammar produces over
 480,000 trees\footnote{Application grammars are usually
 much more compact than resource grammars, hence depth 3 covers already
-a lot of relevant trees.}. All three concrete syntaxes were
-implemented using their respective resource grammars; thus if some
-Phrasebook function has a bug, say it produces ``Spaniard restaurant''
-instead of ``Spanish restaurant'', the problem could be in either grammar.
-In the first case, the resource grammar contains both \t{spanish\_A} ``Spanish'' and
-\t{spaniard\_N} ``Spaniard'', but the application grammarian has
-chosen the wrong function.
-In the second case, the application grammarian has correctly chosen
-\t{spanish\_A} from the resource grammar, but that word itself is
-linearised wrongly into ``Spaniard''.
+a lot of relevant trees.}.
+
+%  All three concrete syntaxes were
+% implemented using their respective resource grammars; thus if some
+% Phrasebook function has a bug, say it produces ``Spaniard restaurant''
+% instead of ``Spanish restaurant'', the problem could be in either grammar.
+% In the first case, the resource grammar contains both \t{spanish\_A} ``Spanish'' and
+% \t{spaniard\_N} ``Spaniard'', but the application grammarian has
+% chosen the wrong function.
+% In the second case, the application grammarian has correctly chosen
+% \t{spanish\_A} from the resource grammar, but that word itself is
+% linearized wrongly into ``Spaniard''.
 
 
-% \footnote{For the resource grammar, depth
-%   3 would be quite small and leave out many completely natural
-%   phrases, but the abstract syntax of application grammars is often
-%   much more compact.} 
-
-The third grammar is a restricted version of the GF resource grammar,
+The third grammar is a restricted version of the \gf{} resource grammar,
 with 84 categories, 217 syntactic functions and 446 words in the
 lexicon. Since all the languages did not have a complete
 implementation, we simply took the subset of functions that was
 common, and removed manually a couple of rare constructions and words
 that are potentially distracting. However, we should not limit the
 lexicon too much, because we may miss important distinctions 
-in some languages\footnote{To give a hypothetical example, some language may
+in some languages---to give a hypothetical example, some grammar may
 have a bug that shows up only in animate nouns which end in a
-consonant other than \emph{r}}. This subset of the resource grammar
-produces hundreds of billions of trees up to depth 5.
+consonant. This subset of the resource grammar produces hundreds of
+billions of trees up to depth 5. 
 %: say, animate and inanimate nouns, ending in front vowel and back vowel.
 
 \subsection{Results}
@@ -730,9 +718,7 @@ produces hundreds of billions of trees up to depth 5.
 \paragraph{Execution time} We ran all the experiments on a MacBook Air with 1,7 GHz processor and 8 GB RAM.
 For the smaller grammars, all languages took just
 seconds to run. For the resource grammar, Dutch and Estonian finished in
-3--4 minutes,
-% Several other languages, such as English, Swedish, \todo{Hindi,
-% Bulgarian, ...} also needed only a few minutes. 
+3--4 minutes.
 However, the Basque resource grammar is noticeably more complex, and
 creating test trees for all functions took several hours. We ran the
 experiment in smaller batches over two days, and noticed a lot of
@@ -740,27 +726,63 @@ variance: functions that handle e.g. noun phrases, adjectives and
 adverbs ran in a few minutes, but a function involving verb phrases
 could take an hour just by itself. 
 
-\paragraph{Generated trees} 
 
-We report two numbers: total number of trees, and unique trees. 
+% \paragraph{Generated trees} 
+
+% \todo{write about this in some later version}
+% We believe this has both language typological and grammar engineering
+% implications---there is no way to implement Basque in a way that
+% results in as few example sentences as English, but other resource
+% grammarians have reported significant differences in complexity
+% between implementations---\cite{enache2010} reports a
+% 200-time reduction in the number of concrete rules after changing the
+% implementation of clitics in verb phrases.
+
+
 
 
 \paragraph{Finding bugs} 
 We read through the test sentences of the small grammar in all the
 three languages. 
-For Dutch we had a native speaker; for Estonian a fluent non-native,
+For Dutch we had a native speaker; for Estonian an intermediate non-native,
 and for Basque, a beginner. None of the three grammars had been tested
 systematically before---\cite{listenmaa_kaljurand2014} report testing
 the morphological paradigms extensively against existing resources,
-and for the syntactic functions, a test treebank of a few hundred trees.
+and syntactic functions with a treebank of 425 trees.
+
+We have been developing the tool by testing it on the Dutch resource
+grammar, and during 4 months, we have committed 16 bugfixes in the
+\gf{} main repository. (In the name of honesty, a few of the bugs were
+caused by our earlier ``fixes''---that was before we had implemented
+the comparison against an older version of the grammar!) 
+
+The Basque resource grammar is still a work in progress, and the
+test sentences showed serious problems in morphology.
+We thought it premature to get a fluent speaker to evaluate the grammar,
+because the errors in morphology would probably make it
+difficult to assess syntax separately. We think that the best course
+of action is to evaluate the morphological paradigms against existing
+resources, fix the implementation, and then concentrate on syntax.
+The Phrasebook was implemented using the resource grammar, so the
+same problems apply.
+
+We read through the first 500 sentences from Estonian Phrasebook,
+which took around 20 minutes. We found 3 errors in the inflection of
+individual words (they did not come from the resource lexicon, which
+was tested, but were implemented separately in the grammar); one error
+of type ``Spaniard restaurant'', and one suggestion for a more idiomatic
+construction. As expected, Phrasebook sentences were easier to read,
+and made more sense semantically than sentences from the resource
+grammar, which is only supposed to contain syntactic functions. 
+
 
 %\todo{up to line 1977, 11 minutes, finish tomorrow}
 %For the 1314 sentences in Estonian, it took \todo{n} minutes for a
 %fluent non-native speaker to read through and mark suspicious-looking constructs
 
-\subsection{State of the art}
+\subsection{Previous work}
 
-Traditionally, GF grammars are tested by the grammarians themselves,
+Traditionally, \gf{} grammars are tested by the grammarians themselves,
 much in the way described in the introduction of this article. An example
 human-written treebank can be found in \cite[p.~136--142]{khegai2006phd}.
 For testing the coverage of the grammars, grammarians have used
@@ -773,8 +795,9 @@ project \cite{forcada2011apertium}.
 %function is used in the treebank.}
 
 
-\cite[pp.~212--213]{butt1999lfg} describes common methods of testing the
-{\sc lfg} formalism: similarly to \gf, they use a combination of
+As an example of other grammar formalisms,
+\cite[pp.~212--213]{butt1999lfg} describe common methods of testing
+the {\sc lfg} formalism: similarly to \gf, they use a combination of
 human-written test suites meant to cover particular phenomena, and
 external larger corpora to test the coverage. As a difference from \gf{}
 testing tradition, their human-written test suites include also
@@ -783,48 +806,50 @@ able to parse. However, their tests are only meant for monolingual
 grammars, whereas \gf{} tests are for multilingual grammars, so they are
 stored as trees. In other words, \gf{} tests only what the grammar
 outputs, not what it parses.
+\cite{bender2010} describe a system for creating and testing \hpsg{} \cite{pollard1994hpsg}
+grammars, by using a detailed questionnaire about the features of the
+given language. This system achieves both generating the grammar rules
+and testing them simultaneously, whereas our method relies on an
+existing grammar. On the other hand, our system is more general to any
+kinds of grammars, including application grammars where the
+distinctions are not syntactic but semantic.
 
-Stephan Müller's sentence list testing only weak generative capacity,
-this method is testing strong generative capacity
 
 
 
+\section{Discussion and future work}
 
-\section{Discussion}
+We have found the tool useful in large-scale grammar writing. However,
+our experience may not apply to non-expert test oracles: one problem
+we predict is that the test sentences from resource grammars are often
+nonsensical semantically, and hence a native speaker might intuitively
+say that a sentence is wrong, even though it is just unnatural. 
+For instance, the function \t{AdvQVP} covers constructions such as ``you
+did \emph{what}?''. However, the function itself is completely general
+and can take any verb phrase and any question adverb, thus  bizarre
+combinations like ``you saw the dog why'' may appear in the generated
+test cases. 
 
-We have only concentrated on GF grammars so far, but the method works
-for any grammar formalism that can be compiled into parallel
-multiple CFG (PMCFG) \cite{seki91pmcfg}. The expressive power of PMCFG lies
-between mildly context-sensitive and context-sensitive, and thus any
-grammar formalism that is less expressive can be expressed as a
-PMCFG. This includes CFGs, and mildly context-sensitive formalisms
-such as \tag{} \cite{joshi1975tag} and \ccg{} \cite{steedman1988ccg}. GF
-already supports reading context-free grammars in labeled BNF format;
-so testing any existing CFG is a matter of some pre-processing.
+So far the only mode of operation is generating test cases for a
+single function. Generating test cases to all trees often leads to redundant
+trees---as we noted in Section~\ref{sec:wishlist_comments}, the trees
+that are needed to test \t{AdjCN} in Estonian are exactly the same
+trees we need to test \t{PrepNP}, even though the functions are
+seemingly separate. As future work, we are planning to add a separate
+mode for testing the whole grammar from scratch: intentionally create
+trees that test several functions at once.
 
-Some existing formalisms such as \hpsg{} and \lfg{} are fully
-context-sensitive \todo{cite and find out if there's some subset with
-  nice properties}.
+We have an implementation only for \gf{} grammars so far, but the
+general method works for any grammar formalism that can be compiled
+into \pmcfg{}. \gf{} already supports reading context-free grammars,
+so testing any existing \cfg{} is a matter of some preprocessing. 
 
-\todo{Treebanks can complement the tree generation}
 
-\todo{Other analyses: program analysis, compiler warnings,
-  possibilities in GF and not programming languages}
+% \todo{Other analyses: program analysis, compiler warnings,
+%   possibilities in \gf{} that we cannot do in other programming
+%   languages (I don't remember anymore what this is supposed to mean,
+%   if you don't know either, just remove :-P)}
 
-Theoretical question: two grammars that produce the same language but
-have different grammar rules.
-NounPhrasesEus and NounPhrasesEusBind -- different number of concrete
-categories, functions are grouped differently, and
-representative+minimal test set is slightly different (smaller in the
-one that uses BIND instead of full forms in inflection tables).
-
-We believe this has both language typological and grammar engineering
-implications---there is no way to implement Basque in a way that
-results in as few example sentences as English, but other resource
-grammarians have reported significant differences in complexity
-between implementations---\todo{cite Ramona's Romanian RG} reports a
-200-time reduction in the number of concrete rules after changing the
-implementation of clitics in verb phrases.
 
 
 
