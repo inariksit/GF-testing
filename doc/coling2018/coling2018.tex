@@ -493,11 +493,11 @@ in Figure~\ref{fig:adjAttr}.
 
 \paragraph{Enumerate contexts} The third and last enumeration we perform when generating test cases is to generate all possible \emph{uses} of a function. After we provide a function with arguments, we need to put the result into a context, so that we can generate a single string from the result (a sentence). We do this for all trees we have generated so far.
 
-The important thing here is that the generated set of contexts shows all the possible different ways the tree can be used. By \emph{context}, we mean a tree in
-the start category, with a \emph{hole} of type \t{CN}, as shown in
-Figure~\ref{fig:treesWithHoles}. A tree of type \t{CN} can be plugged into the hole to form a tree in the start category.
+The important thing here is that the generated set of contexts shows all the possible different ways the tree can be used. For a test tree with an inflection table of size 4, we would generate 4 different sentences in which each of the 4 inflections is used.
 
-In this grammar, the only category above \t{CN} is \t{NP}, and there is only
+By \emph{context}, we mean a tree in
+the start category, with a \emph{hole} of type \t{CN}, as shown in
+Figure~\ref{fig:treesWithHoles}. A tree of type \t{CN} can be plugged into the hole to form a tree in the start category. In this grammar, the only category above \t{CN} is \t{NP}, and there is only
 one way that a \t{CN} can end up in an \t{NP}: by using the function
 \t{DetCN : Det $\rightarrow$ CN $\rightarrow$ NP}. 
 
@@ -508,7 +508,7 @@ resulting trees have \emph{variable} number, and we need to generate contexts th
 cases into the holes, and get 8 trees in total: \t{\{DetCN this (good
   house), \dots, DetCN these (small hill)\}}. 
 
-\todo{a few lines on how to compute contexts}
+So, what we want to compute is, given the result category T of the syntactic function, and the start category S of the grammar, a minimal set of contexts in the start category S with hole of type T, such that any string appearing in the linearization of T also appears somewhere in the linearization of S. We compute this by setting up a system of equations for each category C in the grammar: for each C, we define all the relevant contexts with hole type C in terms of all the relevant contexts with hole type C' for other categories C' that use C. So, the answer for each category is expressed in terms of the answer for other categories. In general, this system of equations is \emph{recursive}, we use a fixpoint iteration to compute the smallest solution.
 
 \paragraph{Pruning} For the previous example, we did not need any pruning: the cross
 product of all relevant distinctions produced a minimal and
