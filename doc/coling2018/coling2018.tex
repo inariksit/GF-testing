@@ -589,18 +589,35 @@ grammar that behave like this.
 
 Here is a typical use for the tool. We have a grammar, which could be
 of any size, and in any stage of maturity. We pick a single function,
-and generate test cases for it.
+say \t{AdvCN}, and generate test cases, which we give to the oracle. If
+the test cases reveal a bug, the grammarian fixes the buggy function,
+and then runs another check: this time, generating tests for
+\emph{all} functions for both old and new version of the grammar, and
+comparing the results to each other. If the fix is implemented
+correctly, then the only difference between the old output and the new
+output should be in the test cases created from \t{AdvCN}.
+
+Let us take a concrete example from the noun phrase grammar. Consider
+the following :
+\t{AdvCN (PrepNP next\_to (DetNP your)) hill} `hill next to yours' and
+\t{AdvCN (PrepNP next\_to (DetNP your)) house} `house next to
+yours'. In Dutch, the words \emph{hill} and \emph{house} have
+different genders, and the word \emph{yours} has to agree
+
+
 
 To cover the whole grammar, the simplest strategy is to generate test
 cases for all functions. However, that often leads to redundant trees:
 as we noted in Section~\ref{sec:wishlist_comments}, the trees that
-we needed to test \t{AdjCN} in Estonian were in fact exactly the same
-trees we needed to test \t{PrepNP}. The tool is completely
-deterministic, that is, it chooses always the same subtree to
-represent a particular feature. On the one hand, this makes the task
-monotonous for the evaluator, but on the other hand, it makes it
-clearer to see the redundancy: if we have already shown a set of trees
-for \t{PrepNP}, we do not need to show them again for \t{AdjCN}.
+are needed to test \t{AdjCN} in Estonian are exactly the same
+trees we need to test \t{PrepNP}. 
+
+% The tool is completely
+% deterministic, that is, it chooses always the same subtree to
+% represent a particular feature. On the one hand, this makes the task
+% monotonous for the evaluator, but on the other hand, it makes it
+% clearer to see the redundancy: if we have already shown a set of trees
+% for \t{PrepNP}, we do not need to show them again for \t{AdjCN}.
 
 As future work, we are planning to add a separate mode for testing the
 whole grammar from scratch: create intentionally trees that test
@@ -765,13 +782,12 @@ much in the way described in the introduction of this article. An example
 human-written treebank can be found in \cite[p.~136--142]{khegai2006phd}.
 For testing the coverage of the grammars, grammarians have used
 treebanks such as the UD treebank \cite{nivre2016ud} and Penn treebank
-\todo{cite}, and for testing morphology, various open-source resources
+\cite{marcus1993penntreebank}, and for testing morphology, various open-source resources
 have been used, such as morphological lexica from the Apertium
-project \todo{cite}.
+project \cite{forcada2011apertium}.
 
 \todo{Pick one function, get a treebank, see how exhaustively the function
 is used in the treebank.}
-
 Check what HPSG, TAG, CCG etc. people use for eval
 
 \cite[pp.~212--213]{butt1999lfg} describes common methods of testing the
