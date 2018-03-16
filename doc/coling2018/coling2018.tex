@@ -24,6 +24,7 @@
 \usepackage{latexsym}
 \usepackage{amssymb}
 \usepackage{stackengine}
+\usepackage[normalem]{ulem}
 \input{syntaxhilight} % suspicious
 
 \def\t#1{\texttt{#1}}
@@ -590,12 +591,17 @@ grammar that behave like this.
 Here is a typical use for the tool. 
 Let us take the noun phrase grammar for Dutch, and pick a single function,
 say \t{AdvCN}. We generate test cases, which include the following
-trees: \t{AdvCN (PrepNP next\_to (DetNP your)) hill} `hill next to
-yours' and \t{AdvCN (PrepNP next\_to (DetNP your)) house} `house next
-to yours'. In Dutch, the words \emph{hill} and \emph{house} have
-different genders, and the word \emph{yours} has to agree in gender
-with the antecedent: \emph{huis naast het jouwe} and \emph{heuvel naast de
-  jouwe}. The test cases reveal a bug, where \t{DetNP your}
+trees: 
+\begin{itemize}
+\item \t{AdvCN (PrepNP next\_to (DetNP your)) hill} `hill next to
+yours'
+\item \t{AdvCN (PrepNP next\_to (DetNP your)) house} `house next
+to yours'
+\end{itemize}
+In Dutch, the words \emph{hill} and \emph{house} have different
+genders, and the word \emph{yours} has to agree in gender 
+with the antecedent: \emph{(de) heuvel naast de jouwe} and \emph{(het)
+  huis naast het jouwe}. The test cases reveal a bug, where \t{DetNP your} 
 picks a gender too soon: always the neuter form, instead of leaving
 gender open in an inflection table. We implement a fix by adding
 gender as a parameter to the \t{Adv} type, and have \t{AdvCN} choose
@@ -607,37 +613,39 @@ versions of the grammar. We want to make sure that our changes
 %to \t{Adv}, \t{AdvCN} and \t{DetNP} 
 have not caused new bugs in other functions. The simplest strategy is
 to generate test cases for \emph{all} functions in both grammars, and
-compare the results: only show those outputs that differ between
-grammars. In the case of this function, we get the following
-differences:
+only show those outputs that differ between the grammars. After our
+fixes, we get the following differences: 
 
 \begin{itemize}
-\item[tree:] \t{DetCN the (AdvCN (PrepNP next\_to (DetNP your)) hill)}
+\item \t{DetCN the (AdvCN (PrepNP next\_to (DetNP your)) hill)}
   \begin{itemize}
-   \item[old:] \emph{de heuvel naast {\bf  het} jouwe}
-   \item[new:] \emph{de heuvel naast {\bf  de} jouwe}
+   \item \emph{\sout{de heuvel naast {\bf  het} jouwe}}
+   \item \emph{de heuvel naast {\bf  de} jouwe}
   \end{itemize}
-\item[tree:] \t{DetCN the (AdvCN (PrepNP next\_to (DetNP this)) hill)}
+\item \t{DetCN the (AdvCN (PrepNP without (DetNP this)) hill)}
   \begin{itemize}
-   \item[old:]  \emph{de heuvel naast {\bf  dit}}
-   \item[new:] \emph{de heuvel naast {\bf  deze}}
+   \item \emph{\sout{de heuvel zonder {\bf  dit}}}
+   \item \emph{de heuvel zonder {\bf  deze}}
   \end{itemize}
 \end{itemize}
 
-This would often lead to redundant trees if we
-wanted to give those sentences to a human---as we noted in
-Section~\ref{sec:wishlist_comments}, the trees that are needed to test
-\t{AdjCN} in Estonian are exactly the same trees we need to test
-\t{PrepNP}, even though the functions are seemingly separate. However,
-when our goal is just to compare the difference, generating test cases
-for each function is no problem
+\noindent We notice a side effect that we may not have thought of: the
+gender is retained in all adverbs made of NPs made of determiners, so
+now it has become impossible to say ``the hill without \emph{that}'' and
+pointing to a house. So we do another round of modifications, compute
+the difference (to the original grammar or to the intermediate), and
+see if something else broke.
 
-In the ideal use case, the fixes are
-small and the tests are run often, so we expect the difference to be
-small too.
-
-Since we include more words in the second test case generation, we
-will find if the fix generalises to 
+Note that generating test cases to all trees often leads to redundant
+trees---as we noted in Section~\ref{sec:wishlist_comments}, the trees
+that are needed to test \t{AdjCN} in Estonian are exactly the same
+trees we need to test \t{PrepNP}, even though the functions are
+seemingly separate. However, when our goal is just to compare the
+strings and return the ones that differ, generating test cases for
+each function is no problem. 
+As future work, we are planning to add a separate mode for testing the
+whole grammar from scratch: intentionally create trees that test
+several functions at once.
 
 % The tool is completely
 % deterministic, that is, it chooses always the same subtree to
@@ -646,9 +654,40 @@ will find if the fix generalises to
 % clearer to see the redundancy: if we have already shown a set of trees
 % for \t{PrepNP}, we do not need to show them again for \t{AdjCN}.
 
-As future work, we are planning to add a separate mode for testing the
-whole grammar from scratch: create intentionally trees that test
-several functions at once.
+\begin{table}[h]
+\centering
+\begin{tabular}{|lll|ll|ll|ll|}
+\hline
+\multicolumn{3}{|r}{Concrete grammar $\rightarrow$}              &
+                                                                   \multicolumn{2}{|c}{\bf Dutch} & \multicolumn{2}{|c}{\bf Basque} & \multicolumn{2}{|c|}{\bf Estonian} \\
+$\downarrow$ Abstract grammar & \#funs+lex & \#trees  &
+                                                                 \#total & \#uniq & \#total & \#uniq  & \#total  & \#uniq \\ \hline
+{\bf Noun phrases}     & 5+15          & \textgreater{}10,000          & 21    & 18     & 33      & 27      & 40       & 36     \\ \hline
+{\bf Phrasebook}       & 130+160         & \textgreater{}480,000       & 2006  & 1892   & 2808    & 2650    & 1513     & 1314   \\ \hline
+{\bf Resource grammar} & 217+446         & \textgreater{}500 billion   & 59,316 & 51,145  & 278,092  & 216,058  & 60,600    & 38,517   \\ \hline
+\end{tabular}
+\caption{Generating test cases for all functions in three grammars}
+\label{results}
+\end{table}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|ll|ll|ll|}
+\hline
+{\bf Resource grammar function} &\multicolumn{2}{|c}{\bf Dutch} &
+                                                                  \multicolumn{2}{|c}{\bf Basque} & \multicolumn{2}{|c|}{\bf Estonian} \\
+                               &  \#trees & \#ctx &\#trees & \#ctx & \#trees & \#ctx  \\ \hline
+\t{ComparA} `younger than me'  &  11      & 3     & 36     & 6     & 21      & 3   \\
+% \t{FunRP~~} `mother of whom'  &  20      & 5     & 26     & 26    & 708     & 116 \\
+\t{RelNP~~} `a cat that I saw' &  25      & 9     & 90     & 10    & 123     & 12 \\
+ \t{ReflVP~} `see myself'      &  1655    & 23    & 10838  &  128  &1608     & 13   \\
+
+
+\hline
+\end{tabular}
+\caption{Test cases for some individual functions in the resource grammar}
+\label{results_indiv}
+\end{table}
 
 In order to evaluate our method, we generate test cases for grammars
 of varying sizes, using the three languages presented earlier: Dutch,
@@ -658,11 +697,12 @@ Indo-European language, has fairly simple nominal and verbal
 morphology, but the rules for handling word order, prefixes and
 particles in verb phrases are somewhat intricate. Estonian and Basque
 both have rich morphology, each featuring 14 nominal cases. However, Basque
-verbs are significantly more complex: verbs agree with subject, object
-and indirect object, there are more tenses and moods than in either
-Dutch or Estonian, and there are several clitics that attach to the
-verb (although the grammar implementation only includes \todo{how
-  many}). 
+verbs are significantly more complex---verbs agree with subject, object
+and indirect object. This combined with all the tenses and moods, as
+well as possible object cases, blows up the number of trees a
+lot. Contrary to our expectations, we found Dutch and Estonian
+behaving similarly to each other and Basque way out there, both in
+execution time and examples generated.
 
 Table~\ref{results} shows the number of generated trees for 
 in total for all syntactic functions in
@@ -670,27 +710,12 @@ the grammar.
 
 For the smaller grammar, we just report the total number of generated
 trees, and for the resource grammar, a few different functions and
-finally the total number. Note that we do not consider this an optimal way of
-testing a whole resource grammar from scratch---the number of trees is
-way too high to be feasible, and the envisioned use case is
-this gives merely a baseline
-reduction from all possible trees up to a reasonable depth.
-We introduce the grammars and comment on the results in the following sections.
-\begin{table}[]
-\centering
-\begin{tabular}{|lll|ll|ll|ll|}
-\hline
-\multicolumn{3}{|r}{Concrete grammar $\rightarrow$}             & \multicolumn{2}{|c}{Dutch} & \multicolumn{2}{|c}{Basque} & \multicolumn{2}{|c|}{Estonian} \\
-$\downarrow$ Abstract grammar & \#funs+lex & \#reasonable trees  &
-                                                                 \#total     & \#uniq    & \#total     & \#uniq     & \#total      & \#uniq      \\ \hline
-Noun phrases     & 5+15          & \textgreater{}10,000          & 21          & 18          & 33          & 27           & 40           & 36            \\
-Phrasebook       & 130+160         & \textgreater{}480,000         & 2006        & 1892        & 2808        & 2650         & 1513         & 1314          \\
-Resource grammar & 217+446         & \textgreater{}500 billion & 59316       & 51145       &             &              & 60600        & 38517        \\
-\hline
-\end{tabular}
-\caption{Generating test cases for all syntactic functions}
-\label{results}
-\end{table}
+finally the total number. As stated earlier, we do not consider this
+an optimal way of testing a whole resource grammar from scratch;
+this gives merely a baseline reduction from all possible trees up to a
+reasonable depth. We introduce the grammars and comment on the results
+in the following sections. 
+
 \subsection{Grammars}
 
 The first grammar is the toy example introduced earlier in this
@@ -755,11 +780,10 @@ seconds to run. For the resource grammar, Dutch and Estonian finished in
 % Bulgarian, ...} also needed only a few minutes. 
 However, the Basque resource grammar is noticeably more complex, and
 creating test trees for all functions took several hours. We ran the
-experiment in smaller batches, and noticed a lot of variance:
-functions that handle e.g. noun phrases, adjectives and adverbs ran in
-a few minutes, but a function involving verb phrases could take an
-hour just by itself. This is not surprising: Basque verbs agree with
-subject, object and indirect object, 
+experiment in smaller batches over two days, and noticed a lot of
+variance: functions that handle e.g. noun phrases, adjectives and
+adverbs ran in a few minutes, but a function involving verb phrases
+could take an hour just by itself. 
 
 \paragraph{Generated trees} 
 
