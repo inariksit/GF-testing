@@ -553,7 +553,7 @@ grammar that behave like this.
 
 The analyses mentioned in this section are implemented in a similar way to the method for enumerating all contexts.
 
-\section{Use Cases and Evaluation}
+\section{Use cases and evaluation}
 
 Here is a typical use for the tool. 
 Let us take the noun phrase grammar for Dutch, and pick a single function,
@@ -633,7 +633,7 @@ $\downarrow$ Abstract grammar & \#funs+lex & \#trees  &
 {\bf Phrasebook}       & 130+160         & \textgreater{}480,000       & 2006  & 1892   & 2808    & 2650    & 1513     & 1314   \\ \hline
 {\bf Resource grammar} & 217+446         & \textgreater{}500 billion   & 59,316 & 51,145  & 278,092  & 216,058  & 60,600    & 38,517   \\ \hline
 \end{tabular}
-\caption{Generating test cases for all functions in three grammars}
+\caption{Test cases for all functions in three grammars}
 \label{results}
 \end{table}
 
@@ -672,13 +672,10 @@ behaving similarly to each other and Basque way out there, both in
 execution time and examples generated.
 
 Table~\ref{results} shows the number of generated trees for 
-in total for all syntactic functions in
-the grammar. 
-
-For the smaller grammar, we just report the total number of generated
-trees, and for the resource grammar, a few different functions and
-finally the total number. As stated earlier, we do not consider this
-an optimal way of testing a whole resource grammar from scratch;
+in total for all syntactic functions in the three grammars, and
+Table~\ref{results_indiv} shows some example functions from the resource grammar. 
+As stated earlier, we do not consider generating test cases for all
+functions an optimal way of testing a whole resource grammar from scratch;
 this gives merely a baseline reduction from all possible trees up to a
 reasonable depth. We introduce the grammars and comment on the results
 in the following sections. 
@@ -766,32 +763,9 @@ systematically before---\cite{listenmaa_kaljurand2014} report testing
 the morphological paradigms extensively against existing resources,
 and for the syntactic functions, a test treebank of a few hundred trees.
 
-\todo{up to line 1977, 11 minutes, finish tomorrow}
-
-On the one hand, test cases based on a single function help to narrow
-down the bug: 
-
-as it happens, the tree \t{ACitizen She Indian} had the
-wrong form for Indian; one that only works as an attribute, not as a
-nationality. (Similar error would be to say e.g. ``a Spaniard
-restaurant''.)
-
-
-Many of the Phrasebook examples felt repetitive, because a lot of
-actions, which would be in the lexicon in the resource grammar, were
-actually functions with arguments: contrast  \t{Pred She (Compl Like
-  Pizza)} with more general functions \t{Pred} and \t{Compl}, to
-\t{Like She Pizza}. The latter is useful for more freedom
-
-
-For the 1314 sentences in Estonian, it took \todo{n} minutes for a
-fluent non-native speaker to read through and mark suspicious-looking constructs
-
-smaller grammars, we read through all the example sentences
-
-How many trees you eliminate -- how many trees would you have to read
-to confirm that you're correct, and how many trees you need to read
-now
+%\todo{up to line 1977, 11 minutes, finish tomorrow}
+%For the 1314 sentences in Estonian, it took \todo{n} minutes for a
+%fluent non-native speaker to read through and mark suspicious-looking constructs
 
 \subsection{State of the art}
 
@@ -804,9 +778,9 @@ treebanks such as the UD treebank \cite{nivre2016ud} and Penn treebank
 have been used, such as morphological lexica from the Apertium
 project \cite{forcada2011apertium}.
 
-\todo{Pick one function, get a treebank, see how exhaustively the function
-is used in the treebank.}
-Check what HPSG, TAG, CCG etc. people use for eval
+%\todo{Pick one function, get a treebank, see how exhaustively the
+%function is used in the treebank.}
+
 
 \cite[pp.~212--213]{butt1999lfg} describes common methods of testing the
 {\sc lfg} formalism: similarly to \gf, they use a combination of
@@ -823,21 +797,6 @@ Stephan Müller's sentence list testing only weak generative capacity,
 this method is testing strong generative capacity
 
 
-% \begin{itemize}
-% \item Cost
-%   \begin{itemize}
-%   \item time of generating examples
-%   \item how many examples generated -- analysis if they're redundant
-%   \item time of looking at examples
-%   \end{itemize}
-
-% \item Effect
-%   \begin{itemize}
-%   \item compare against other methods -- what methods?
-%   \item For application grammars, if you're writing them from scratch, it is actually pretty feasible to just gt the hell out of it as you write. But this doesn't work for bigger grammars.
-%   \item Morphology can be tested efficiently againts any existing morphological analyser. I've used Apertium for Dutch and Basque.
-%   \end{itemize}
-% \end{itemize}
 
 
 \section{Discussion}
