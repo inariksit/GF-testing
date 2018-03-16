@@ -594,9 +594,26 @@ grammar that behave like this.
 
 \section{Use Cases and Evaluation}
 
-Here is a typical use for the tool. We have a grammar, which could be
-of any size, and in any stage of maturity. We pick a single function,
-say \t{AdvCN}, and generate test cases, which we give to the oracle. If
+Here is a typical use for the tool. 
+Let us take the noun phrase grammar for Dutch, and pick a single function,
+say \t{AdvCN}. We generate test cases, which include the following
+trees: \t{AdvCN (PrepNP next\_to (DetNP your)) hill} `hill next to
+yours' and \t{AdvCN (PrepNP next\_to (DetNP your)) house} `house next
+to yours'. In Dutch, the words \emph{hill} and \emph{house} have
+different genders, and the word \emph{yours} has to agree in gender
+with the antecedent. The test cases reveal a bug, where \t{DetNP your}
+picks a gender too soon---always a neuter, instead of leaving it open
+as an inflection table. We implement a fix by adding gender as a
+parameter to the \t{Adv} type, and have \t{AdvCN} choose the correct
+form based on the gender of the \t{CN}. 
+
+After implementing the fix, we run a second test case generation: this
+time, not meant for human eyes, but just to compare the old and new
+versions of the grammar. If we have implemented the fixes to \t{Adv},
+\t{AdvCN} and \t{DetNP}
+
+
+If
 the test cases reveal a bug, the grammarian fixes the buggy function,
 and then runs another check: this time, generating tests for
 \emph{all} functions for both old and new version of the grammar, and
@@ -604,12 +621,14 @@ comparing the results to each other. If the fix is implemented
 correctly, then the only difference between the old output and the new
 output should be in the test cases created from \t{AdvCN}.
 
-Let us take a concrete example from the noun phrase grammar. Consider
-the following :
-\t{AdvCN (PrepNP next\_to (DetNP your)) hill} `hill next to yours' and
-\t{AdvCN (PrepNP next\_to (DetNP your)) house} `house next to
-yours'. In Dutch, the words \emph{hill} and \emph{house} have
-different genders, and the word \emph{yours} has to agree
+Consider the following trees: \t{AdvCN (PrepNP next\_to (DetNP your))
+  hill} `hill next to yours' and \t{AdvCN (PrepNP next\_to (DetNP
+  your)) house} `house next to yours'. In Dutch, the words \emph{hill}
+and \emph{house} have different genders, and the word \emph{yours} has
+to agree in gender with the antecedent. The test cases reveal a bug,
+and we implement a fix by adding gender as a parameter to the \t{Adv}
+type, and have \t{AdvCN} choose the correct form based on the gender
+of the \t{CN}. After implementing the fix, we
 
 
 
