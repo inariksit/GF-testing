@@ -601,42 +601,50 @@ trees: \t{AdvCN (PrepNP next\_to (DetNP your)) hill} `hill next to
 yours' and \t{AdvCN (PrepNP next\_to (DetNP your)) house} `house next
 to yours'. In Dutch, the words \emph{hill} and \emph{house} have
 different genders, and the word \emph{yours} has to agree in gender
-with the antecedent. The test cases reveal a bug, where \t{DetNP your}
-picks a gender too soon---always a neuter, instead of leaving it open
-as an inflection table. We implement a fix by adding gender as a
-parameter to the \t{Adv} type, and have \t{AdvCN} choose the correct
-form based on the gender of the \t{CN}. 
+with the antecedent: \emph{huis naast het jouwe} and \emph{heuvel naast de
+  jouwe}. The test cases reveal a bug, where \t{DetNP your}
+picks a gender too soon: always the neuter form, instead of leaving
+gender open in an inflection table. We implement a fix by adding
+gender as a parameter to the \t{Adv} type, and have \t{AdvCN} choose
+the correct form based on the gender of the \t{CN}. 
 
 After implementing the fix, we run a second test case generation: this
 time, not meant for human eyes, but just to compare the old and new
-versions of the grammar. If we have implemented the fixes to \t{Adv},
-\t{AdvCN} and \t{DetNP}
+versions of the grammar. We want to make sure that our changes 
+%to \t{Adv}, \t{AdvCN} and \t{DetNP} 
+have not caused new bugs in other functions. The simplest strategy is
+to generate test cases for \emph{all} functions in both grammars, and
+compare the results: only show those outputs that differ between
+grammars. In the case of this function, we get the following
+differences:
 
+\begin{itemize}
+\item[tree:] \t{DetCN the (AdvCN (PrepNP next\_to (DetNP your)) hill)}
+  \begin{itemize}
+   \item[old:] \emph{de heuvel naast {\bf  het} jouwe}
+   \item[new:] \emph{de heuvel naast {\bf  de} jouwe}
+  \end{itemize}
+\item[tree:] \t{DetCN the (AdvCN (PrepNP next\_to (DetNP this)) hill)}
+  \begin{itemize}
+   \item[old:]  \emph{de heuvel naast {\bf  dit}}
+   \item[new:] \emph{de heuvel naast {\bf  deze}}
+  \end{itemize}
+\end{itemize}
 
-If
-the test cases reveal a bug, the grammarian fixes the buggy function,
-and then runs another check: this time, generating tests for
-\emph{all} functions for both old and new version of the grammar, and
-comparing the results to each other. If the fix is implemented
-correctly, then the only difference between the old output and the new
-output should be in the test cases created from \t{AdvCN}.
+This would often lead to redundant trees if we
+wanted to give those sentences to a human---as we noted in
+Section~\ref{sec:wishlist_comments}, the trees that are needed to test
+\t{AdjCN} in Estonian are exactly the same trees we need to test
+\t{PrepNP}, even though the functions are seemingly separate. However,
+when our goal is just to compare the difference, generating test cases
+for each function is no problem
 
-Consider the following trees: \t{AdvCN (PrepNP next\_to (DetNP your))
-  hill} `hill next to yours' and \t{AdvCN (PrepNP next\_to (DetNP
-  your)) house} `house next to yours'. In Dutch, the words \emph{hill}
-and \emph{house} have different genders, and the word \emph{yours} has
-to agree in gender with the antecedent. The test cases reveal a bug,
-and we implement a fix by adding gender as a parameter to the \t{Adv}
-type, and have \t{AdvCN} choose the correct form based on the gender
-of the \t{CN}. After implementing the fix, we
+In the ideal use case, the fixes are
+small and the tests are run often, so we expect the difference to be
+small too.
 
-
-
-To cover the whole grammar, the simplest strategy is to generate test
-cases for all functions. However, that often leads to redundant trees:
-as we noted in Section~\ref{sec:wishlist_comments}, the trees that
-are needed to test \t{AdjCN} in Estonian are exactly the same
-trees we need to test \t{PrepNP}. 
+Since we include more words in the second test case generation, we
+will find if the fix generalises to 
 
 % The tool is completely
 % deterministic, that is, it chooses always the same subtree to
