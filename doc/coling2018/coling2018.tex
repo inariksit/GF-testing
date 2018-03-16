@@ -87,7 +87,7 @@ test the coverage of the grammar: how many sentences are successfully parsed.
 However, often we want information beyond numbers: do the rules we
 wrote for relative clauses correctly accept all relative clauses and
 nothing else? In other words, we are interested in the strong
-generative capacity \todo{chomsky1963} of the grammar, i.e. combinations
+generative capacity \cite{chomsky1963} of the grammar, i.e. combinations
 of a string and its structural description.
 
 Here is an example of a typical situation we want to improve. Suppose a
@@ -150,9 +150,9 @@ We present a method that addresses these problems, by designing a tool that can 
   automatically traced. 
 \end{itemize}
 
-Our concrete implementation is for a particular grammar formalism, namely parallel multiple context-free grammars ({\sc pmcfg}) \cite{seki91pmcfg}, which is the core formalism used by the Grammatical Framework (\gf \cite{ranta2004gf}). However, the method works for any formalism that is at most as expressive as PMCFG, including formalisms such as Tree-Adjoining Grammar (\tag) \cite{joshi1975tag} and Combinatorial Categorial Grammar (\ccg) \cite{steedman1988ccg}.
+Our concrete implementation is for a particular grammar formalism, namely parallel multiple context-free grammars ({\sc pmcfg}) \cite{seki91pmcfg}, which is the core formalism used by the Grammatical Framework (\gf) \cite{ranta2004gf}. However, the method works for any formalism that is at most as expressive as PMCFG, including formalisms such as Tree-Adjoining Grammar (\tag) \cite{joshi1975tag} and Combinatorial Categorial Grammar (\ccg) \cite{steedman1988ccg}.
 
-\section{Grammatical Framework}
+\section{Grammatical Framework} \label{sec:gf}
 Grammatical Framework (\gf) \cite{ranta2004gf} 
 is a framework for building multilingual grammar applications. Its main
 components are a functional programming language for writing grammars
@@ -418,56 +418,29 @@ paradigms. But there are easier methods to test for such bugs---our
 goal is to test the more abstract, syntactic phenomena with as few
 trees as possible.  
 
-\section{How it works}
+\section{How the tool works}
 \label{sec:details}
 
-GF grammar compiles into a low-level format called PGF. After the
-compilation, we get one category for each combination of parameters:
-for English adjectives, \texttt{A => A$_{pos}$, A$_{comp}$,
-A$_{superl}$}, and for Spanish, \texttt{A => A$_{pos\times{}sg\times{}masc}$, \dots,
-A$_{superl\times{}pl\times{}fem}$}. 
+A GF grammar compiles into a low-level format called PGF (``Portable Grammar Format''), which is processed by our tool. For each category in the original grammar, the GF compiler introduces a new category in the PGF for each combination of parameters. For example for English adjectives, we get \texttt{A => A$_{pos}$, A$_{comp}$,
+A$_{superl}$}, and for Spanish, \texttt{A => A$_{pos\times{}sg\times{}masc}$, \dots, A$_{superl\times{}pl\times{}fem}$}. 
 
-Suddenly, we have a bunch of new types, and those are different for
-each concrete syntax! The original question ``we need a sample of
-nouns/verbs/… that makes sense'' can be simplified ``we need one
-noun/verb/… of each type''. The types are determined by the parameters
-in the concrete syntax. 
+This compilation step can dramatically increase the number of categories of the grammar, but it also removes the need for dealing with these parameters explicitly when we generate test cases. Instead, each syntactic function from the original grammar turns into multiple syntactic functions into the PGF -- one for each combination of parameters of its arguments.
 
-So remember all the hassle when you can't pattern match strings to
-know something, but instead you have to define a parameter? This is
-actually a nice side effect from that: each parameter contributes to a
-new category, so it pays off in generating examples. If the feature is
-important for your grammar---say that in language A, negation is
-simply attaching the word  ``no'' before the verb, and in language B,
-negation changes the word order and the object case. Then in the GF
-grammar for language B, we would need a Boolean \texttt{isNeg} field
-in the relevant categories, which we then pattern match against in
-order to determine the relevant operations. That parameter in the
-abstract category translates into different concrete categories, and
-that way, when we generate example trees, we make sure to include one
-of each. For instance, in language A, we could end up with the trees
-``any horse'' and ``all horses'' when testing NPs, but in language B,
-the set would also include ``no horses''. 
+We now describe the generation of test cases for a given syntactic function. We assume that all test cases are trees with the same start (top-level) category, such as \t{NP} in our example grammar, or \t{S} (for sentence) for more general grammars. The requirement is that the start category is linearized as one string only. (In a PMCFG, categories in general can be linearized to vectors of strings, which is perhaps unsuitable for test cases that are presented to a human.)
 
+\paragraph{Enumerate functions} As we explained before, each syntactic function turns into multiple versions, one for each combination of parameters of its arguments. We test each of these versions seperately. This enumeration is the main reason we see several test cases in the examples in Section~\ref{sec:gf}.
 
-\paragraph{Test cases} 
-The basic unit of a test case is a single constructor, and the first step 
-is to build a set of trees using that constructor.
-If we are interested in a single lexical item, such as \emph{small}, 
-then the subtree \t{small} is the full set of trees. If we choose a function 
-with arguments, such as \t{PrepNP}, then we do the following: 
-\begin{itemize}
-\item For each argument type (\t{Prep} and \t{NP}), compute the
-  set of minimal and representative trees. This is a recursive
-  process: to compute the set of trees in \t{NP}, we must consider
-  all functions that create its argument types (\t{Det} and \t{CN}).
-%  until we have a set of lexical functions to choose from. 
-\item Take a cross product, prune out redundant combinations, and
-  apply the constructor \t{PrepNP} to the resulting set of
-  arguments. The pruning method will be described later. 
-\end{itemize}
+In order to construct trees that use the syntactic function, we need to supply it with \emph{arguments}, as well as put the resulting tree into a \emph{context} that produces a tree of the correct start category.
 
-\paragraph{Test cases using \t{AdjCN}} Let us test the function
+\paragraph{Enumerate arguments} Some syntactic functions are simply a single lexical item (for example the word \emph{small}); in this case just the tree \t{small} is our answer. If we choose a function with arguments, such as for example \t{PrepNP}, then we have to supply it with argument trees. Each argument tree needs to be a tree belonging to the right category (in the example, \t{Prep} and \t{NP}, respectively).
+
+When we test a function, we want to see whether or not it uses the right information from its arguments, in the right way. The information that a syntactic function uses is any of the strings that come from linearizing its arguments. In order to be able to see which string in the result comes from which string from which arguments, we want to generate test cases that only contain unique strings (no duplicates).
+
+For example, when we test a preposition together with a noun, we want to pick a noun that actually has different forms (unique strings) for different prepositions, rather than having identical forms, because the human would not be able to see if the \t{PrepVP} function picked the wrong form.
+
+It is often possible to generate one combination of arguments where all strings in the linearization are different. However, it is not always possible. This is why we in general aim to generate a set of arguments, where for each pair of strings from the arguments, there is always one test case where those strings are different. In this way, if the syntactic function contains a mistake, there is always one test case that reveals it.
+
+\paragraph{Example: Test cases using \t{AdjCN}} Let us test the function
 \t{AdjCN : Adj $\rightarrow$ CN $\rightarrow$ CN}, and take a Spanish
 concrete syntax as an example. 
 Firstly, we need a minimal and representative set of arguments of types
@@ -519,35 +492,26 @@ in Figure~\ref{fig:adjAttr}.
 \end{minipage}
 \end{figure}
 
+\paragraph{Enumerate contexts} The third and last enumeration we perform when generating test cases is to generate all possible \emph{uses} of a function. After we provide a function with arguments, we need to put the result into a context, so that we can generate a single string from the result (a sentence). We do this for all trees we have generated so far.
 
-\paragraph{Context} 
+The important thing here is that the generated set of contexts shows all the possible different ways the tree can be used. By \emph{context}, we mean a tree in
+the start category, with a \emph{hole} of type \t{CN}, as shown in
+Figure~\ref{fig:treesWithHoles}. A tree of type \t{CN} can be plugged into the hole to form a tree in the start category.
 
-Now that we have a set of test cases, we create contexts that show all
-variation within them. By \emph{context}, we mean simply a tree in
-some other category, with a \emph{hole} of type \t{CN}, as shown in
-Figure~\ref{fig:treesWithHoles}. 
-In this grammar, the only category above is \t{NP}, and there is only
+In this grammar, the only category above \t{CN} is \t{NP}, and there is only
 one way that a \t{CN} can end up in an \t{NP}: by using the function
 \t{DetCN : Det $\rightarrow$ CN $\rightarrow$ NP}. 
 
-Just like before, we start by creating a representative and minimal
-set of arguments of type \t{Det}. So far the relevant features have
+Let us return to our running example. So far the relevant features have
 been grammatical gender an adjective placement---we have 4 trees with
 all combinations of \{masculine, feminine\} and \{pre,post\}. The
-resulting trees have \emph{variable} number, but now we have a
-category \t{Det} with an inherent number, so we can create the context
-that picks the string ``casa  peque\~{n}a'', and another that picks
-``casas  peque\~{n}as''. By simple combinatorics, we pick the
-representative set of \t{Det} with one singular and one plural
-element, e.g. \t{this} and \t{these}, and form two contexts:
-\verb|DetCN this _| and  \verb|DetCN these _|. We insert the 4 test
+resulting trees have \emph{variable} number, and we need to generate contexts that specify that number. In the PGF, the function \t{DetCN} actually comes in two versions: one for singular and one for plural determiners. Both of these use their arguments in different ways (different strings from the hole appear in the result). So, both versions of \t{DetCN} lead to one context each. The final contexts are \verb|DetCN this _| and  \verb|DetCN these _|. Note that we do not have to enumerate all possible first arguments to \t{DetCN}. We insert the 4 test
 cases into the holes, and get 8 trees in total: \t{\{DetCN this (good
   house), \dots, DetCN these (small hill)\}}. 
 
+\todo{a few lines on how to compute contexts}
 
-\paragraph{Pruning}
-
-For the previous example, we did not need any pruning: the cross
+\paragraph{Pruning} For the previous example, we did not need any pruning: the cross
 product of all relevant distinctions produced a minimal and
 representative set of trees. Now assume we have a larger grammar,
 which also covers adjectives in a predicative position:
@@ -567,11 +531,12 @@ Section~\ref{sec:details}.
 \todo{rewrite/restructure/merge into something?}
 
 Aside from concrete language-dependent phenomena, there are more
-general, engineering questions. For instance, say that our
+general, engineering questions a grammar writer may ask. For instance, say that our
 concrete type for a \t{CN} in Dutch is an inflection table from case
-to string, we would like to know whether (a) all string fields make it to
-the start category; (b) all fields are distinct; and (c) some fields
-are empty. In Dutch, nominative and accusative are only different for
+to string, we would like to know if (a) a given string field is unreachable from the start category; (b) any two fields always contain the same string; or (c) some fields
+are always the empty string. A yes answer to any of these may indicate a bug in the grammar.
+
+In Dutch, nominative and accusative are only different for
 pronouns, so for this grammar we would indeed find out that case is
 redundant: all nominative and accusative fields would be
 identical. As grammarians, we could decide to keep the distinction for
@@ -585,6 +550,8 @@ adjective to the new \t{CN}, in which case \t{AdjCN blue house} and
 \t{house} are linearised identically. Instead of testing every single
 function, we would like to know if there are any functions in the
 grammar that behave like this.
+
+The analyses mentioned in this section are implemented in a similar way to the method for enumerating all contexts.
 
 \section{Use Cases and Evaluation}
 
