@@ -627,7 +627,12 @@ $\downarrow$ Abstract grammar & \#funs+lex & \#trees  &
 \hline
 {\bf Resource grammar function} &\multicolumn{2}{|c}{\bf Dutch} &
                                                                   \multicolumn{2}{|c}{\bf Basque} & \multicolumn{2}{|c|}{\bf Estonian} \\
-                               &  \#trees & \#ctx &\#trees & \#ctx & \#trees & \#ctx  \\ \hline
+                               &  \#trees in ctx & \#comb. of args
+                                                                                                  &\#trees
+                                                                                                    in
+                                                                                                    ctx
+                               & \#c.args & \#trees in ctx &
+                                                                    \#c. args\\ \hline
 \t{ComparA} `younger than me'  &  11      & 3     & 36     & 6     & 21      & 3   \\
 % \t{FunRP~~} `mother of whom'  &  20      & 5     & 26     & 26    & 708     & 116 \\
 \t{RelNP~~} `a cat that I saw' &  25      & 9     & 90     & 10    & 123     & 12 \\
@@ -773,7 +778,7 @@ was tested, but were implemented separately in the grammar); one error
 of type ``Spaniard restaurant'', and one suggestion for a more idiomatic
 construction. As expected, Phrasebook sentences were easier to read,
 and made more sense semantically than sentences from the resource
-grammar, which is only supposed to contain syntactic functions. 
+grammar. %, which is only supposed to contain syntactic functions. 
 
 
 %\todo{up to line 1977, 11 minutes, finish tomorrow}
@@ -832,14 +837,15 @@ combinations like ``you saw the dog why'' may appear in the generated
 test cases. For future work, we plan to use an external treebank to guide the algorithm to pick trees that also make sense semantically.
 
 So far the only mode of operation is generating test cases for a
-single function. Generating test cases to all trees often leads to redundant
-trees---as we noted in Section~\ref{sec:wishlist_comments}, the trees
-that are needed to test \t{AdjCN} in Estonian are exactly the same
-trees we need to test \t{PrepNP}, even though the functions are
-seemingly separate. As future work, we are planning to add a separate
+single function. 
+% Generating test cases to all trees often leads to redundant
+% trees---as we noted in Section~\ref{sec:wishlist_comments}, the trees
+% that are needed to test \t{AdjCN} in Estonian are exactly the same
+% trees we need to test \t{PrepNP}, even though the functions are
+% seemingly separate. 
+As future work, we are planning to add a separate
 mode for testing the whole grammar from scratch: intentionally create
 trees that test several functions at once.
-
 We have an implementation only for \gf{} grammars so far, but the
 general method works for any grammar formalism that can be compiled
 into \pmcfg{}. \gf{} already supports reading context-free grammars,
