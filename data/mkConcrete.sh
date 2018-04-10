@@ -7,6 +7,7 @@ else
 fi
 
 if [ $# -eq 2 ]; then
+  LANG=$1
   OPTIMIZEPGF="--optimize-pgf"
 else
   OPTIMIZEPGF=""

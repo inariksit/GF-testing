@@ -47,6 +47,7 @@ data GfTest
 
  -- Misc
   , treebank      :: Maybe FilePath
+  , count_trees   :: Maybe Int
   , debug         :: Bool
   , write_to_file :: Bool
 
@@ -74,6 +75,7 @@ gftest = GfTest
   , erased_trees  = def &= A.name "r"   &= help "Show trees that are erased"
   , treebank      = def &= typFile
                         &= A.name "b"   &= help "Path to a treebank"
+  , count_trees   = def &= A.typ "3"    &= help "Number of trees of depth <depth>"
   , old_grammar   = def &= typFile
                         &= A.name "o"   &= help "Path to an earlier version of the grammar"
   , only_changed_cats = def             &= help "When comparing against an earlier version of a grammar, only test functions in categories that have changed between versions"
@@ -98,6 +100,8 @@ main = do
   gr     <- readGrammar langName grName
   grTrans <- sequence [ readGrammar lt grName | lt <- langTrans ]
 
+  
+
   let startcat = startCat gr `fromMaybe` start_cat args
 
       testTree' t n = testTree False gr grTrans t n ctxs
@@ -118,10 +122,8 @@ main = do
       uncoerceAbsCat c = case c of
         CC (Just cat) _ -> cat
         CC Nothing    _ -> the [ uncoerceAbsCat x | x <- uncoerce gr c ]
-  -----------------------------------------------------------------------------
-  -- Statistics about the grammar
 
-  let intersectConcrCats cats_fields intersection =
+      intersectConcrCats cats_fields intersection =
         M.fromListWith intersection
               ([ (c,fields)
               | (CC (Just c) _,fields) <- cats_fields 
@@ -137,8 +139,60 @@ main = do
                        putStrLn $ unlines (map (fs!!) xs)
                   | (c,vs) <- M.toList tab
                   , let fs = fieldNames gr c
-                  , xs@(_:_) <- [ S.toList vs ]
-                  ]
+                  , xs@(_:_) <- [ S.toList vs ] ]
+ -----------------------------------------------------------------------------
+ -- Testing functions
+ 
+  -- Test a tree
+  case tree args of 
+    [] -> return ()
+    t  -> output $ testTree' (readTree gr t) 1
+
+  -- Test a function
+  case category args of
+    []  -> return ()
+    cat -> output $ unlines 
+            [ testTree' t n
+            | (t,n) <- treesUsingFun gr (functionsByCat gr cat) `zip` [1..]]
+            
+  -- Test all functions in a category
+  case function args of
+    [] -> return ()
+    fs -> let funs = if '*' `elem` fs
+                      then let subs = filter (/="*") $ groupBy (\a b -> a/='*' && b/='*') fs
+                            in nub [ f | s <- symbols gr, let f = show s
+                                   , all (`isInfixOf` f) subs
+                                   , arity s >= 1 ]
+                      else words fs
+           in output $ unlines
+               [ testFun (debug args) gr grTrans startcat f
+               | f <- funs ]
+
+-----------------------------------------------------------------------------
+-- Information about the grammar
+
+  -- Show available categories
+  when (show_cats args) $ do
+   putStrLn "* Categories in the grammar:"
+   putStrLn $ unlines [ cat | (cat,_,_,_) <- concrCats gr ]
+
+  -- Show available functions
+  when (show_funs args) $ do
+   putStrLn "* Functions in the grammar:"
+   putStrLn $ unlines $ nub [ show s | s <- symbols gr ]
+
+  -- Show coercions in the grammar
+  when (show_coercions args) $ do
+   putStrLn "* Coercions in the grammar:"
+   putStrLn $ unlines [ show cat++"--->"++show coe | (cat,coe) <- coercions gr ]
+
+  -- Show all functions that contain the given string 
+  -- (e.g. English "it" appears in DefArt, ImpersCl, it_Pron, …)
+  case concr_string args of
+    []  -> return ()
+    str -> do putStrLn $ "### The following functions contain the syncategorematic string '" ++ str ++ "':"
+              putStr "==> "
+              putStrLn $ intercalate ", " $ nub [ name s | s <- hasConcrString gr str]
 
   -- Show empty fields
   when (empty_fields args) $ do
@@ -146,7 +200,7 @@ main = do
     printStats $ intersectConcrCats (emptyFields gr) S.intersection
     putStrLn ""
 
-  -- Show question marks
+  -- Show erased trees
   when (erased_trees args) $ do
     putStrLn "* Erased trees:"
     sequence_
@@ -182,8 +236,11 @@ main = do
          | tp <- ccats gr startcat
          , (c,is) <- reachableFieldsFromTop gr tp
          , let ar = head $
-                [ length (seqs f) | f <- symbols gr, snd (ctyp f) == c ] ++
-                [ length (seqs f) | (b,a) <- coercions gr, a == c, f <- symbols gr, snd (ctyp f) == b ]
+                [ length (seqs f)
+                | f <- symbols gr, snd (ctyp f) == c ] ++
+                [ length (seqs f)
+                | (b,a) <- coercions gr, a == c
+                , f <- symbols gr, snd (ctyp f) == b ]
                notUsed = [ i | i <- [0..ar-1], i `notElem` is ]
          , not (null notUsed)
          ]
@@ -206,56 +263,17 @@ main = do
      ]
     putStrLn ""
 
-  -----------------------------------------------------------------------------
-  -- Show available categories
-  when (show_cats args) $ do
-   putStrLn "* Categories in the grammar:"
-   putStrLn $ unlines [ cat | (cat,_,_,_) <- concrCats gr ]
+  case count_trees args of
+    Nothing -> return ()
+    Just n  -> do let start = head $ ccats gr startcat
+                  let i = featCard gr start n
+                  let iTot = sum [ featCard gr start m | m <- [1..n] ]
+                  putStrLn $ "There are "++show iTot++" trees up to size "++show n
+                  print $ featIth gr start n 0
+                  print $ featIth gr start n (i-1)           
 
-  -- Show available functions
-  when (show_funs args) $ do
-   putStrLn "* Functions in the grammar:"
-   putStrLn $ unlines $ nub [ show s | s <- symbols gr ]
-
-  -- Show coercions in the grammar
-  when (show_coercions args) $ do
-   putStrLn "* Coercions in the grammar:"
-   putStrLn $ unlines [ show cat++"--->"++show coe | (cat,coe) <- coercions gr ]
-
-  -- Show all functions that contain the given string 
-  -- (e.g. English "it" appears in DefArt, ImpersCl, it_Pron, …)
-  case concr_string args of
-    []  -> return ()
-    str -> do putStrLn $ "### The following functions contain the syncategorematic string '" ++ str ++ "':"
-              putStr "==> "
-              putStrLn $ intercalate ", " $ nub [ name s | s <- hasConcrString gr str]
-
-
-  -- Testing a tree
-  case tree args of 
-    [] -> return ()
-    t  -> output $ testTree' (readTree gr t) 1
-
-  -- Testing a function or all functions in a category
-  case category args of
-    []  -> return ()
-    cat -> output $ unlines 
-            [ testTree' t n
-            | (t,n) <- treesUsingFun gr (functionsByCat gr cat) `zip` [1..]]
-  case function args of
-    [] -> return ()
-    fs -> let funs = if '*' `elem` fs
-                      then let subs = filter (/="*") $ groupBy (\a b -> a/='*' && b/='*') fs
-                            in nub [ f | s <- symbols gr, let f = show s
-                                   , all (`isInfixOf` f) subs ]
-                      else words fs
-           in output $ unlines
-               [ testFun (debug args) gr grTrans startcat f
-               | f <- funs ]
-
-
-  -------------------------------------------------------------------------------
-  -- Comparison with old grammar
+-------------------------------------------------------------------------------
+-- Comparison with old grammar
 
   case old_grammar args of
     Nothing -> return ()
@@ -354,8 +372,9 @@ main = do
       writeFunFile (groupFuns gr)  (langName ++ "-new-funs.org") gr
 
       putStrLn $ "Created files " ++ langName ++ "-(old|new)-funs.org"
-  -------------------------------------------------------------------------------
-  -- Read trees from treebank. No fancier functionality yet.
+
+-------------------------------------------------------------------------------
+-- Read trees from treebank. No fancier functionality yet.
 
   case treebank args of
     Nothing -> return ()
