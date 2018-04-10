@@ -1,5 +1,11 @@
 # gftest
 
+This is an old version of `gftest`. We recommend to use the one in https://github.com/GrammaticalFramework/GF/tree/master/src/tools/gftest .
+
+The biggest difference so far (Apr 2018) is that this version requires your files to be in a certain directory. We'll make updates and bugfixes in the new version.
+
+Papers, log files etc. will still be in this repository.
+
 ## Installation, setup, …
 
 If you want to use the `testLang.sh`, then you should clone this repository into the GF main directory, so that you've got `lib`, `src`, `GF-testing` etc. at the same level. **If you don't want to use it, just clone this repository anywhere.**
