@@ -44,5 +44,5 @@ cd data
 cd $HERE
 
 # 4) Run 
-gftest -l $ISO  $TRANS -o TestLangOlder.pgf 
+cabal run -- -l $ISO  $TRANS -o TestLangOlder.pgf
 
