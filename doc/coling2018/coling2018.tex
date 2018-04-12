@@ -404,8 +404,9 @@ generates over 10,000 %17,574
 trees\footnote{e.g. {\tt DetCN the (AdvCN (PrepNP on
 (DetCN a (AdjCN small hill)) (AdjCN blue house))} `the blue house on a
 small hill'}  up to depth 5. 
-However, as we have seen in the examples above, we can test complex morphosyntactic phenomena just with a set
-of 4, 8 or 12 trees, depending on the complexity of the language.
+However, as we have seen in the examples above, we can test complex
+morphosyntactic phenomena with just a set of 4, 8 or 12 trees,
+depending on the complexity of the language. 
 
 As mentioned previously, the base of a test case is one syntactic
 function, but often the same sentence ends up showcasing several
@@ -443,7 +444,7 @@ In order to construct trees that use the syntactic function, we need to supply i
 
 When we test a function, we want to see whether or not it uses the right information from its arguments, in the right way. The information that a syntactic function uses is any of the strings that come from linearizing its arguments. In order to be able to see which string in the result comes from which string from which arguments, we want to generate test cases that only contain unique strings (no duplicates).
 
-For example, when we test a preposition together with a noun, we want to pick a noun that actually has different forms (unique strings) for different prepositions, rather than having identical forms, because the human would not be able to see if the \t{PrepVP} function picked the wrong form.
+For example, when we test a preposition together with a noun, we want to pick a noun that actually has different forms (unique strings) for different prepositions, rather than having identical forms, because the human would not be able to see if the \t{PrepNP} function picked the wrong form.
 
 It is often possible to generate one combination of arguments where all strings in the linearizations are different. However, it is not always possible to this, which is why we in general aim to generate a set of combinations of arguments, where for each pair of strings from the arguments, there is always one test case where those strings are different. In this way, if the syntactic function contains a mistake, there is always one test case that reveals it.
 
@@ -504,8 +505,7 @@ Let us return to our running example. So far the relevant features have
 been grammatical gender an adjective placement---we have 4 trees with
 all combinations of \{masculine, feminine\} and \{pre,post\}. The
 resulting trees have \emph{variable} number, and we need to generate contexts that specify that number. In the \pgf{}, the function \t{DetCN} actually comes in two versions: one for singular and one for plural determiners. Both of these use their arguments in different ways (different strings from the hole appear in the result). So, both versions of \t{DetCN} lead to one context each. The final contexts are \verb|DetCN this _| and  \verb|DetCN these _|. Note that we do not have to enumerate all possible first arguments to \t{DetCN}. We insert the 4 test
-cases into the holes, and get 8 trees in total: \t{\{DetCN this (good
-  house), \dots, DetCN these (small hill)\}}. 
+cases into the holes, and get 8 trees in total: \t{\{DetCN this (AdjCN good house), \dots, DetCN these (AdjCN small hill)\}}. 
 
 So, what we want to compute is, given the result category T of the syntactic function, and the start category S of the grammar, a minimal set of contexts in the start category S with hole of type T, such that any string appearing in the linearization of T also appears somewhere in the linearization of S. We compute this by setting up a system of equations for each category C in the grammar: for each C, we define all the relevant contexts with hole type C in terms of all the relevant contexts with hole type C' for other categories C' that use C. So, the answer for each category is expressed in terms of the answer for other categories. In general, this system of equations is \emph{recursive}, and we use a fixpoint iteration to compute the smallest solution.
 
