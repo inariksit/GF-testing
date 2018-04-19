@@ -17,6 +17,20 @@ Is this correct? If not, what is correct?
 
 ### Weirdness with VPSlashPrep
 
+```
+* VPSlashPrep (ReflVP (SlashV2V help_V2V (ProgrVP (UseV turn_V)))) without_Prep
+
+** UseCl (TTAnt TFut ASimul) PPos (GenericCl (ComplSlash ∅ (ConjNP or_Conj (BaseNP (UsePron i_Pron) (UsePron youSg_Pron)))))
+TestLangDut> men zal zonder mij of jou helpen jezelf aan het draaien te zijn
+TestLangDut-OLD> men zal zonder mij of jou helpen mijzelf aan het draaien te zijn
+TestLangEng> one will help itself be turning without me or you
+```
+
+ComplSlash is choosing the agreement of help oneself to turn based on "me or you", but it should be GenericCl that chooses the argument.
+
+Would probably help to change VPSlashPrep so that it leaves an open slot for an Adv, not an actual object.
+
+***
 
 TODO: should make sure that VPSlash created by VPSlashPrep doesn't try to put things in n0 or n2 fields?
 
