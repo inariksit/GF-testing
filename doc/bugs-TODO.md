@@ -15,6 +15,114 @@ Is this correct? If not, what is correct?
 
 ***
 
+### ReflVP and choice of agreement
+
+Consider the following sentences.
+
+* "I help him turn with himself."
+* "I help him turn with myself."
+
+Here is AST 1:
+
+```
+PredVP (UsePron i_Pron) 
+       (ReflVP 
+           (VPSlashPrep 
+               (ComplSlash 
+                  (SlashV2V help_V2V 
+                           (UseV turn_V)
+                  )
+                  (UsePron he_Pron)
+               ) 
+               with_Prep
+            )
+        )
+```
+
+We have the following steps: 
+* "help _ turn" (SlashV2V)
+* "help `he_Pron` turn" (ComplSlash)
+* "help him turn `with`" (VPSlashPrep)
+* "help him turn with `refl`" (ReflVP)
+* "`i_Pron` help him turn with `myself`" (PredVP)
+
+Seems like a reasonable This is also the behaviour I get in English, German and Dutch when I do the following command (changed help to beg, because that's in the RGL lexicon):
+
+* `TestLang> gt PredVP (UsePron ?) (ReflVP ( VPSlashPrep ( ComplSlash (SlashV2V beg_V2V (UseV turn_V)) (UsePron he_Pron)) with_Prep)) | l`
+
+
+```
+I beg with myself him to turn
+it begs with itself him to turn
+she begs with herself him to turn
+...
+```
+
+Now, let's stack the constructors in different order. AST 2:
+
+```
+PredVP (UsePron i_Pron) 
+       (ComplSlash 
+           (SlashV2V 
+               help_V2V 
+               (ReflVP 
+                   (VPSlashPrep 
+                       (UseV turn_V) 
+                       with_Prep
+                   )
+                )
+            )
+           (UsePron he_Pron)
+       )
+```
+
+Now the steps, from innermost, are the following:
+
+* "turn with _" (VPSlashPrep)
+* "turn with `refl` (ReflVP)
+* "help _ turn with `refl`" (SlashV2V)
+* "help `he_Pron` turn with `refl`" (ComplSlash)
+* "I help him turn with ???" (PredVP)
+
+I think this sentence should linearise to "I help him turn with himself". However, trying this out with different pronouns gives the following in English:
+
+```
+I help him turn with myself
+it helps him turn with itself
+she helps him turn with herself
+```
+
+It's the same in German, but as I described for Dutch.
+
+```
+TestLang> gt PredVP (UsePron ?) (ComplSlash (SlashV2V help_V2V (ReflVP (VPSlashPrep (UseV turn_V) with_Prep))) (UsePron he_Pron)) | l -treebank
+TestLang: PredVP (UsePron he_Pron) (ComplSlash (SlashV2V help_V2V (ReflVP (VPSlashPrep (UseV turn_V) with_Prep))) (UsePron he_Pron))
+TestLangDut: hij helpt hem met zichzelf te draaien
+TestLangEng: he helps him turn with himself
+TestLangGer: er hilft ihn mit sich zu drehen
+TestLang: PredVP (UsePron i_Pron) (ComplSlash (SlashV2V help_V2V (ReflVP (VPSlashPrep (UseV turn_V) with_Prep))) (UsePron he_Pron))
+TestLangDut: ik help hem met zichzelf te draaien
+TestLangEng: I help him turn with myself
+TestLangGer: ich helfe ihn mit mir zu drehen
+TestLang: PredVP (UsePron it_Pron) (ComplSlash (SlashV2V help_V2V (ReflVP (VPSlashPrep (UseV turn_V) with_Prep))) (UsePron he_Pron))
+TestLangDut: het helpt hem met zichzelf te draaien
+TestLangEng: it helps him turn with itself
+TestLangGer: es hilft ihn mit sich zu drehen
+TestLang: PredVP (UsePron she_Pron) (ComplSlash (SlashV2V help_V2V (ReflVP (VPSlashPrep (UseV turn_V) with_Prep))) (UsePron he_Pron))
+TestLangDut: zij helpt hem met zichzelf te draaien
+TestLangEng: she helps him turn with herself
+TestLangGer: sie hilft ihn mit sich zu drehen
+TestLang: PredVP (UsePron they_Pron) (ComplSlash (SlashV2V help_V2V (ReflVP (VPSlashPrep (UseV turn_V) with_Prep))) (UsePron he_Pron))
+TestLangDut: zij helpen hem met zichzelf te draaien
+TestLangEng: they help him turn with themselves
+TestLangGer: sie helfen ihn mit sich zu drehen
+TestLang: PredVP (UsePron we_Pron) (ComplSlash (SlashV2V help_V2V (ReflVP (VPSlashPrep (UseV turn_V) with_Prep))) (UsePron he_Pron))
+TestLangDut: wij helpen hem met zichzelf te draaien
+TestLangEng: we help him turn with ourselves
+TestLangGer: wir helfen ihn mit uns zu drehen
+```
+
+
 ### Weirdness with VPSlashPrep
 
 ```
@@ -60,30 +168,4 @@ Which one is correct, or are both wrong?
 - UseCl (TTAnt TFut ASimul) PPos (PredVP (DetNP somePl_Det) VP_401)
   new> sommigen zullen zichzelf zonder me af vragen wie er is
   old> sommigen zullen zonder me zich af vragen wie er is
-```
-
-
-*** 
-
-Reflexive + number of the NP with ConjNP: should it be like in English, or is this "fine"? (As much fine as that sentence can be :-P)
-
-```
-UseCl (TTAnt TPast ASimul) PPos (PredVP (ConjNP either7or_DConj (BaseNP something_NP (UsePron i_Pron))) VP_387)
-TestLangDut> ofwel iets of ik smeekten het ons te schrijven
-TestLangEng> either something or I begged it to write myself
-```
-
-
-***
-
-Should this be like in English? split between heavy and light APs?
-
-```
-TestLang> UseCl (TTAnt TPres ASimul) PPos (ExistNP (MassNP (AdjCN (ComplA2 A2_2 (UsePron it_Pron)) (UseN worm_N))))
-TestLangDut> er is getrouwde ermee worm
-TestLangEng> there is worm married to it
-
-TestLang> UseCl (TTAnt TPres ASimul) PPos (ExistNP (MassNP (AdjCN (ComplA2 A2_2 something_NP) (UseN worm_N))))
-TestLangDut> er is gemakkelijke voor iets worm
-TestLangEng> there is worm easy for something
 ```
