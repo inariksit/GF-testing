@@ -4,7 +4,7 @@
 
 
 
-Wrong: men is aan het *het* een worm **helpen** te zijn
+Wrong: men is aan het *het* een worm **helpen** te zijn  
 Native suggestion: men is *het* aan het **helpen** een worm te zijn
 
 ProgrVP used to construct a fixed string: "aan het" ++ obj ++ fin ++ inf.
