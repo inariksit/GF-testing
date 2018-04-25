@@ -1,0 +1,427 @@
+% This is samplepaper.tex, a sample chapter demonstrating the
+% LLNCS macro package for Springer Computer Science proceedings;
+% Version 2.20 of 2017/10/04
+%
+\documentclass[runningheads]{llncs}
+%
+\usepackage{graphicx}
+% Used for displaying a sample figure. If possible, figure files should
+% be included in EPS format.
+%
+% If you use the hyperref package, please uncomment the following line
+% to display URLs in blue roman font according to Springer's eBook style:
+% \renewcommand\UrlFont{\color{blue}\rmfamily}
+\usepackage{url}
+\usepackage{color}
+\usepackage{stackengine}
+
+\def\t#1{\texttt{#1}}
+\def\gf{\textsc{gf}}
+\def\pgf{\textsc{pgf}}
+\def\lfg{\textsc{lfg}}
+\def\ccg{\textsc{ccg}}
+\def\tag{\textsc{tag}}
+\def\cfg{\textsc{cfg}}
+\def\pmcfg{\textsc{pmcfg}}
+\def\hpsg{\textsc{hpsg}}
+\newcommand{\quality}[1]{${\tt Quality_{#1}}$}
+\newcommand{\kind}[1]{${\tt Kind_{#1}}$}
+\newcommand{\very}[1]{${\tt Very_{#1}}$}
+\newcommand{\comment}{${\tt Comment}$}
+\newcommand{\mod}[2]{${\tt Mod_{#1\times#2}}$}
+\newcommand{\pred}[3]{${\tt Pred_{#1\times#2\times#3}}$}
+\newcommand{\itemSpa}[2]{${\tt Item_{#1\times#2}}$}
+\newcommand{\itemEng}[1]{${\tt Item_{#1}}$}
+\newcommand{\todo}[1]{{\color{cyan}\textbf{[TODO: }#1\textbf{]}}}
+
+\begin{document}
+%
+\title{Automatic test suite generation for PMCFG grammars}
+%
+%\titlerunning{Abbreviated paper title}
+% If the paper title is too long for the running head, you can set
+% an abbreviated paper title here
+%
+\author{Inari Listenmaa \and
+Koen Claessen}
+%
+\authorrunning{I. Listenmaa and K. Claessen}
+% First names are abbreviated in the running head.
+% If there are more than two authors, 'et al.' is used.
+%
+\institute{Department of Computer Science and Engineering \\
+ University of Gothenburg and Chalmers University of Technology \\
+ Gothenburg, Sweden.\\
+\{inari,koen\}@chalmers.se}
+%\url{http://http://www.cse.chalmers.se/}
+%
+\maketitle              % typeset the header of the contribution
+%
+\begin{abstract}
+The abstract should briefly summarize the contents of the paper in
+15--250 words.
+
+\keywords{First keyword  \and Second keyword \and Another keyword.}
+\end{abstract}
+%
+%
+%
+\section{Introduction}
+
+What is the essence of a language? 
+Suppose we have a potentially infinite grammar, and we want to find a
+minimal and representative set of sentences, along with their
+analyses, to test the correctness of the grammar.
+
+In general computer science, \emph{kernelization} \todo{cite} is used
+to preprocess inputs given to some expensive algorithm: for instance,
+a large graph can be reduced into a smaller graph, which produces the
+same output, but runs much faster than the original large graph. We
+propose a similar technique for grammars, with the purpose of building
+test suites of trees. These test suites could be given for human
+oracles to read (which is an extremely expensive algorithm!), they
+could be tested against a large corpus, or a combination of the two. 
+
+To give an intuitive example: in English we need to test a reflexive
+construct with three different 3rd person singular subjects, because
+the object has to agree with the subject: ``he sees himself'', ``she
+sees herself'' and ``it sees itself''. Without seeing all three
+examples, we cannot be certain that the reflexive construction is
+implemented correctly. In contrast, the general pattern of a transitive
+verb with a non-reflexive object is enough to test with only one third
+person subject: \emph{he, she, it}, or any singular noun or proper
+name. The agreement only shows in the verb form, thus including both
+``she sees a dog'' and ``John sees a dog'' in the test suite is redundant. 
+
+Now, what is minimal and representative is highly language-dependent. 
+For instance, Basque transitive verbs agree with both subject and
+object, thus we need 6 $\times$ 6 examples just to cover all verb
+forms. We are not interested in the morphology per se---there are
+easier methods to test for that---but the correctness of the syntactic
+function: does the function pick the correct verb form for the correct
+combination of subject and object? For that purpose, it is enough to
+test the syntactic construction ``transitive verb phrase'' with just a
+single transitive verb.
+
+Our concrete implementation is for a particular grammar formalism,
+namely parallel multiple context-free grammars ({\sc pmcfg})
+\cite{seki91pmcfg}, which is the core formalism used by the
+Grammatical Framework (\gf) \cite{ranta2004gf}. However, the general
+method works for any formalism that is at most as expressive as
+\pmcfg{}, including formalisms such as Tree-Adjoining Grammar (\tag)
+\cite{joshi1975tag} and Combinatorial Categorial Grammar (\ccg)
+\cite{steedman1988ccg}.
+
+\section{Grammatical Framework}
+
+\todo{General \gf{} introduction.
+
+\begin{itemize}
+\item Emphasize that analysis and generation are all in the same
+  grammar.
+\item GF as a formalism can be as syntactic or semantic as one wants.
+\item Show Foods grammar, and concrete in Spanish and English
+\end{itemize}}
+
+
+\section{PMCFG}
+
+\gf{} grammars are compiled into parallel multiple context-free
+grammars (\pmcfg), which are processed by our tool. Here we explain
+three key features that are important for the process of test suite
+generation.
+
+\subsubsection{Concrete categories}
+
+For each category in the original grammar, the \gf{} compiler
+introduces a new category in the \pmcfg{} for each combination of
+inherent parameters.  
+% For example, the English \t{Item} has an inherent property of number,
+% so it compiles into two \pmcfg{} categories: \itemEng{sg} and
+% \itemEng{pl}. Spanish noun phrases also have an inherent property of
+% gender, so the same abstract category of \t{Item} compiles into four
+% concrete categories: \{\itemSpa{sg}{masc}, \dots, \itemSpa{pl}{fem}\}.
+These categories can be linearized to strings or vectors of
+strings. The start category (\t{Comment} in the Foods grammar) is in
+general a single string, but intermediate categories may have to keep
+some decisions open. 
+
+Consider the categories \t{Item}, \t{Kind} and \t{Quality} in the
+Spanish concrete syntax. \t{Item} has an inherent property of number
+and gender, so it compiles into four
+concrete categories: \{\itemSpa{sg}{masc}, \itemSpa{sg}{fem},
+\itemSpa{pl}{masc}, \itemSpa{pl}{fem}\}, each of them containing one string.
+On the other hand, \t{Kind} has only gender as an inherent feature,
+and number is variable. Thus on the \pmcfg{} level, the Spanish
+\t{Kind} compiles into two concrete categories: \kind{masc} and
+\kind{fem}, each of them a vector of two strings (singular and plural).
+Finally, \t{Quality} needs to agree in number and gender
+with its head, but it has its position as an inherent feature. 
+Thus \t{Quality} compiles into two concrete categories: \quality{pre} and
+\quality{post}, each of them a vector of four strings.
+% ---the
+% combinations of \{\stackanchor{\tt \small sg}{\tt \small pl}\}
+% $\times$ \{ \stackanchor{\tt \small masc}{\tt \small fem}\}
+
+\subsubsection{Concrete functions}
+Just like categories, each syntactic function from the original
+grammar turns into multiple syntactic functions into the
+\pmcfg{}---one for each combination of parameters of its arguments.
+
+\begin{itemize}
+\item \mod{pre}{fem~~} \t{:} \quality{pre~} $\rightarrow$ \kind{fem~} $\rightarrow$ \kind{fem}
+\item  \mod{post}{fem~} \t{:} \quality{post} $\rightarrow$ \kind{fem~} $\rightarrow$ \kind{fem}
+\item  \mod{pre}{masc~~}\t{:} \quality{pre~} $\rightarrow$ \kind{masc} $\rightarrow$ \kind{masc}
+\item \mod{post}{masc} \t{:} \quality{post} $\rightarrow$ \kind{masc} $\rightarrow$ \kind{masc}
+\end{itemize}
+
+
+\subsubsection{Coercions}
+\label{sec:Coercions}
+As we have seen, \t{Quality} in Spanish compiles into \quality{pre} and
+\quality{post}. However, the difference of position is meaningful only when the
+adjective is modifying the noun: ``la \emph{buena} pizza'' vs. ``la pizza
+\emph{vegana}''. But when we use an adjective in a predicative position, both
+classes of adjectives behave the same: ``la pizza es \emph{buena}''
+and ``la pizza es \emph{vegana}''. As an optimization strategy, the
+grammar creates a {\it coercion}: both \quality{pre} and \quality{post}
+may be treated as \quality{*} when the distinction doesn't matter. 
+Furthermore, the function \t{Pred : Item -> Quality -> Comment} uses
+the coerced category \quality{*} as its second argument, and thus
+expands only into 4 variants, despite there being 8 combinations of
+\t{Item}$\times$\t{Quality}.
+
+\begin{itemize}
+\item \pred{sg}{fem}{*~} \t{:} \itemSpa{sg}{fem~} $\rightarrow$ \quality{*} $\rightarrow$ \comment
+\item  \pred{pl}{fem}{*~} \t{:} \itemSpa{pl}{fem~} $\rightarrow$ \quality{*} $\rightarrow$ \comment
+\item  \pred{sg}{masc}{*} \t{:} \itemSpa{sg}{masc} $\rightarrow$ \quality{*} $\rightarrow$ \comment
+\item \pred{pl}{masc}{*} \t{:} \itemSpa{pl}{masc} $\rightarrow$ \quality{*} $\rightarrow$ \comment
+\end{itemize}
+
+\section{Generating the test suite}
+
+We now have all building blocks for creating a representative and
+minimal set of test cases.
+In the previous section, we saw how a single abstract category
+compiles into multiple concrete categories, depending on the
+combinations of parameters. This compilation step can dramatically
+increase the number of categories of the grammar, but it also removes
+the need for dealing with these parameters explicitly when we generate
+test cases. Since every syntactic function also expands into multiple
+versions of itself, we took a syntactic function as the natural
+building block for a single test case.
+
+We now describe the generation of test cases for a given syntactic
+function. We assume that all test cases are trees with the same start
+(top-level) category, such as \t{Comment} in our example grammar, or \t{S}
+(for sentence) for more general grammars. The requirement is that the
+start category is linearized as one string only. 
+
+\subsubsection{Enumerate functions} As we explained before, each syntactic
+function turns into multiple versions, one for each combination of
+parameters of its arguments. We test each of these versions
+seperately. 
+%This enumeration is the main reason we see several test cases in the examples in Section~\ref{sec:gf}.
+
+In order to construct trees that use the syntactic function, we need
+to supply it with \emph{arguments}, as well as put the resulting tree
+into a \emph{context} that produces a tree in the correct start
+category.
+
+\subsubsection{Enumerate arguments} Some syntactic functions are simply a single lexical item (for example the word \emph{good}); in this case just the tree \t{Good} is our answer. If we choose a function with arguments, such as for example \t{Pred}, then we have to supply it with argument trees. Each argument tree needs to be a tree belonging to the right category (in the example, \t{Item} and \t{Quality}, respectively).
+
+When we test a function, we want to see whether or not it uses the right information from its arguments, in the right way. The information that a syntactic function uses is any of the strings that come from linearizing its arguments. In order to be able to see which string in the result comes from which string from which arguments, we want to generate test cases that only contain unique strings (no duplicates).
+
+For example, when we test the predication function, we want to pick a
+\t{Quality} that actually has different forms (unique strings) for 
+different genders and numbers, rather than having identical forms,
+because the human would not be able to see if the \t{Pred} function
+picked the wrong form. Thus a word like \t{Good} ``bueno/buena'' is
+better than \t{Green} ``verde/verde'', because the latter is
+invariable for gender.
+
+It is often possible to generate one combination of arguments where
+all strings in the linearizations are different. However, it is not
+always possible to do this, which is why we in general aim to generate
+a set of combinations of arguments, where for each pair of strings
+from the arguments, there is always one test case where those strings
+are different. In this way, if the syntactic function contains a
+mistake, there is always one test case that reveals it.
+
+\paragraph{Example: Test cases using \t{Mod}} Let us test the function
+\t{Mod : Quality $\rightarrow$ Kind $\rightarrow$ Kind} in the Spanish
+concrete syntax.
+Firstly, we need a minimal and representative set of arguments of types
+\t{Quality} and \t{Kind}. As we have seen, the inherent features here
+are position and gender, thus we pick one premodifier and one
+postmodifier \t{Quality} (\t{Good} and \t{Vegan} respectively), as
+well as one feminine and one masculine \t{Kind} (\t{Pizza} and \t{Wine}).
+Now, our full set of test cases are \t{Mod} applied to the cross
+product of \{\stackanchor{\tt \small Good}{\tt \small Vegan}\}
+$\times$ \{ \stackanchor{\tt \small Pizza}{\tt \small Wine}\}, as
+seen in Figure~\ref{fig:adjAttr}.
+% Note that \t{Kind} is unspecified for number, because it is still
+% waiting either \t{This} or \t{These} to complete it into an
+% \t{Item}. Thus all the test cases contain both singular and plural
+% variants, and by linearizing these 4 trees, we get the 8 strings shown
+% in Figure~\ref{fig:adjAttr}.
+
+\begin{figure}
+\centering
+\centering
+\begin{tabular}{| l | l |}
+\hline
+\t{Mod Good Pizza}   & \t{Mod Good Wine} \\ 
+\textsc{(sg)} buena pizza             & \textsc{(sg)} buen vino \\
+\textsc{(pl)} buenas pizzas           & \textsc{(pl)} buenos vinos \\ \hline
+
+\t{Mod Vegan Pizza}   & \t{Mod Vegan Wine} \\ 
+\textsc{(sg)} pizza  vegana            & \textsc{(sg)} vino  vegano \\
+\textsc{(pl)} pizzas  veganas          & \textsc{(pl)} vinos  veganos \\ \hline
+\end{tabular}
+\caption{Agreement and placement of adjectives in attributive position}
+\label{fig:adjAttr}
+\end{figure}
+
+\subsubsection{Enumerate contexts} The third and last enumeration we perform when generating test cases is to generate all possible \emph{uses} of a function. After we provide a function with arguments, we need to put the result into a context, so that we can generate a single string from the result (a sentence). We do this for all trees we have generated so far.
+
+The important thing here is that the generated set of contexts shows all the possible different ways the tree can be used. For example, for a test tree with an inflection table of size 4, we would generate 4 different sentences in which each of the 4 inflections is used.
+
+By \emph{context}, we mean a tree in
+the start category, with a \emph{hole} of type \t{Kind}. A tree of
+type \t{Kind} can be plugged into the hole to form a tree in the start
+category \t{Comment}. There is only one function, \t{Pred : Item ->
+  Quality -> Comment}, that constructs a \t{Comment}. 
+We cannot give a \t{Kind} directly as an argument to \t{Pred}, but we
+do have two functions that turn a \t{Kind} into an \t{Item}, namely \t{This} and
+\t{These}. These functions pick out the singular and plural forms of
+the \t{Kind}, so we need both of them in our contexts.
+In contrast, the second argument to \t{Pred} doesn't make a difference
+in what form we pick out of the \t{Kind}---we just want to pick
+something that has maximally different forms, so the program is sure
+not to pick \t{Green}, which is invariable for gender. By random
+selection, let us pick \t{Warm}.
+
+The final contexts are \verb|Pred (This _) Warm| and \verb|Pred (These _) Warm|.
+We insert the 4 test cases from Figure~\ref{fig:adjAttr} into the
+holes, and get 8 trees in total: 
+
+\begin{figure}
+\centering
+\centering
+\begin{tabular}{| l | l |}
+\hline
+\t{Pred (This (Mod Good Pizza)) Warm} & \t{Pred (This (Mod Good Wine))
+                                        Warm} \\ 
+esta buena pizza es caliente          & este buen vino es caliente \\ \hline
+\t{Pred (This (Mod Good Pizza)) Warm} & \t{Pred (This (Mod Good Wine))
+                                        Warm} \\ 
+estas buenas pizzas son calientes          & estos buenos vinos son calientes \\ \hline
+\t{Pred (This (Mod Vegan Pizza)) Warm} & \t{Pred (This (Mod Vegan Wine))
+                                        Warm} \\ 
+esta pizza vegana es caliente          & este vino vegano es caliente \\ \hline
+\t{Pred (This (Mod Vegan Pizza)) Warm} & \t{Pred (This (Mod Vegan Wine))
+                                        Warm} \\ 
+estas pizzas veganas son calientes          & estos vinos veganos son calientes \\ \hline
+\end{tabular}
+\caption{Complete test cases to test \t{Mod}}
+\label{fig:testCases}
+\end{figure}
+
+\todo{Write this better?} So, what we want to compute is, given the result category T of the syntactic function, and the start category S of the grammar, a minimal set of contexts in the start category S with hole of type T, such that any string appearing in the linearization of T also appears somewhere in the linearization of S. We compute this by setting up a system of equations for each category C in the grammar: for each C, we define all the relevant contexts with hole type C in terms of all the relevant contexts with hole type C' for other categories C' that use C. So, the answer for each category is expressed in terms of the answer for other categories. In general, this system of equations is \emph{recursive}, and we use a fixpoint iteration to compute the smallest solution.
+
+\subsubsection{Pruning} 
+There are two ways to prune the resulting trees.
+
+The first one is about coercions.
+So, if we want to base our test cases on a category instead of
+function, we would get in total 12 example sentences for adjectives:
+\begin{itemize}
+\item 4 test cases for a premodifier adjective as modifier
+\item 4 test cases for a postmodifier adjective as modifier
+\item 4 test cases for \emph{any} adjective as predicative.
+\end{itemize}
+ As explained in Section~\ref{sec:Coercions}, the grammar detects
+these redundancies automatically, so we just leverage the coercions
+already existing in the grammar.
+
+% In our example we tested explicitly
+% \t{Mod}, but suppose we want to test the function \t{Very} instead. On
+% the \pmcfg{} level, it compiles into two concrete functions,
+% \very{pre} \t{:} \quality{pre} $\rightarrow$ \quality{pre} and 
+% \very{post} \t{:} \quality{post} $\rightarrow$ \quality{post}.
+% By enumerating the arguments, we end up with the test cases \t{Very
+%   Good} and \t{Very Vegan}, and each of them has to be placed into
+% contexts. 
+
+The second pruning is about \todo{the whole grammar.} In fact, the 8 test
+sentences created for \t{Mod} happen to also test \t{Pred} exhaustively.
+Let us recap the steps we took to create them for \t{Mod}:
+enumerating arguments brought us \t{Good}, \t{Vegan}, \t{Pizza} and
+\t{Wine}, and enumerating contexts brought us \t{This} and
+\t{These}. Had we been enumerating arguments for \t{Pred}, we would've
+gotten \t{This} and \t{These} at that stage, and then there would've
+been no need for contexts, because \t{Pred} already creates a start category.
+
+
+% \begin{table}
+% \caption{Table captions should be placed above the
+% tables.}\label{tab1}
+% \begin{tabular}{|l|l|l|}
+% \hline
+% Heading level &  Example & Font size and style\\
+% \hline
+% Title (centered) &  {\Large\bfseries Lecture Notes} & 14 point, bold\\
+% 1st-level heading &  {\large\bfseries 1 Introduction} & 12 point, bold\\
+% 2nd-level heading & {\bfseries 2.1 Printing Area} & 10 point, bold\\
+% 3rd-level heading & {\bfseries Run-in Heading in Bold.} Text follows & 10 point, bold\\
+% 4th-level heading & {\itshape Lowest Level Heading.} Text follows & 10 point, italic\\
+% \hline
+% \end{tabular}
+% \end{table}
+
+
+% \noindent Displayed equations are centered and set on a separate
+% line.
+% \begin{equation}
+% x + y = z
+% \end{equation}
+% Please try to avoid rasterized images for line-art diagrams and
+% schemas. Whenever possible, use vector graphics instead (see
+% Fig.~\ref{fig1}).
+
+% \begin{figure}
+% \includegraphics[width=\textwidth]{fig1.eps}
+% \caption{A figure caption is always placed below the illustration.
+% Please note that short captions are centered, while long ones are
+% justified by the macro package automatically.} \label{fig1}
+% \end{figure}
+
+% \begin{theorem}
+% This is a sample theorem. The run-in heading is set in bold, while
+% the following text appears in italics. Definitions, lemmas,
+% propositions, and corollaries are styled the same way.
+% \end{theorem}
+% %
+% % the environments 'definition', 'lemma', 'proposition', 'corollary',
+% % 'remark', and 'example' are defined in the LLNCS documentclass as well.
+% %
+% \begin{proof}
+% Proofs, examples, and remarks have the initial word in italics,
+% while the following text appears in normal font.
+% \end{proof}
+% For citations of references, we prefer the use of square brackets
+% and consecutive numbers. Citations using labels or the author/year
+% convention are also acceptable. The following bibliography provides
+% a sample reference list with entries for journal
+
+%
+% ---- Bibliography ----
+%
+% BibTeX users should specify bibliography style 'splncs04'.
+% References will then be sorted and formatted in the correct style.
+%
+\bibliographystyle{splncs04}
+\bibliography{../coling2018/bibliography}
+
+\end{document}
