@@ -14,6 +14,7 @@
 \usepackage{url}
 \usepackage{color}
 \usepackage{stackengine}
+\usepackage[normalem]{ulem}
 
 \def\t#1{\texttt{#1}}
 \def\gf{\textsc{gf}}
@@ -114,22 +115,41 @@ method works for any formalism that is at most as expressive as
 
 \section{Grammatical Framework}
 
-\todo{General \gf{} introduction.
+\todo{General \gf{} introduction.\\
+1) Emphasize that analysis and generation are all in the same
+  grammar. \\ 2) GF as a formalism can be as syntactic or semantic as one wants.
+}
 
-\begin{itemize}
-\item Emphasize that analysis and generation are all in the same
-  grammar.
-\item GF as a formalism can be as syntactic or semantic as one wants.
-\item Show Foods grammar, and concrete in Spanish and English
-\end{itemize}}
+\begin{figure}[h]
+  \caption{GF grammar about food}
+\label{fig:exampleGrammar}
+\centering
+    \begin{verbatim}
+abstract Foods = {
+  flags startcat = Comment ;
+  cat
+    Comment ; Item ; Kind ; Quality ;
+  fun
+    Pred : Item -> Quality -> Comment ;
+    This, That, These, Those : Kind -> Item ;
+    Mod : Quality -> Kind -> Kind ;
+    Wine, Cheese, Fish, Pizza : Kind ;
+    Very : Quality -> Quality ;
+    Fresh, Warm, Good, Italian, 
+      Expensive, Delicious, Vegan : Quality ;
+}
+    \end{verbatim}
+\end{figure}
+
+Figure~\ref{fig:exampleGrammar} shows a small example of a GF
+grammar. We refer to this grammar throughout the section. 
 
 
 \section{PMCFG}
 
 \gf{} grammars are compiled into parallel multiple context-free
 grammars (\pmcfg), which are processed by our tool. Here we explain
-three key features that are important for the process of test suite
-generation.
+three key features that are important for the test suite generation.
 
 \subsubsection{Concrete categories}
 
@@ -144,7 +164,7 @@ inherent parameters.
 These categories can be linearized to strings or vectors of
 strings. The start category (\t{Comment} in the Foods grammar) is in
 general a single string, but intermediate categories may have to keep
-some decisions open. 
+several options open. 
 
 Consider the categories \t{Item}, \t{Kind} and \t{Quality} in the
 Spanish concrete syntax. \t{Item} has an inherent property of number
@@ -207,12 +227,17 @@ compiles into multiple concrete categories, depending on the
 combinations of parameters. This compilation step can dramatically
 increase the number of categories of the grammar, but it also removes
 the need for dealing with these parameters explicitly when we generate
-test cases. Since every syntactic function also expands into multiple
-versions of itself, we took a syntactic function as the natural
-building block for a single test case.
+test cases. 
 
-We now describe the generation of test cases for a given syntactic
-function. We assume that all test cases are trees with the same start
+% We chose to take one syntactic function as a base for
+% Since every syntactic function also expands into multiple
+% versions of itself, we took a syntactic function as the natural
+% building block for a single test case.
+
+% We now describe the generation of test cases for a given syntactic
+% function.
+
+We assume that all test cases are trees with the same start
 (top-level) category, such as \t{Comment} in our example grammar, or \t{S}
 (for sentence) for more general grammars. The requirement is that the
 start category is linearized as one string only. 
@@ -220,7 +245,7 @@ start category is linearized as one string only.
 \subsubsection{Enumerate functions} As we explained before, each syntactic
 function turns into multiple versions, one for each combination of
 parameters of its arguments. We test each of these versions
-seperately. 
+seperately. Each concrete syntactic function may produce one or several trees.
 %This enumeration is the main reason we see several test cases in the examples in Section~\ref{sec:gf}.
 
 In order to construct trees that use the syntactic function, we need
@@ -237,7 +262,7 @@ For example, when we test the predication function, we want to pick a
 different genders and numbers, rather than having identical forms,
 because the human would not be able to see if the \t{Pred} function
 picked the wrong form. Thus a word like \t{Good} ``bueno/buena'' is
-better than \t{Green} ``verde/verde'', because the latter is
+better than \t{Warm} ``caliente/caliente'', because the latter is
 invariable for gender.
 
 It is often possible to generate one combination of arguments where
@@ -251,23 +276,17 @@ mistake, there is always one test case that reveals it.
 \paragraph{Example: Test cases using \t{Mod}} Let us test the function
 \t{Mod : Quality $\rightarrow$ Kind $\rightarrow$ Kind} in the Spanish
 concrete syntax.
-Firstly, we need a minimal and representative set of arguments of types
-\t{Quality} and \t{Kind}. As we have seen, the inherent features here
-are position and gender, thus we pick one premodifier and one
-postmodifier \t{Quality} (\t{Good} and \t{Vegan} respectively), as
-well as one feminine and one masculine \t{Kind} (\t{Pizza} and \t{Wine}).
-Now, our full set of test cases are \t{Mod} applied to the cross
-product of \{\stackanchor{\tt \small Good}{\tt \small Vegan}\}
-$\times$ \{ \stackanchor{\tt \small Pizza}{\tt \small Wine}\}, as
-seen in Figure~\ref{fig:adjAttr}.
-% Note that \t{Kind} is unspecified for number, because it is still
-% waiting either \t{This} or \t{These} to complete it into an
-% \t{Item}. Thus all the test cases contain both singular and plural
-% variants, and by linearizing these 4 trees, we get the 8 strings shown
-% in Figure~\ref{fig:adjAttr}.
+Firstly, we need a minimal and representative set of arguments:
+one premodifier and one postmodifier \t{Quality} (\t{Good} and
+\t{Vegan} respectively), as well as one feminine and one masculine
+\t{Kind} (\t{Pizza} and \t{Wine}). Now, our full set of test cases are
+\t{Mod} applied to the cross product of \{\stackanchor{\tt \small
+  Good}{\tt \small Vegan}\} $\times$ \{\stackanchor{\tt \small
+  Pizza}{\tt \small Wine}\}, as seen in Table~\ref{tab:adjAttr}.
 
-\begin{figure}
-\centering
+\begin{table}
+\caption{Agreement and placement of adjectives in attributive position}
+\label{tab:adjAttr}
 \centering
 \begin{tabular}{| l | l |}
 \hline
@@ -279,54 +298,58 @@ seen in Figure~\ref{fig:adjAttr}.
 \textsc{(sg)} pizza  vegana            & \textsc{(sg)} vino  vegano \\
 \textsc{(pl)} pizzas  veganas          & \textsc{(pl)} vinos  veganos \\ \hline
 \end{tabular}
-\caption{Agreement and placement of adjectives in attributive position}
-\label{fig:adjAttr}
-\end{figure}
+\end{table}
 
 \subsubsection{Enumerate contexts} The third and last enumeration we perform when generating test cases is to generate all possible \emph{uses} of a function. After we provide a function with arguments, we need to put the result into a context, so that we can generate a single string from the result (a sentence). We do this for all trees we have generated so far.
 
-The important thing here is that the generated set of contexts shows all the possible different ways the tree can be used. For example, for a test tree with an inflection table of size 4, we would generate 4 different sentences in which each of the 4 inflections is used.
+The important thing here is that the generated set of contexts shows
+all the possible different ways the tree can be used. For example, for
+a test tree with an inflection table of 4 forms, we would generate 4 different sentences in which each of the 4 inflections is used.
 
-By \emph{context}, we mean a tree in
-the start category, with a \emph{hole} of type \t{Kind}. A tree of
-type \t{Kind} can be plugged into the hole to form a tree in the start
-category \t{Comment}. There is only one function, \t{Pred : Item ->
-  Quality -> Comment}, that constructs a \t{Comment}. 
-We cannot give a \t{Kind} directly as an argument to \t{Pred}, but we
-do have two functions that turn a \t{Kind} into an \t{Item}, namely \t{This} and
-\t{These}. These functions pick out the singular and plural forms of
-the \t{Kind}, so we need both of them in our contexts.
+By \emph{context}, we mean a tree in the start category, with a
+\emph{hole} of type \t{Kind}. Since \t{Kind} is variable for
+number, we need two contexts:
+% A tree of
+% type \t{Kind} can be plugged into the hole to form a tree in the start
+% category \t{Comment}. There is only one function, \t{Pred : Item ->
+%   Quality -> Comment}, that constructs a \t{Comment}. 
+% We cannot give a \t{Kind} directly as an argument to \t{Pred}, but we
+% do have four functions that turn a \t{Kind} into an \t{Item}, namely
+% \t{This}, \t{That}, \t{These} and \t{Those}. However, we only need two
+% of them, 
+one that picks out the singular form and other that picks out
+the plural form. This suggests that we should apply two different
+\t{Kind -> Item} functions, for instance \t{This} and \t{These}, and
+give their results to the \t{Pred} function, which constructs a \t{Comment}.
 In contrast, the second argument to \t{Pred} doesn't make a difference
 in what form we pick out of the \t{Kind}---we just want to pick
 something that has maximally different forms, so the program is sure
-not to pick \t{Green}, which is invariable for gender. By random
-selection, let us pick \t{Warm}.
-
-The final contexts are \verb|Pred (This _) Warm| and \verb|Pred (These _) Warm|.
-We insert the 4 test cases from Figure~\ref{fig:adjAttr} into the
+not to pick \t{Warm}, which is invariable for gender. By random
+selection, let us pick \t{Italian}.
+The final contexts are \verb|Pred (This _) Italian| and \verb|Pred (These _) Italian|.
+We insert the 4 test cases from Figure~\ref{tab:adjAttr} into the
 holes, and get 8 trees in total: 
 
-\begin{figure}
-\centering
+\begin{table}
+\caption{Complete test cases to test \t{Mod}}
+\label{tab:testCases}
 \centering
 \begin{tabular}{| l | l |}
 \hline
-\t{Pred (This (Mod Good Pizza)) Warm} & \t{Pred (This (Mod Good Wine))
-                                        Warm} \\ 
-esta buena pizza es caliente          & este buen vino es caliente \\ \hline
-\t{Pred (This (Mod Good Pizza)) Warm} & \t{Pred (This (Mod Good Wine))
-                                        Warm} \\ 
-estas buenas pizzas son calientes          & estos buenos vinos son calientes \\ \hline
-\t{Pred (This (Mod Vegan Pizza)) Warm} & \t{Pred (This (Mod Vegan Wine))
-                                        Warm} \\ 
-esta pizza vegana es caliente          & este vino vegano es caliente \\ \hline
-\t{Pred (This (Mod Vegan Pizza)) Warm} & \t{Pred (This (Mod Vegan Wine))
-                                        Warm} \\ 
-estas pizzas veganas son calientes          & estos vinos veganos son calientes \\ \hline
+\t{Pred (This (Mod Good Pizza)) Italian} & \t{Pred (This (Mod Good Wine))
+                                        Italian} \\ 
+esta buena pizza es italiana          & este buen vino es italiano \\ \hline
+\t{Pred (These (Mod Good Pizza)) Italian} & \t{Pred (These (Mod Good Wine))
+                                        Italian} \\ 
+estas buenas pizzas son italianas          & estos buenos vinos son italianos \\ \hline
+\t{Pred (This (Mod Vegan Pizza)) Italian} & \t{Pred (This (Mod Vegan Wine))
+                                        Italian} \\ 
+esta pizza vegana es italiana          & este vino vegano es italiano \\ \hline
+\t{Pred (These (Mod Vegan Pizza)) Italian} & \t{Pred (These (Mod Vegan Wine))
+                                        Italian} \\ 
+estas pizzas veganas son italianas          & estos vinos veganos son italianos \\ \hline
 \end{tabular}
-\caption{Complete test cases to test \t{Mod}}
-\label{fig:testCases}
-\end{figure}
+\end{table}
 
 \todo{Write this better?} So, what we want to compute is, given the result category T of the syntactic function, and the start category S of the grammar, a minimal set of contexts in the start category S with hole of type T, such that any string appearing in the linearization of T also appears somewhere in the linearization of S. We compute this by setting up a system of equations for each category C in the grammar: for each C, we define all the relevant contexts with hole type C in terms of all the relevant contexts with hole type C' for other categories C' that use C. So, the answer for each category is expressed in terms of the answer for other categories. In general, this system of equations is \emph{recursive}, and we use a fixpoint iteration to compute the smallest solution.
 
@@ -354,8 +377,10 @@ already existing in the grammar.
 %   Good} and \t{Very Vegan}, and each of them has to be placed into
 % contexts. 
 
-The second pruning is about \todo{the whole grammar.} In fact, the 8 test
-sentences created for \t{Mod} happen to also test \t{Pred} exhaustively.
+The second pruning is about the number of trees needed to test the
+whole grammar. We have so far created a separate set of trees for each
+function, but one tree can easily test more than one function.
+In fact, the 8 test sentences created for \t{Mod} happen to also test \t{Pred} exhaustively.
 Let us recap the steps we took to create them for \t{Mod}:
 enumerating arguments brought us \t{Good}, \t{Vegan}, \t{Pizza} and
 \t{Wine}, and enumerating contexts brought us \t{This} and
@@ -363,6 +388,59 @@ enumerating arguments brought us \t{Good}, \t{Vegan}, \t{Pizza} and
 gotten \t{This} and \t{These} at that stage, and then there would've
 been no need for contexts, because \t{Pred} already creates a start category.
 
+
+\section{Use cases and evaluation}
+
+Here is a typical use for the tool. 
+Let us take the GF resource grammar \cite{ranta2009rgl} for Spanish, and
+pick the function \t{AdvCN : Adv -> CN -> CN}, which takes a \t{CN} `common
+noun'---much like \t{Kind} from the Foods grammar, it can be modified
+by adjectives or adverbs, but it hasn't yet been quantified into a
+\t{NP}. The tool generates test cases in the way described previously,
+which include the following (slightly simplified) trees: 
+\begin{itemize}
+\item \t{AdvCN (PrepNP next\_to (DetNP your)) hill} `hill next to
+yours'
+\item \t{AdvCN (PrepNP next\_to (DetNP your)) house} `house next
+to yours'
+\end{itemize}
+In Spanish, the words \emph{hill} and \emph{house} have different
+genders, and the word \emph{yours} has to agree in gender 
+with the antecedent: \emph{(la) casa al lado de la tuya} and \emph{(el)
+  cerro al lado del tuyo}. The test cases reveal a bug, where \t{DetNP your} 
+picks a gender too soon, say always masculine, instead of leaving it
+open in an inflection table. We implement a fix by adding gender as a
+parameter to the \t{Adv} type, and have \t{AdvCN} choose the correct
+form based on the gender of the \t{CN}.
+
+After implementing the fix, we run a second test case generation: this
+time, not meant for human eyes, but just to compare the old and new
+versions of the grammar. We want to make sure that our changes 
+%to \t{Adv}, \t{AdvCN} and \t{DetNP} 
+have not caused new bugs in other functions. The simplest strategy is
+to generate test cases for \emph{all} functions in both grammars, and
+only show those outputs that differ between the grammars. After our
+fixes, we get the following differences: 
+
+\begin{itemize}
+\item \t{DetCN the (AdvCN (PrepNP next\_to (DetNP your)) house)}
+  \begin{itemize}
+   \item \emph{\sout{la casa al lado {\bf  del tuyo}}}
+   \item \emph{la casa al lado {\bf  de la tuya}}
+  \end{itemize}
+\item \t{DetCN the (AdvCN (PrepNP without (DetNP this)) house)}
+  \begin{itemize}
+   \item \emph{\sout{la casa sin {\bf  esto}}}
+   \item \emph{la casa sin {\bf esta}}
+  \end{itemize}
+\end{itemize}
+
+\noindent We notice a side effect that we may not have thought of: the
+gender is retained in all adverbs made of NPs made of determiners, so
+now it has become impossible to say ``the hill without \emph{that}'' and
+pointing to a house. So we do another round of modifications, compute
+the difference (to the original grammar or to the intermediate), and
+see if something else broke.
 
 % \begin{table}
 % \caption{Table captions should be placed above the
