@@ -2,8 +2,9 @@
 % LLNCS macro package for Springer Computer Science proceedings;
 % Version 2.20 of 2017/10/04
 %
-\documentclass[runningheads]{llncs}
-%
+
+\documentclass[11pt]{article}
+\usepackage{coling2018}
 \usepackage{graphicx}
 % Used for displaying a sample figure. If possible, figure files should
 % be included in EPS format.
@@ -37,6 +38,7 @@
 \newcommand{\itemEng}[1]{${\tt NP_{#1}}$}
 \newcommand{\todo}[1]{{\color{cyan}\textbf{[TODO: }#1\textbf{]}}}
 
+
 \begin{document}
 %
 \title{Automatic test suite generation for PMCFG grammars}
@@ -45,26 +47,17 @@
 % If the paper title is too long for the running head, you can set
 % an abbreviated paper title here
 %
-\author{Inari Listenmaa \and
-Koen Claessen}
-%
-\authorrunning{I. Listenmaa and K. Claessen}
-% First names are abbreviated in the running head.
-% If there are more than two authors, 'et al.' is used.
-%
-\institute{Department of Computer Science and Engineering \\
- University of Gothenburg and Chalmers University of Technology \\
- Gothenburg, Sweden.\\
-\{inari,koen\}@chalmers.se}
-%\url{http://http://www.cse.chalmers.se/}
-%
+
+\author{Inari Listenmaa and Koen Claessen \\
+  Department of Computer Science and Engineering \\
+  University of Gothenburg and Chalmers University of Technology \\
+  Gothenburg, Sweden \\
+  {\tt inari@chalmers.se, koen@chalmers.se} }
+
 \maketitle              % typeset the header of the contribution
 %
 \begin{abstract}
-The abstract should briefly summarize the contents of the paper in
-15--250 words.
-
-\keywords{First keyword  \and Second keyword \and Another keyword.}
+We present a method for finding errors in formalized natural language grammars, by automatically and systematically generating test cases that are intended to be judged by a human oracle. The method works on a per-construction basis; given a construction from the grammar, it generates a finite but complete set of test sentences (typically tens or hundreds), where that construction is used in all possible ways. Our method is an alternative to using a corpus or a treebank, where no such completeness guarantees can be made. The method is language-independent and is implemented for the grammar formalism \pmcfg{}, but also works for weaker grammar formalisms. We evaluate the method on a number of different grammars for different natural languages, with sizes ranging from toy examples to real-world grammars.
 \end{abstract}
 %
 %
@@ -159,30 +152,29 @@ Combinatorial Categorial Grammar (\ccg) \cite{steedman1988ccg}.
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{concrete }\DataTypeTok{FoodsSpa} \KeywordTok{of} \DataTypeTok{Foods} \FunctionTok{=} \NormalTok{\{}
-  \NormalTok{flags startcat }\FunctionTok{=} \DataTypeTok{S} \NormalTok{;}
   \NormalTok{lincat}
     \DataTypeTok{S} \FunctionTok{=} \DataTypeTok{Str} \NormalTok{;}
     \DataTypeTok{NP} \FunctionTok{=} \NormalTok{\{ s }\OtherTok{:} \DataTypeTok{Str} \NormalTok{; n }\OtherTok{:} \DataTypeTok{Number} \NormalTok{; g }\OtherTok{:} \DataTypeTok{Gender} \NormalTok{\} ;}
     \DataTypeTok{CN} \FunctionTok{=} \NormalTok{\{ s }\OtherTok{:} \DataTypeTok{Number} \OtherTok{=>} \DataTypeTok{Str} \NormalTok{; g }\OtherTok{:} \DataTypeTok{Gender} \NormalTok{\} ;}
-    \DataTypeTok{AP} \FunctionTok{=} \DataTypeTok{Number} \OtherTok{=>} \DataTypeTok{Gender} \OtherTok{=>} \DataTypeTok{Str} \NormalTok{;}
+    \DataTypeTok{AP} \FunctionTok{=} \NormalTok{\{ s }\OtherTok{:} \DataTypeTok{Number} \OtherTok{=>} \DataTypeTok{Gender} \OtherTok{=>} \DataTypeTok{Str} \NormalTok{; p }\OtherTok{:} \DataTypeTok{Position} \NormalTok{\} ;}
   \NormalTok{lin}
-    \DataTypeTok{Pred} \NormalTok{np ap }\FunctionTok{=} \NormalTok{np}\FunctionTok{.}\NormalTok{s }\FunctionTok{++} \NormalTok{copula }\FunctionTok{!} \NormalTok{np}\FunctionTok{.}\NormalTok{n }\FunctionTok{++} \NormalTok{ap }\FunctionTok{!} \NormalTok{np}\FunctionTok{.}\NormalTok{n }\FunctionTok{!} \NormalTok{np}\FunctionTok{.}\NormalTok{g ;}
-    \DataTypeTok{This}\NormalTok{ cn}  \FunctionTok{=} \NormalTok{det }\DataTypeTok{Sg} \StringTok{"este"} \StringTok{"esta"} \NormalTok{cn ;}
-    \DataTypeTok{These}\NormalTok{ cn} \FunctionTok{=} \NormalTok{det }\DataTypeTok{Pl} \StringTok{"estos"} \StringTok{"estas"} \NormalTok{cn ;}
+    \DataTypeTok{Pred} \NormalTok{np ap }\FunctionTok{=} \NormalTok{np}\FunctionTok{.}\NormalTok{s }\FunctionTok{++} \NormalTok{copula }\FunctionTok{!} \NormalTok{np}\FunctionTok{.}\NormalTok{n }\FunctionTok{++} \NormalTok{ap.s }\FunctionTok{!} \NormalTok{np}\FunctionTok{.}\NormalTok{n }\FunctionTok{!} \NormalTok{np}\FunctionTok{.}\NormalTok{g ;}
+    \DataTypeTok{This}\NormalTok{ cn}  \FunctionTok{=} \NormalTok{mkNP }\DataTypeTok{Sg} \StringTok{"este"} \StringTok{"esta"} \NormalTok{cn ;}
+    \DataTypeTok{These}\NormalTok{ cn} \FunctionTok{=} \NormalTok{mkNP }\DataTypeTok{Pl} \StringTok{"estos"} \StringTok{"estas"} \NormalTok{cn ;}
     \CommentTok{-- That, Those defined similarly}
-    \DataTypeTok{Mod} \NormalTok{ap cn }\FunctionTok{=} \NormalTok{\{ s }\FunctionTok{=} \NormalTok{table \{n }\OtherTok{=>} \NormalTok{ap }\FunctionTok{!} \NormalTok{n }\FunctionTok{!} \NormalTok{cn}\FunctionTok{.}\NormalTok{g }\FunctionTok{++} \NormalTok{cn}\FunctionTok{.}\NormalTok{s }\FunctionTok{!} \NormalTok{n \} ;}
+    \DataTypeTok{Mod} \NormalTok{ap cn }\FunctionTok{=} \NormalTok{\{ s }\FunctionTok{=} \NormalTok{table \{n }\OtherTok{=>} \NormalTok{preOrPost ap}\FunctionTok{.}\NormalTok{p (ap }\FunctionTok{!} \NormalTok{n }\FunctionTok{!} \NormalTok{cn}\FunctionTok{.}\NormalTok{g) (cn}\FunctionTok{.}\NormalTok{s }\FunctionTok{!} \NormalTok{n) \} ;}
                   \NormalTok{g }\FunctionTok{=} \NormalTok{cn}\FunctionTok{.}\NormalTok{g \} ;}
-    \CommentTok{--Wine, Cheese, Fish, Pizza defined as lexical items}
-    \CommentTok{--Warm, Good, Italian, Vegan defined as lexical items}
+    \CommentTok{--Wine, Cheese, \dots, Italian, Vegan defined as lexical items}
   \NormalTok{param}
     \DataTypeTok{Number} \FunctionTok{=} \DataTypeTok{Sg} \FunctionTok{|} \DataTypeTok{Pl} \NormalTok{;}
     \DataTypeTok{Gender} \FunctionTok{=} \DataTypeTok{Masc} \FunctionTok{|} \DataTypeTok{Fem} \NormalTok{;}
+    \DataTypeTok{Position} \FunctionTok{=} \DataTypeTok{Pre} \FunctionTok{|} \DataTypeTok{Post} \NormalTok{;}
   \NormalTok{oper}
-\NormalTok{    det }\OtherTok{:} \NormalTok{(num }\OtherTok{:} \DataTypeTok{Number}\NormalTok{) }\OtherTok{->} \NormalTok{(masc,fem }\OtherTok{:} \DataTypeTok{String}\NormalTok{) }\OtherTok{->} \NormalTok{(cn }\OtherTok{:} \DataTypeTok{CN}\NormalTok{) }\OtherTok{->} \DataTypeTok{NP} \FunctionTok{=}
+\NormalTok{    mkNP }\OtherTok{:} \NormalTok{(num }\OtherTok{:} \DataTypeTok{Number}\NormalTok{) }\OtherTok{->} \NormalTok{(masc,fem }\OtherTok{:} \DataTypeTok{String}\NormalTok{) }\OtherTok{->} \NormalTok{(cn }\OtherTok{:} \DataTypeTok{CN}\NormalTok{) }\OtherTok{->} \DataTypeTok{NP} \FunctionTok{=}
      \KeywordTok{let} \NormalTok{this }\FunctionTok{=} \KeywordTok{case} \NormalTok{cn}\FunctionTok{.}\NormalTok{g }\KeywordTok{of} \NormalTok{\{ }\DataTypeTok{Masc} \OtherTok{=>} \NormalTok{masc ; }\DataTypeTok{Fem} \OtherTok{=>} \NormalTok{fem \} ;}
-      \KeywordTok{in} \NormalTok{\{ s }\FunctionTok{=} \NormalTok{this }\FunctionTok{++} \NormalTok{cn}\FunctionTok{.}\NormalTok{s }\FunctionTok{!} \NormalTok{num} \NormalTok{;}
-           \NormalTok{n }\FunctionTok{=} \NormalTok{num} \NormalTok{; g }\FunctionTok{=} \NormalTok{cn}\FunctionTok{.}\NormalTok{g \} ;}
+      \KeywordTok{in} \NormalTok{\{ s }\FunctionTok{=} \NormalTok{this }\FunctionTok{++} \NormalTok{cn}\FunctionTok{.}\NormalTok{s }\FunctionTok{!} \NormalTok{num} \NormalTok{;} \NormalTok{n }\FunctionTok{=} \NormalTok{num} \NormalTok{; g }\FunctionTok{=} \NormalTok{cn}\FunctionTok{.}\NormalTok{g \} ;}
     \NormalTok{copula }\FunctionTok{=} \NormalTok{table \{ }\DataTypeTok{Sg} \OtherTok{=>} \StringTok{"es"} \NormalTok{; }\DataTypeTok{Pl} \OtherTok{=>} \StringTok{"son"} \NormalTok{\} ;}
+    \NormalTok{preOrPost p x y }\FunctionTok{=} \KeywordTok{case} \NormalTok{p }\KeywordTok{of} \NormalTok{\{ }\DataTypeTok{Pre} \OtherTok{=>} \NormalTok{x }\FunctionTok{++} \NormalTok{y ; }\DataTypeTok{Post} \OtherTok{=>} \NormalTok{y }\FunctionTok{++} \NormalTok{x \} ;}
 \end{Highlighting}
 \end{Shaded}
 
@@ -202,7 +194,7 @@ it hasn't yet been quantified into a \t{NP}.
 grammars (\pmcfg), which are processed by our tool. Here we explain
 three key features that are important for the test suite generation.
 
-\subsubsection{Concrete categories}
+\paragraph{Concrete categories}
 
 For each category in the original grammar, the \gf{} compiler
 introduces a new category in the \pmcfg{} for each combination of
@@ -222,19 +214,18 @@ Spanish concrete syntax. Firstly, \t{NP} has inherent number
 and gender, so it compiles into four concrete categories:
 \itemSpa{sg}{masc}, \itemSpa{sg}{fem}, \itemSpa{pl}{masc} and
 \itemSpa{pl}{fem}, each of them containing one string. Secondly,
-\t{CN} has only gender as an inherent feature, and number is
-variable. Thus on the \pmcfg{} level, the Spanish \t{CN} compiles
-into two concrete categories: \kind{masc} and \kind{fem}, each of them
-a vector of two strings (singular and plural). Finally, \t{AP}
-needs to agree in number and gender with its head, but it has its
-position as an inherent feature.  Thus \t{AP} compiles into two
-concrete categories: \quality{pre} and \quality{post}, each of them a
-vector of four strings. 
+\t{CN} has an inherent gender and variable number, so it compiles into
+two concrete categories: \kind{masc} and \kind{fem}, each of them a
+vector of two strings (singular and plural). Finally, \t{AP} needs to
+agree in number and gender with its head, but it has its position as
+an inherent feature.  Thus \t{AP} compiles into two concrete
+categories: \quality{pre} and \quality{post}, each of them a vector of
+four strings.
 % ---the
 % combinations of \{\stackanchor{\tt \small sg}{\tt \small pl}\}
 % $\times$ \{ \stackanchor{\tt \small masc}{\tt \small fem}\}
 
-\subsubsection{Concrete functions}
+\paragraph{Concrete functions}
 Just like categories, each syntactic function from the original
 grammar turns into multiple syntactic functions into the
 \pmcfg{}---one for each combination of parameters of its arguments.
@@ -247,7 +238,7 @@ grammar turns into multiple syntactic functions into the
 \end{itemize}
 
 
-\subsubsection{Coercions}
+\paragraph{Coercions}
 \label{sec:Coercions}
 As we have seen, \t{AP} in Spanish compiles into \quality{pre} and
 \quality{post}. However, the difference of position is meaningful only when the
@@ -281,12 +272,11 @@ increase the number of categories of the grammar, but it also removes
 the need for dealing with these parameters explicitly when we generate
 test cases. 
 
-We choose to take one syntactic function as the base for one set of
-test cases. For lexical categories, it also makes sense to
-test the whole category: ``generate all trees that show that the
-category \t{AP} is correctly defined''. However, we only explain in
-detail the method with one syntactic function as a base.
-
+We use one syntactic function as the base for one set of test
+cases. For lexical categories, it also makes sense to test the whole
+category, i.e. generate all trees that show that \t{AP} is defined and
+handled correctly in the functions. However, we only explain in detail
+the method with one syntactic function as a base.
 
 % We chose to take one syntactic function as a base for
 % Since every syntactic function also expands into multiple
@@ -300,7 +290,7 @@ We assume that all test cases are trees with the same start
 (top-level) category, such as \t{S} in our example grammar. The
 requirement is that the start category is linearized as one string only. 
 
-\subsubsection{Enumerate functions} As we explained before, each syntactic
+\paragraph{Enumerate functions} As we explained before, each syntactic
 function turns into multiple versions, one for each combination of
 parameters of its arguments. We test each of these versions
 seperately. Each concrete syntactic function may produce one or several trees.
@@ -311,11 +301,11 @@ to supply it with \emph{arguments}, as well as put the resulting tree
 into a \emph{context} that produces a tree in the correct start
 category.
 
-\subsubsection{Enumerate arguments} Some syntactic functions are
+\paragraph{Enumerate arguments} Some syntactic functions are
 simply a single lexical item (for example the word \emph{good}); in
 this case just the tree \t{Good} is our answer.
 If we choose a function with arguments, such as \t{Pred}, then we have
-to supply it with argument trees. Each argument tree needs to be a
+to supply it with argument trees. Each argument needs to be a
 tree belonging to the right category (in the example, \t{NP} and
 \t{AP}, respectively). 
 
@@ -323,17 +313,19 @@ When we test a function, we want to see whether or not it uses the
 right information from its arguments, in the right way. The
 information that a syntactic function uses is any of the strings that
 come from linearizing its arguments. In order to be able to see which
-string in the result comes from which string from which arguments, we
-want to generate test cases that only contain unique strings (no
-duplicates). 
+string in the result comes from which field from which argument, we
+want to generate test cases that only contain unique strings.
+For example, \t{Good} `bueno/buena/buenos/buenas' is a
+better argument than \t{Warm} `caliente/caliente/calientes/calientes',
+because the latter is invariable for gender.
 
-For example, when we test the predication function, we want to pick a
-\t{AP} that actually has different forms (unique strings) for 
-different genders and numbers, rather than having identical forms,
-because the human would not be able to see if the \t{Pred} function
-picked the wrong form. Thus a word like \t{Good} `bueno/buena' is
-better than \t{Warm} `caliente/caliente', because the latter is
-invariable for gender.
+% For example, when we test the predication function, we want to pick an
+% \t{AP} that actually has different forms (unique strings) for 
+% different genders and numbers, rather than having identical forms,
+% because the human would not be able to see if the \t{Pred} function
+% picked the wrong form. Thus a word like \t{Good} `bueno/buena' is
+% better than \t{Warm} `caliente/caliente', because the latter is
+% invariable for gender.
 
 It is often possible to generate one combination of arguments where
 all strings in the linearizations are different. However, it is not
@@ -370,7 +362,7 @@ one premodifier and one postmodifier \t{AP} (\t{Good} and
 \end{tabular}
 \end{table}
 
-\subsubsection{Enumerate contexts} The third and last enumeration we
+\paragraph{Enumerate contexts} The third and last enumeration we
 perform when generating test cases is to generate all possible
 \emph{uses} of a function. After we provide a function with arguments,
 we need to put the result into a context, so that we can generate a
@@ -383,7 +375,6 @@ a test tree with an inflection table of 4 forms, we would generate 4 different s
 
 By \emph{context}, we mean a tree in the start category \t{S}, with a 
 \emph{hole} of type \t{CN}. 
-
 Since \t{CN} is variable for number, we need two contexts: 
 % A tree of
 % type \t{CN} can be plugged into the hole to form a tree in the start
@@ -395,7 +386,6 @@ Since \t{CN} is variable for number, we need two contexts:
 % of them, 
 one that picks out the singular form and other that picks out
 the plural form. 
-
 This suggests that we should apply two different
 \t{CN $\rightarrow$ NP} functions, for instance \t{This} and \t{These}, and
 give their results to the \t{Pred} function, which constructs a \t{S}.
@@ -429,9 +419,9 @@ estas pizzas veganas son italianas          & estos vinos veganos son italianos 
 \end{tabular}
 \end{table}
 
-\todo{Write this better?} So, what we want to compute is, given the result category T of the syntactic function, and the start category S of the grammar, a minimal set of contexts in the start category S with hole of type T, such that any string appearing in the linearization of T also appears somewhere in the linearization of S. We compute this by setting up a system of equations for each category C in the grammar: for each C, we define all the relevant contexts with hole type C in terms of all the relevant contexts with hole type C' for other categories C' that use C. So, the answer for each category is expressed in terms of the answer for other categories. In general, this system of equations is \emph{recursive}, and we use a fixpoint iteration to compute the smallest solution.
+So, what we want to compute is, given the result category T of the syntactic function, and the start category S of the grammar, a minimal set of contexts in the start category S with hole of type T, such that any string appearing in the linearization of T also appears somewhere in the linearization of S. We compute this by setting up a system of equations for each category C in the grammar: for each C, we define all the relevant contexts with hole type C in terms of all the relevant contexts with hole type C' for other categories C' that use C. So, the answer for each category is expressed in terms of the answer for other categories. In general, this system of equations is \emph{recursive}, and we use a fixpoint iteration to compute the smallest solution.
 
-\subsubsection{Pruning the trees within one set of test cases} 
+\paragraph{Pruning the trees within one set of test cases} 
 On the scope of our tiny example grammar, this pruning method is
 easiest to illustrate when we test a category instead of a function;
 however, in bigger grammars, the need arises when testing functions as
@@ -442,12 +432,18 @@ In order to test the category \t{AP}, we need in total 12 example sentences:
 \item 4 test cases for a postmodifier \t{AP} as modifier;
 \item 4 test cases for \emph{any} \t{AP} as predicative.
 \end{itemize}
-If we did not prune the trees, the program would generate
-redundant test cases with \t{AP}s in predicative position: 4 for
-premodifier and 4 for postmodifier adjectives,
-As explained in Section~\ref{sec:Coercions}, these redundancies are
-encoded as coercions in the compiled \pmcfg{}. We just use the
-coercions to reduce the number of trees generated.
+These categories correspond to the concrete categories \kind{pre},
+\kind{post} and the coercion \kind{*} (as explained in
+Section~\ref{sec:Coercions}). Instead of generating redundant test
+cases for the predicative, we use the coercions in the grammar to
+detect when something is redundant.
+
+% If we did not prune the trees, the program would generate
+% redundant test cases with \t{AP}s in predicative position: 4 for
+% premodifier and 4 for postmodifier adjectives,
+% As explained in Section~\ref{sec:Coercions}, these redundancies are
+% encoded as coercions in the compiled \pmcfg{}. We just use the
+% coercions to reduce the number of trees generated.
 
 
 % In our example we tested explicitly
@@ -459,7 +455,7 @@ coercions to reduce the number of trees generated.
 %   Good} and \t{Very Vegan}, and each of them has to be placed into
 % contexts. 
 
-\subsubsection{Pruning the trees to test the whole grammar}
+\paragraph{Pruning the trees to test the whole grammar}
 So far we have completely ignored that one tree can showcase more
 than one function. In fact, the 8 test sentences created for \t{Mod}
 happen to also test \t{Pred} exhaustively.
@@ -483,10 +479,11 @@ deterministic, where every feminine noun is \t{Pizza}, and we can
 eliminate redundancies by just eliminating copies of the same
 tree. Then, when we have a set of unique trees, we can substitute
 individual words in them with other words in the same concrete
-category: ``the house gives the pizza the fountain'' has the same
-testing property as the version with pizza in every role, but at least
-it is easier to keep track who does what, and compare the translations
-of the same tree. 
+category.
+%  ``the house gives the pizza the fountain'' has the same
+% testing property as the version with pizza in every role, but at least
+% it is easier to keep track who does what, and compare the translations
+% of the same tree. 
 
 It would be ideal to generate sentences that make sense,
 such as ``the waitress gives the girl the pizza''. If the grammar is
@@ -561,8 +558,9 @@ behaving similarly to each other and Basque significantly worse, both
 in execution time and number of examples generated. 
 
 Table~\ref{results} shows the number of generated trees for 
-in total for all syntactic functions in the three grammars, and
-Table~\ref{results_indiv} shows some example functions from the resource grammar. 
+in total for all syntactic functions in the three grammars% , and
+% Table~\ref{results_indiv} shows some example functions from the resource grammar
+. 
 As stated earlier, we do not consider generating test cases for all
 functions an optimal way of testing a whole resource grammar from scratch;
 this gives merely a baseline reduction from all possible trees up to a
@@ -570,6 +568,8 @@ reasonable depth. We introduce the grammars and comment on the results
 in the following sections.
 
 \begin{table}[h]
+\caption{Test cases for all functions in two grammars}
+\label{results}
 \centering
 \begin{tabular}{|lll|ll|ll|ll|}
 \hline
@@ -580,23 +580,18 @@ $\downarrow$ Abstract  & \#funs+lex & \#trees  &
 {\bf Phrasebook}       & 130+160         & \textgreater{}480,000       & 2006  & 1892   & 2808    & 2650    & 1513     & 1314   \\ \hline
 {\bf Resource gr.} & 217+446         & \textgreater{}500 billion   & 59,316 & 51,145  & 278,092  & 216,058  & 60,600    & 38,517   \\ \hline
 \end{tabular}
-\caption{Test cases for all functions in two grammars}
-\label{results}
 \end{table}
 
-\subsubsection{Grammars}
+\paragraph{Grammars}
 
-The first grammar is a mid-size application grammar: Phrasebook
-\cite{ranta2010phrasebook}, with 42 categories such as \t{Person,
-  Currency, Price} and \t{Nationality}, 160-word lexicon and 130
-functions with arguments. As opposed to the trees that we have seen so far,
-which only contain syntactic information, the trees in the Phrasebook
-are much more semantic: for example, the abstract tree for the
-sentence ``how far is the bar?'' in the Phrasebook is \t{PQuestion
-  (HowFar (ThePlace Bar))}, in contrast to the resource grammar tree
-{\tt \small UttQS (UseQCl (TTAnt TPres ASimul) PPos (QuestIComp
-  (CompIAdv (AdvIAdv how\_IAdv (PositAdvAdj far\_A))) 
-  (DetCN (DetQuant DefArt NumSg) (UseN bar\_N))))} for the same
+The first grammar is Phrasebook \cite{ranta2010phrasebook}, a mid-size
+application grammar with 42 categories such as \t{Person, Currency,
+  Price} and \t{Nationality}, 160-word lexicon and 130 functions with
+arguments. The trees in the Phrasebook are more semantic than the
+trees we have seen so far: for example, the abstract tree for the sentence ``how far is the bar?'' in the Phrasebook is {\tt \small PQuestion (HowFar (ThePlace Bar))}, in contrast to the resource grammar tree
+{\tt \small UseQCl (TTAnt TPres ASimul) PPos (QuestIComp
+  (CompIAdv (AdvIAdv how\_IAdv (PositAdvAdj far\_A))) \\
+  (DetCN (DetQuant DefArt NumSg) (UseN bar\_N)))} for the same
 sentence. Limiting up to depth 3, the Phrasebook grammar produces over
 480,000 trees\footnote{Application grammars are usually
 much more compact than resource grammars, hence depth 3 covers already
@@ -614,64 +609,7 @@ bug that shows up only in animate nouns which end in a consonant. This
 subset of the resource grammar produces hundreds of billions of trees
 up to depth 5.
 
-% \begin{table}
-% \caption{Table captions should be placed above the
-% tables.}\label{tab1}
-% \begin{tabular}{|l|l|l|}
-% \hline
-% Heading level &  Example & Font size and style\\
-% \hline
-% Title (centered) &  {\Large\bfseries Lecture Notes} & 14 point, bold\\
-% 1st-level heading &  {\large\bfseries 1 Introduction} & 12 point, bold\\
-% 2nd-level heading & {\bfseries 2.1 Printing Area} & 10 point, bold\\
-% 3rd-level heading & {\bfseries Run-in Heading in Bold.} Text follows & 10 point, bold\\
-% 4th-level heading & {\itshape Lowest Level Heading.} Text follows & 10 point, italic\\
-% \hline
-% \end{tabular}
-% \end{table}
-
-
-% \noindent Displayed equations are centered and set on a separate
-% line.
-% \begin{equation}
-% x + y = z
-% \end{equation}
-% Please try to avoid rasterized images for line-art diagrams and
-% schemas. Whenever possible, use vector graphics instead (see
-% Fig.~\ref{fig1}).
-
-% \begin{figure}
-% \includegraphics[width=\textwidth]{fig1.eps}
-% \caption{A figure caption is always placed below the illustration.
-% Please note that short captions are centered, while long ones are
-% justified by the macro package automatically.} \label{fig1}
-% \end{figure}
-
-% \begin{theorem}
-% This is a sample theorem. The run-in heading is set in bold, while
-% the following text appears in italics. Definitions, lemmas,
-% propositions, and corollaries are styled the same way.
-% \end{theorem}
-% %
-% % the environments 'definition', 'lemma', 'proposition', 'corollary',
-% % 'remark', and 'example' are defined in the LLNCS documentclass as well.
-% %
-% \begin{proof}
-% Proofs, examples, and remarks have the initial word in italics,
-% while the following text appears in normal font.
-% \end{proof}
-% For citations of references, we prefer the use of square brackets
-% and consecutive numbers. Citations using labels or the author/year
-% convention are also acceptable. The following bibliography provides
-% a sample reference list with entries for journal
-
-%
-% ---- Bibliography ----
-%
-% BibTeX users should specify bibliography style 'splncs04'.
-% References will then be sorted and formatted in the correct style.
-%
-\bibliographystyle{splncs04}
-\bibliography{../coling2018/bibliography}
+\bibliographystyle{acl}
+\bibliography{bibliography}
 
 \end{document}
