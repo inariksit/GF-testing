@@ -15,12 +15,14 @@
 \usepackage{color}
 \usepackage{stackengine}
 \usepackage[normalem]{ulem}
+\input{syntaxhilight} % suspicious
 
 \def\t#1{\texttt{#1}}
 \def\gf{\textsc{gf}}
 \def\pgf{\textsc{pgf}}
 \def\lfg{\textsc{lfg}}
 \def\ccg{\textsc{ccg}}
+\def\acg{\textsc{acg}}
 \def\tag{\textsc{tag}}
 \def\cfg{\textsc{cfg}}
 \def\pmcfg{\textsc{pmcfg}}
@@ -73,19 +75,9 @@ The abstract should briefly summarize the contents of the paper in
 What is the essence of a language? 
 Suppose we have a potentially infinite grammar, and we want to find a
 minimal and representative set of sentences, along with their
-analyses, to test the correctness of the grammar.
-
-In general computer science, \emph{kernelization} \todo{cite} is used
-to preprocess inputs given to some expensive algorithm: for instance,
-a large graph can be reduced into a smaller graph, which produces the
-same output, but runs much faster than the original large graph. We
-propose a similar technique for grammars, with the purpose of building
-test suites of trees. These test suites could be given for human
-oracles to read (which is an extremely expensive algorithm!), they
-could be tested against a large corpus, or a combination of the two. 
-
-\todo{Human judgment is inavoidable, but we want to minimize the
-  number of sentences the human reads.}
+analyses, to test the correctness of the grammar. Human judgment is
+inavoidable, but we want to minimize the number of sentences the human
+reads.
 
 To give an intuitive example: in English we need to test a reflexive
 construct with three different 3rd person singular subjects, because
@@ -114,40 +106,90 @@ namely parallel multiple context-free grammars ({\sc pmcfg})
 Grammatical Framework (\gf) \cite{ranta2004gf}. However, the general
 method works for any formalism that is at most as expressive as
 \pmcfg{}, including formalisms such as Tree-Adjoining Grammar (\tag)
-\cite{joshi1975tag} and several variants of Categorial Grammars
-\todo{cite about the fragment of ACG that is MCFG}.
+\cite{joshi1975tag} and several variants of Categorial Grammar, such
+as Abstract Categorial Grammar
+\todo{cite about the fragment of \acg{} that is MCFG} and 
 Combinatorial Categorial Grammar (\ccg) \cite{steedman1988ccg}.
+
+\todo{Emphasize the CS background of the work, in particular Feat, QuickCheck, and formal methods in general.}
+% In general computer science, \emph{kernelization} \todo{cite} is used
+% to preprocess inputs given to some expensive algorithm: for instance,
+% a large graph can be reduced into a smaller graph, which produces the
+% same output, but runs much faster than the original large graph. We
+% propose a similar technique for grammars, with the purpose of building
+% test suites of trees. These test suites could be given for human
+% oracles to read (which is an extremely expensive algorithm!), they
+% could be tested against a large corpus, or a combination of the two. 
+
 
 \section{Grammatical Framework}
 \label{sec:GF}
 
 \todo{General \gf{} introduction.\\
-1) Emphasize that analysis and generation are all in the same
+1) Analysis and generation are all in the same
   grammar. \\ 2) GF as a formalism can be as syntactic or semantic as one wants.
 }
 
 \begin{figure}[h]
-  \caption{GF grammar about food}
+  \caption{Abstract syntax of a GF grammar about food}
 \label{fig:exampleGrammar}
 \centering
-    \begin{verbatim}
-abstract Foods = {
-  flags startcat = S ;
-  cat
-    S ; NP ; CN ; AP ;
-  fun
-    Pred : NP -> AP -> S ;
-    This, That, These, Those : CN -> NP ;
-    Mod : AP -> CN -> CN ;
-    Wine, Cheese, Fish, Pizza : CN ;
-    Very : AP -> AP ;
-    Warm, Good, Italian, Vegan : AP ;
-}
-    \end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{abstract }\DataTypeTok{Foods} \FunctionTok{=} \NormalTok{\{}
+  \NormalTok{flags startcat }\FunctionTok{=} \DataTypeTok{S} \NormalTok{;}
+  \NormalTok{cat}
+    \DataTypeTok{S} \NormalTok{; }\DataTypeTok{NP} \NormalTok{; }\DataTypeTok{CN} \NormalTok{; }\DataTypeTok{AP} \NormalTok{;}
+  \NormalTok{fun}
+    \DataTypeTok{Pred}\OtherTok{ :} \DataTypeTok{NP} \OtherTok{->} \DataTypeTok{AP} \OtherTok{->} \DataTypeTok{S} \NormalTok{;                }\CommentTok{-- this wine is good}
+    \DataTypeTok{This}\NormalTok{, }\DataTypeTok{That}\NormalTok{, }\DataTypeTok{These}\NormalTok{, }\DataTypeTok{Those}\OtherTok{ :} \DataTypeTok{CN} \OtherTok{->} \DataTypeTok{NP} \NormalTok{; }\CommentTok{-- this wine}
+    \DataTypeTok{Mod}\OtherTok{ :} \DataTypeTok{AP} \OtherTok{->} \DataTypeTok{CN} \OtherTok{->} \DataTypeTok{CN} \NormalTok{;                }\CommentTok{-- Italian wine}
+    \DataTypeTok{Wine}\NormalTok{, }\DataTypeTok{Cheese}\NormalTok{, }\DataTypeTok{Fish}\NormalTok{, }\DataTypeTok{Pizza}\OtherTok{ :} \DataTypeTok{CN} \NormalTok{;}
+    \DataTypeTok{Warm}\NormalTok{, }\DataTypeTok{Good}\NormalTok{, }\DataTypeTok{Italian}\NormalTok{, }\DataTypeTok{Vegan}\OtherTok{ :} \DataTypeTok{AP} \NormalTok{;}
+\end{Highlighting}
+\end{Shaded}
+
+\end{figure}
+
+\begin{figure}[h]
+  \caption{Spanish concrete syntax of a GF grammar about food}
+\label{fig:spanish}
+\centering
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{concrete }\DataTypeTok{FoodsSpa} \KeywordTok{of} \DataTypeTok{Foods} \FunctionTok{=} \NormalTok{\{}
+  \NormalTok{flags startcat }\FunctionTok{=} \DataTypeTok{S} \NormalTok{;}
+  \NormalTok{lincat}
+    \DataTypeTok{S} \FunctionTok{=} \DataTypeTok{Str} \NormalTok{;}
+    \DataTypeTok{NP} \FunctionTok{=} \NormalTok{\{ s }\OtherTok{:} \DataTypeTok{Str} \NormalTok{; n }\OtherTok{:} \DataTypeTok{Number} \NormalTok{; g }\OtherTok{:} \DataTypeTok{Gender} \NormalTok{\} ;}
+    \DataTypeTok{CN} \FunctionTok{=} \NormalTok{\{ s }\OtherTok{:} \DataTypeTok{Number} \OtherTok{=>} \DataTypeTok{Str} \NormalTok{; g }\OtherTok{:} \DataTypeTok{Gender} \NormalTok{\} ;}
+    \DataTypeTok{AP} \FunctionTok{=} \DataTypeTok{Number} \OtherTok{=>} \DataTypeTok{Gender} \OtherTok{=>} \DataTypeTok{Str} \NormalTok{;}
+  \NormalTok{lin}
+    \DataTypeTok{Pred} \NormalTok{np ap }\FunctionTok{=} \NormalTok{np}\FunctionTok{.}\NormalTok{s }\FunctionTok{++} \NormalTok{copula }\FunctionTok{!} \NormalTok{np}\FunctionTok{.}\NormalTok{n }\FunctionTok{++} \NormalTok{ap }\FunctionTok{!} \NormalTok{np}\FunctionTok{.}\NormalTok{n }\FunctionTok{!} \NormalTok{np}\FunctionTok{.}\NormalTok{g ;}
+    \DataTypeTok{This}\NormalTok{ cn}  \FunctionTok{=} \NormalTok{det }\DataTypeTok{Sg} \StringTok{"este"} \StringTok{"esta"} \NormalTok{cn ;}
+    \DataTypeTok{These}\NormalTok{ cn} \FunctionTok{=} \NormalTok{det }\DataTypeTok{Pl} \StringTok{"estos"} \StringTok{"estas"} \NormalTok{cn ;}
+    \CommentTok{-- That, Those defined similarly}
+    \DataTypeTok{Mod} \NormalTok{ap cn }\FunctionTok{=} \NormalTok{\{ s }\FunctionTok{=} \NormalTok{table \{n }\OtherTok{=>} \NormalTok{ap }\FunctionTok{!} \NormalTok{n }\FunctionTok{!} \NormalTok{cn}\FunctionTok{.}\NormalTok{g }\FunctionTok{++} \NormalTok{cn}\FunctionTok{.}\NormalTok{s }\FunctionTok{!} \NormalTok{n \} ;}
+                  \NormalTok{g }\FunctionTok{=} \NormalTok{cn}\FunctionTok{.}\NormalTok{g \} ;}
+    \CommentTok{--Wine, Cheese, Fish, Pizza defined as lexical items}
+    \CommentTok{--Warm, Good, Italian, Vegan defined as lexical items}
+  \NormalTok{param}
+    \DataTypeTok{Number} \FunctionTok{=} \DataTypeTok{Sg} \FunctionTok{|} \DataTypeTok{Pl} \NormalTok{;}
+    \DataTypeTok{Gender} \FunctionTok{=} \DataTypeTok{Masc} \FunctionTok{|} \DataTypeTok{Fem} \NormalTok{;}
+  \NormalTok{oper}
+\NormalTok{    det }\OtherTok{:} \NormalTok{(num }\OtherTok{:} \DataTypeTok{Number}\NormalTok{) }\OtherTok{->} \NormalTok{(masc,fem }\OtherTok{:} \DataTypeTok{String}\NormalTok{) }\OtherTok{->} \NormalTok{(cn }\OtherTok{:} \DataTypeTok{CN}\NormalTok{) }\OtherTok{->} \DataTypeTok{NP} \FunctionTok{=}
+     \KeywordTok{let} \NormalTok{this }\FunctionTok{=} \KeywordTok{case} \NormalTok{cn}\FunctionTok{.}\NormalTok{g }\KeywordTok{of} \NormalTok{\{ }\DataTypeTok{Masc} \OtherTok{=>} \NormalTok{masc ; }\DataTypeTok{Fem} \OtherTok{=>} \NormalTok{fem \} ;}
+      \KeywordTok{in} \NormalTok{\{ s }\FunctionTok{=} \NormalTok{this }\FunctionTok{++} \NormalTok{cn}\FunctionTok{.}\NormalTok{s }\FunctionTok{!} \NormalTok{num} \NormalTok{;}
+           \NormalTok{n }\FunctionTok{=} \NormalTok{num} \NormalTok{; g }\FunctionTok{=} \NormalTok{cn}\FunctionTok{.}\NormalTok{g \} ;}
+    \NormalTok{copula }\FunctionTok{=} \NormalTok{table \{ }\DataTypeTok{Sg} \OtherTok{=>} \StringTok{"es"} \NormalTok{; }\DataTypeTok{Pl} \OtherTok{=>} \StringTok{"son"} \NormalTok{\} ;}
+\end{Highlighting}
+\end{Shaded}
+
 \end{figure}
 
 Figure~\ref{fig:exampleGrammar} shows a small example of a GF
-grammar. We refer to this grammar throughout sections~\ref{sec:GF}--\ref{sec:testing}. 
+grammar, slightly modified from \cite{ranta2011gfbook}. We refer to this grammar throughout sections~\ref{sec:GF}--\ref{sec:testing}. 
 
 \t{CN}, `common noun', can be modified by adjectives or adverbs, but
 it hasn't yet been quantified into a \t{NP}. 
@@ -215,7 +257,7 @@ classes of adjectives behave the same: ``la pizza es \emph{buena}''
 and ``la pizza es \emph{vegana}''. As an optimization strategy, the
 grammar creates a {\it coercion}: both \quality{pre} and \quality{post}
 may be treated as \quality{*} when the distinction doesn't matter. 
-Furthermore, the function \t{Pred : NP -> AP -> S} uses
+Furthermore, the function \t{Pred : NP $\rightarrow$ AP $\rightarrow$ S} uses
 the coerced category \quality{*} as its second argument, and thus
 expands only into 4 variants, despite there being 8 combinations of
 \t{NP}$\times$\t{AP}.
@@ -289,8 +331,8 @@ For example, when we test the predication function, we want to pick a
 \t{AP} that actually has different forms (unique strings) for 
 different genders and numbers, rather than having identical forms,
 because the human would not be able to see if the \t{Pred} function
-picked the wrong form. Thus a word like \t{Good} ``bueno/buena'' is
-better than \t{Warm} ``caliente/caliente'', because the latter is
+picked the wrong form. Thus a word like \t{Good} `bueno/buena' is
+better than \t{Warm} `caliente/caliente', because the latter is
 invariable for gender.
 
 It is often possible to generate one combination of arguments where
@@ -323,31 +365,39 @@ one premodifier and one postmodifier \t{AP} (\t{Good} and
 \textsc{(pl)} buenas pizzas           & \textsc{(pl)} buenos vinos \\ \hline
 
 \t{Mod Vegan Pizza}   & \t{Mod Vegan Wine} \\ 
-\textsc{(sg)} pizza  vegana            & \textsc{(sg)} vino  vegano \\
-\textsc{(pl)} pizzas  veganas          & \textsc{(pl)} vinos  veganos \\ \hline
+\textsc{(sg)} pizza vegana            & \textsc{(sg)} vino vegano \\
+\textsc{(pl)} pizzas veganas          & \textsc{(pl)} vinos veganos \\ \hline
 \end{tabular}
 \end{table}
 
-\subsubsection{Enumerate contexts} The third and last enumeration we perform when generating test cases is to generate all possible \emph{uses} of a function. After we provide a function with arguments, we need to put the result into a context, so that we can generate a single string from the result (a sentence). We do this for all trees we have generated so far.
+\subsubsection{Enumerate contexts} The third and last enumeration we
+perform when generating test cases is to generate all possible
+\emph{uses} of a function. After we provide a function with arguments,
+we need to put the result into a context, so that we can generate a
+single string from the result (a sentence). We do this for all trees
+we have generated so far. 
 
 The important thing here is that the generated set of contexts shows
 all the possible different ways the tree can be used. For example, for
 a test tree with an inflection table of 4 forms, we would generate 4 different sentences in which each of the 4 inflections is used.
 
-By \emph{context}, we mean a tree in the start category, with a
-\emph{hole} of type \t{CN}. Since \t{CN} is variable for
-number, we need two contexts:
+By \emph{context}, we mean a tree in the start category \t{S}, with a 
+\emph{hole} of type \t{CN}. 
+
+Since \t{CN} is variable for number, we need two contexts: 
 % A tree of
 % type \t{CN} can be plugged into the hole to form a tree in the start
-% category \t{S}. There is only one function, \t{Pred : NP ->
-%   AP -> S}, that constructs a \t{S}. 
+% category \t{S}. There is only one function, \t{Pred : NP $\rightarrow$
+%   AP $\rightarrow$ S}, that constructs a \t{S}. 
 % We cannot give a \t{CN} directly as an argument to \t{Pred}, but we
 % do have four functions that turn a \t{CN} into an \t{NP}, namely
 % \t{This}, \t{That}, \t{These} and \t{Those}. However, we only need two
 % of them, 
 one that picks out the singular form and other that picks out
-the plural form. This suggests that we should apply two different
-\t{CN -> NP} functions, for instance \t{This} and \t{These}, and
+the plural form. 
+
+This suggests that we should apply two different
+\t{CN $\rightarrow$ NP} functions, for instance \t{This} and \t{These}, and
 give their results to the \t{Pred} function, which constructs a \t{S}.
 In contrast, the second argument to \t{Pred} doesn't make a difference
 in what form we pick out of the \t{CN}---we just want to pick
@@ -395,9 +445,10 @@ In order to test the category \t{AP}, we need in total 12 example sentences:
 If we did not prune the trees, the program would generate
 redundant test cases with \t{AP}s in predicative position: 4 for
 premodifier and 4 for postmodifier adjectives,
-As explained in Section~\ref{sec:Coercions}, the grammar detects
-these redundancies automatically, so we just leverage the coercions 
-already existing in the grammar.
+As explained in Section~\ref{sec:Coercions}, these redundancies are
+encoded as coercions in the compiled \pmcfg{}. We just use the
+coercions to reduce the number of trees generated.
+
 
 % In our example we tested explicitly
 % \t{Mod}, but suppose we want to test the function \t{Very} instead. On
@@ -409,7 +460,7 @@ already existing in the grammar.
 % contexts. 
 
 \subsubsection{Pruning the trees to test the whole grammar}
-So far we have completely ignored that one tree can test more
+So far we have completely ignored that one tree can showcase more
 than one function. In fact, the 8 test sentences created for \t{Mod}
 happen to also test \t{Pred} exhaustively.
 Let us recap the steps we took to create them for \t{Mod}:
@@ -448,7 +499,7 @@ distinctions, e.g. limiting the subject and indirect object of
 
 Here is a typical use for the tool. 
 Let us take the GF resource grammar \cite{ranta2009rgl} for Spanish, and
-pick the function \t{AdvCN : Adv -> CN -> CN}, modifies a \t{CN} with
+pick the function \t{AdvCN : Adv $\rightarrow$ CN $\rightarrow$ CN}, modifies a \t{CN} with
 an adverb.
 The tool generates test cases in the way described previously,
 which include the following (slightly simplified) trees: 
@@ -497,8 +548,71 @@ see if something else broke.
 
 \section{Evaluation}
 
-The previous section describes the use of the tool for developing and
-testing one function at a time. However, it is interesting to see 
+In order to evaluate our method, we generate test cases for two
+grammars of different sizes, using three languages from different
+language families: Dutch, Estonian and Basque. Dutch, an Indo-European
+language, has fairly simple nominal and verbal morphology, but the
+rules for handling word order, prefixes and particles in verb phrases
+are somewhat intricate. Estonian and Basque both have rich morphology,
+each featuring 14 nominal cases, but Basque verb morphology is much
+more complex, with agreement in subject, object and indirect
+object. Contrary to our expectations, we found Dutch and Estonian
+behaving similarly to each other and Basque significantly worse, both
+in execution time and number of examples generated. 
+
+Table~\ref{results} shows the number of generated trees for 
+in total for all syntactic functions in the three grammars, and
+Table~\ref{results_indiv} shows some example functions from the resource grammar. 
+As stated earlier, we do not consider generating test cases for all
+functions an optimal way of testing a whole resource grammar from scratch;
+this gives merely a baseline reduction from all possible trees up to a
+reasonable depth. We introduce the grammars and comment on the results
+in the following sections.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|lll|ll|ll|ll|}
+\hline
+\multicolumn{3}{|r}{Concrete $\rightarrow$}              &
+                                                                   \multicolumn{2}{|c}{\bf Dutch} & \multicolumn{2}{|c}{\bf Basque} & \multicolumn{2}{|c|}{\bf Estonian} \\
+$\downarrow$ Abstract  & \#funs+lex & \#trees  &
+                                                                 \#total & \#uniq & \#total & \#uniq  & \#total  & \#uniq \\ \hline
+{\bf Phrasebook}       & 130+160         & \textgreater{}480,000       & 2006  & 1892   & 2808    & 2650    & 1513     & 1314   \\ \hline
+{\bf Resource gr.} & 217+446         & \textgreater{}500 billion   & 59,316 & 51,145  & 278,092  & 216,058  & 60,600    & 38,517   \\ \hline
+\end{tabular}
+\caption{Test cases for all functions in two grammars}
+\label{results}
+\end{table}
+
+\subsubsection{Grammars}
+
+The first grammar is a mid-size application grammar: Phrasebook
+\cite{ranta2010phrasebook}, with 42 categories such as \t{Person,
+  Currency, Price} and \t{Nationality}, 160-word lexicon and 130
+functions with arguments. As opposed to the trees that we have seen so far,
+which only contain syntactic information, the trees in the Phrasebook
+are much more semantic: for example, the abstract tree for the
+sentence ``how far is the bar?'' in the Phrasebook is \t{PQuestion
+  (HowFar (ThePlace Bar))}, in contrast to the resource grammar tree
+{\tt \small UttQS (UseQCl (TTAnt TPres ASimul) PPos (QuestIComp
+  (CompIAdv (AdvIAdv how\_IAdv (PositAdvAdj far\_A))) 
+  (DetCN (DetQuant DefArt NumSg) (UseN bar\_N))))} for the same
+sentence. Limiting up to depth 3, the Phrasebook grammar produces over
+480,000 trees\footnote{Application grammars are usually
+much more compact than resource grammars, hence depth 3 covers already
+a lot of relevant trees.}.
+
+The second grammar is a restricted version of the \gf{} resource
+grammar \cite{ranta2009rgl}, with 84 categories, 217 syntactic
+functions and 446 words in the lexicon. Since all the languages did
+not have a complete implementation, we simply took the subset of functions that was
+common, and removed manually a couple of rare constructions and words
+that are potentially distracting. However, we should not limit the
+lexicon too much, because we may miss important distinctions  in some
+languages---to give a hypothetical example, some grammar may have a
+bug that shows up only in animate nouns which end in a consonant. This
+subset of the resource grammar produces hundreds of billions of trees
+up to depth 5.
 
 % \begin{table}
 % \caption{Table captions should be placed above the
