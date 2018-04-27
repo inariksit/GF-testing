@@ -97,10 +97,34 @@ Combinatorial Categorial Grammar (\ccg) \cite{steedman1988ccg}.
 \section{Grammatical Framework}
 \label{sec:GF}
 
-\todo{General \gf{} introduction.\\
-1) Analysis and generation are all in the same
-  grammar. \\ 2) GF as a formalism can be as syntactic or semantic as one wants.
-}
+Grammatical Framework (\gf) \cite{ranta2004gf} 
+is a framework for building multilingual grammar applications. Its main
+components are a functional programming language for writing grammars
+and a resource library \cite{ranta2009rgl}, which, as of May 2018,
+contains the linguistic details of 40 natural languages. The library
+has had over 50 contributors, and it consists of 1900 program modules and 3
+million lines of code. \gf{} is well suited for creating
+domain-specific systems: examples include mathematics
+\cite{caprotti2006webalt}, legal documents \cite{camilleri2017} and
+\todo{some nice example}.
+
+A \gf{} grammar consists of an \emph{abstract syntax}, which is a set
+of grammatical categories and functions between them, and one or more
+\emph{concrete syntaxes}, which describe how the abstract functions
+and categories are linearized, i.e. turned into surface strings. The
+resulting grammar describes a mapping between concrete language
+strings and their corresponding abstract trees. This mapping is
+bidirectional---strings can be \emph{parsed} to trees, and trees
+\emph{linearized} to strings. As an abstract syntax can have multiple
+corresponding concrete syntaxes, the respective languages can be
+automatically \emph{translated} from one to the other by first parsing
+a string into a tree and then linearizing the obtained tree into a new
+string. 
+Figure~\ref{fig:exampleGrammar} shows the abstract syntax of a small
+example grammar in GF, slightly modified from
+\cite{ranta2011gfbook}, and Figure~\ref{fig:spanish} shows a Spanish concrete
+syntax. We refer to this grammar throughout sections~\ref{sec:GF}--\ref{sec:testing}. 
+
 
 \begin{figure}[h]
 \centering
@@ -125,7 +149,46 @@ Combinatorial Categorial Grammar (\ccg) \cite{steedman1988ccg}.
 
 \subsection{Abstract syntax}
 
+
+Abstract syntax describes the constructions in our grammar without
+giving a concrete implementation.
+Section \t{cat} introduces the categories of the grammar: \t{S} for sentence,
+\t{NP} for noun phrase,  \t{AP} for adjectival phrase, and \t{CN} for
+common noun, which can be modified by \t{AP}s, but hasn't yet been
+quantified into an \t{NP}. \t{S} is the \emph{start category} of the grammar:
+this means that sentences are complete constructions in the language,
+everything else is an intermediate stage.
+
+The next section \t{fun} introduces functions: they are either lexical
+items without arguments, or syntactic functions which manipulate their
+arguments and build new terms. 
+The function \t{Pred} constructs an \t{S} from an
+\t{NP} and an \t{AP}: e.g. \t{Pred (This Pizza) Good} ``this pizza is
+good''. \t{Mod}~adds an \t{AP} to a \t{CN}, such as \t{Mod Italian
+  Pizza} ``Italian pizza''.
+
+
 \subsection{Concrete syntax}
+
+Concrete syntax is an implementation of the abstract syntax.
+The section \t{lincat} corresponds to \t{cat} in the abstract syntax:
+for every abstract category introduced in \t{cat}, we give a concrete implementation in \t{lincat}.
+Figure~\ref{fig:spanish} shows the Spanish concrete
+syntax, in which \t{S} is a string, and the rest of the
+categories are more complex records. For instance, \t{CN} has a field \t{s} which
+is a table from number to string (\emph{pizza},
+\emph{pizzas}), and another field \t{g}, which contains its gender
+(feminine for \t{Pizza}). We say that \t{CN} has \emph{inherent} gender,
+and \emph{variable} number.
+
+The section \t{lin} contains the concrete implementation of the
+functions, introduced in \t{fun}. Here we take care of
+language-specific details, such as agreemen: when \t{Pred (This Pizza)
+  Good} is linearized in Spanish, the copula must be singular
+(la pizza \emph{es} buena), and the adjective must be in singular
+feminine (\emph{buena}). In contrast, for an English concrete syntax,
+only the number of the copula is relevant.
+
 
 \begin{figure}[h]
 \centering
@@ -142,7 +205,7 @@ Combinatorial Categorial Grammar (\ccg) \cite{steedman1988ccg}.
     \DataTypeTok{This}\NormalTok{ cn} \FunctionTok{=} \NormalTok{mkNP }\DataTypeTok{Sg} \StringTok{"este"} \StringTok{"esta"} \NormalTok{cn ;}
     \DataTypeTok{These}\NormalTok{ cn} \FunctionTok{=} \NormalTok{mkNP }\DataTypeTok{Pl} \StringTok{"estos"} \StringTok{"estas"} \NormalTok{cn ;}
     \CommentTok{-- That, Those defined similarly}
-    \DataTypeTok{Mod} \NormalTok{ap cn }\FunctionTok{=} \NormalTok{\{ s }\FunctionTok{=} \NormalTok{table \{n }\OtherTok{=>} \NormalTok{preOrPost ap}\FunctionTok{.}\NormalTok{p (ap }\FunctionTok{!} \NormalTok{n }\FunctionTok{!} \NormalTok{cn}\FunctionTok{.}\NormalTok{g) (cn}\FunctionTok{.}\NormalTok{s }\FunctionTok{!} \NormalTok{n) \} ;}
+    \DataTypeTok{Mod} \NormalTok{ap cn }\FunctionTok{=} \NormalTok{\{ s }\FunctionTok{=} \NormalTok{\textbackslash\textbackslash{}n }\OtherTok{=>} \NormalTok{preOrPost ap}\FunctionTok{.}\NormalTok{p (ap}\FunctionTok{.}\NormalTok{s }\FunctionTok{!} \NormalTok{n }\FunctionTok{!} \NormalTok{cn}\FunctionTok{.}\NormalTok{g) (cn}\FunctionTok{.}\NormalTok{s }\FunctionTok{!} \NormalTok{n) ;}
                   \NormalTok{g }\FunctionTok{=} \NormalTok{cn}\FunctionTok{.}\NormalTok{g \} ;}
     \CommentTok{--Wine, Cheese, \dots, Italian, Vegan defined as lexical items}
   \NormalTok{param}
@@ -151,8 +214,8 @@ Combinatorial Categorial Grammar (\ccg) \cite{steedman1988ccg}.
     \DataTypeTok{Position} \FunctionTok{=} \DataTypeTok{Pre} \FunctionTok{|} \DataTypeTok{Post} \NormalTok{;}
   \NormalTok{oper}
 \NormalTok{    mkNP} \NormalTok{num mascDet femDet cn} \FunctionTok{=}
-     \KeywordTok{let} \NormalTok{this }\FunctionTok{=} \KeywordTok{case} \NormalTok{cn}\FunctionTok{.}\NormalTok{g }\KeywordTok{of} \NormalTok{\{ }\DataTypeTok{Masc} \OtherTok{=>} \NormalTok{mascDet ; }\DataTypeTok{Fem} \OtherTok{=>} \NormalTok{femDet \} ;}
-      \KeywordTok{in} \NormalTok{\{ s }\FunctionTok{=} \NormalTok{this }\FunctionTok{++} \NormalTok{cn}\FunctionTok{.}\NormalTok{s }\FunctionTok{!} \NormalTok{num} \NormalTok{;} \NormalTok{n }\FunctionTok{=} \NormalTok{num} \NormalTok{; g }\FunctionTok{=} \NormalTok{cn}\FunctionTok{.}\NormalTok{g \} ;}
+     \KeywordTok{let} \NormalTok{det }\FunctionTok{=} \KeywordTok{case} \NormalTok{cn}\FunctionTok{.}\NormalTok{g }\KeywordTok{of} \NormalTok{\{ }\DataTypeTok{Masc} \OtherTok{=>} \NormalTok{mascDet ; }\DataTypeTok{Fem} \OtherTok{=>} \NormalTok{femDet \} ;}
+      \KeywordTok{in} \NormalTok{\{ s }\FunctionTok{=} \NormalTok{det }\FunctionTok{++} \NormalTok{cn}\FunctionTok{.}\NormalTok{s }\FunctionTok{!} \NormalTok{num} \NormalTok{;} \NormalTok{n }\FunctionTok{=} \NormalTok{num} \NormalTok{; g }\FunctionTok{=} \NormalTok{cn}\FunctionTok{.}\NormalTok{g \} ;}
     \NormalTok{copula }\FunctionTok{=} \NormalTok{table \{ }\DataTypeTok{Sg} \OtherTok{=>} \StringTok{"es"} \NormalTok{; }\DataTypeTok{Pl} \OtherTok{=>} \StringTok{"son"} \NormalTok{\} ;}
     \NormalTok{preOrPost p x y }\FunctionTok{=} \KeywordTok{case} \NormalTok{p }\KeywordTok{of} \NormalTok{\{ }\DataTypeTok{Pre} \OtherTok{=>} \NormalTok{x }\FunctionTok{++} \NormalTok{y ; }\DataTypeTok{Post} \OtherTok{=>} \NormalTok{y }\FunctionTok{++} \NormalTok{x \} ;}
 \end{Highlighting}
@@ -161,14 +224,6 @@ Combinatorial Categorial Grammar (\ccg) \cite{steedman1988ccg}.
 \label{fig:spanish}
 
 \end{figure}
-
-Figure~\ref{fig:exampleGrammar} shows the abstract syntax of a small
-example grammar in GF, slightly modified from
-\cite{ranta2011gfbook}. Figure~\ref{fig:spanish} shows a Spanish concrete
-syntax. We refer to this grammar throughout sections~\ref{sec:GF}--\ref{sec:testing}. 
-
-\t{CN}, `common noun', can be modified by adjectives or adverbs, but
-it hasn't yet been quantified into a \t{NP}. 
 
 
 \section{PMCFG}
@@ -209,6 +264,7 @@ grammar turns into multiple syntactic functions into the
 \pmcfg{}---one for each combination of parameters of its arguments.
 
 \begin{itemize}
+
 \item[--] \mod{pre}{fem~~} \t{:} \quality{pre~} $\rightarrow$ \kind{fem~} $\rightarrow$ \kind{fem}
 \item[--]  \mod{post}{fem~} \t{:} \quality{post} $\rightarrow$ \kind{fem~} $\rightarrow$ \kind{fem}
 \item[--]  \mod{pre}{masc~~}\t{:} \quality{pre~} $\rightarrow$ \kind{masc} $\rightarrow$ \kind{masc}
