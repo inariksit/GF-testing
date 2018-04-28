@@ -86,10 +86,10 @@ namely parallel multiple context-free grammars ({\sc pmcfg})
 Grammatical Framework (\gf) \cite{ranta2004gf}. However, the general
 method works for any formalism that is at most as expressive as
 \pmcfg{}, including formalisms such as Tree-Adjoining Grammar (\tag)
-\cite{joshi1975tag} and several variants of Categorial Grammar, such
-as Abstract Categorial Grammar
-\todo{cite about the fragment of \acg{} that is MCFG} and 
-Combinatorial Categorial Grammar (\ccg) \cite{steedman1988ccg}.
+\cite{joshi1975tag} and several variants of Categorial Grammar
+\cite{deGroote2004,steedman1988ccg}.
+% such as Abstract Categorial Grammar (\acg) and
+% Combinatorial Categorial Grammar (\ccg) \cite{steedman1988ccg}.
 
 \todo{Emphasize the CS background of the work, in particular Feat,
   QuickCheck, and formal methods in general.}
@@ -136,9 +136,9 @@ syntax. We refer to this grammar throughout sections~\ref{sec:GF}--\ref{sec:test
   \NormalTok{cat}
     \DataTypeTok{S} \NormalTok{; }\DataTypeTok{NP} \NormalTok{; }\DataTypeTok{CN} \NormalTok{; }\DataTypeTok{AP} \NormalTok{;}
   \NormalTok{fun}
-    \DataTypeTok{Pred}\OtherTok{ :} \DataTypeTok{NP} \OtherTok{->} \DataTypeTok{AP} \OtherTok{->} \DataTypeTok{S} \NormalTok{;                }\CommentTok{-- this wine is good}
-    \DataTypeTok{This}\NormalTok{, }\DataTypeTok{That}\NormalTok{, }\DataTypeTok{These}\NormalTok{, }\DataTypeTok{Those}\OtherTok{ :} \DataTypeTok{CN} \OtherTok{->} \DataTypeTok{NP} \NormalTok{; }\CommentTok{-- this wine}
-    \DataTypeTok{Mod}\OtherTok{ :} \DataTypeTok{AP} \OtherTok{->} \DataTypeTok{CN} \OtherTok{->} \DataTypeTok{CN} \NormalTok{;                }\CommentTok{-- Italian wine}
+    \DataTypeTok{Pred}\OtherTok{ :} \DataTypeTok{NP} \OtherTok{->} \DataTypeTok{AP} \OtherTok{->} \DataTypeTok{S} \NormalTok{;                          }\CommentTok{-- this wine is good}
+    \DataTypeTok{This}\NormalTok{, }\DataTypeTok{That}\NormalTok{, }\DataTypeTok{These}\NormalTok{, }\DataTypeTok{Those}\OtherTok{ :} \DataTypeTok{CN} \OtherTok{->} \DataTypeTok{NP} \NormalTok{;           }\CommentTok{-- this wine}
+    \DataTypeTok{Mod}\OtherTok{ :} \DataTypeTok{AP} \OtherTok{->} \DataTypeTok{CN} \OtherTok{->} \DataTypeTok{CN} \NormalTok{;                          }\CommentTok{-- Italian wine}
     \DataTypeTok{Wine}\NormalTok{, }\DataTypeTok{Cheese}\NormalTok{, }\DataTypeTok{Fish}\NormalTok{, }\DataTypeTok{Pizza}\OtherTok{ :} \DataTypeTok{CN} \NormalTok{;}
     \DataTypeTok{Warm}\NormalTok{, }\DataTypeTok{Good}\NormalTok{, }\DataTypeTok{Italian}\NormalTok{, }\DataTypeTok{Vegan}\OtherTok{ :} \DataTypeTok{AP} \NormalTok{;}
 \end{Highlighting}
@@ -159,38 +159,39 @@ quantified into an \t{NP}. \t{S} is the \emph{start category} of the grammar:
 this means that sentences are complete constructions in the language,
 everything else is an intermediate stage.
 
-The next section \t{fun} introduces functions: they are either lexical
+Section \t{fun} introduces functions: they are either lexical
 items without arguments, or syntactic functions which manipulate their
-arguments and build new terms. 
-The function \t{Pred} constructs an \t{S} from an
-\t{NP} and an \t{AP}: e.g. \t{Pred (This Pizza) Good} ``this pizza is
-good''. \t{Mod}~adds an \t{AP} to a \t{CN}, such as \t{Mod Italian
-  Pizza} ``Italian pizza''.
-
+arguments and build new terms. Of the syntactic functions, \t{Pred}
+constructs an \t{S} from an \t{NP} and an \t{AP}, building trees
+such as \t{Pred (This Pizza) Good} `this pizza is good'. \t{Mod}~adds
+an \t{AP} to a \t{CN}, such as \t{Mod Italian   Pizza}. The functions
+\t{This, That, These} and \t{Those} quantify a \t{CN} into an \t{NP},
+for instance, \t{That (Mod Italian Pizza)}. 
 
 \subsection{Concrete syntax}
-
 Concrete syntax is an implementation of the abstract syntax.
 The section \t{lincat} corresponds to \t{cat} in the abstract syntax:
 for every abstract category introduced in \t{cat}, we give a concrete implementation in \t{lincat}.
+
+
 Figure~\ref{fig:spanish} shows the Spanish concrete
 syntax, in which \t{S} is a string, and the rest of the
 categories are more complex records. For instance, \t{CN} has a field \t{s} which
-is a table from number to string (\emph{pizza},
-\emph{pizzas}), and another field \t{g}, which contains its gender
+is a table from number to string (\textsc{sg} $\Rightarrow$
+\emph{pizza}, \textsc{pl} $\Rightarrow$ \emph{pizzas}), and another field \t{g}, which contains its gender
 (feminine for \t{Pizza}). We say that \t{CN} has \emph{inherent} gender,
 and \emph{variable} number.
 
 The section \t{lin} contains the concrete implementation of the
 functions, introduced in \t{fun}. Here we take care of
-language-specific details, such as agreemen: when \t{Pred (This Pizza)
+language-specific details, such as agreement: when \t{Pred (This Pizza)
   Good} is linearized in Spanish, the copula must be singular
 (la pizza \emph{es} buena), and the adjective must be in singular
-feminine (\emph{buena}). In contrast, for an English concrete syntax,
-only the number of the copula is relevant.
-
-
-\begin{figure}[h]
+feminine (\emph{buena}), matching the gender of \t{Pizza} and the number
+of \t{This}. 
+If we write an English concrete syntax, then only the number of the copula is
+relevant: this pizza/wine \emph{is} good, these pizzas/wines \emph{are} good.
+\begin{figure}[]
 \centering
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -222,7 +223,6 @@ only the number of the copula is relevant.
 \end{Shaded}
   \caption{Spanish concrete syntax of a GF grammar about food}
 \label{fig:spanish}
-
 \end{figure}
 
 
@@ -231,14 +231,14 @@ only the number of the copula is relevant.
 
 \gf{} grammars are compiled into parallel multiple context-free
 grammars (\pmcfg), which are processed by our tool. Here we explain
-three key features that are important for the test suite generation.
+three key features for the test suite generation.
 
 \subsection{Concrete categories}
 
 For each category in the original grammar, the \gf{} compiler
-introduces a new category in the \pmcfg{} for each combination of
+introduces a new \emph{concrete category} in the \pmcfg{} for each combination of
 inherent parameters.  
-These categories can be linearized to strings or vectors of
+These concrete categories can be linearized to strings or vectors of
 strings. The start category (\t{S} in the Foods grammar) is in
 general a single string, but intermediate categories may have to keep
 several options open. 
@@ -264,7 +264,7 @@ grammar turns into multiple syntactic functions into the
 \pmcfg{}---one for each combination of parameters of its arguments.
 
 \begin{itemize}
-
+\setlength\itemsep{0em}
 \item[--] \mod{pre}{fem~~} \t{:} \quality{pre~} $\rightarrow$ \kind{fem~} $\rightarrow$ \kind{fem}
 \item[--]  \mod{post}{fem~} \t{:} \quality{post} $\rightarrow$ \kind{fem~} $\rightarrow$ \kind{fem}
 \item[--]  \mod{pre}{masc~~}\t{:} \quality{pre~} $\rightarrow$ \kind{masc} $\rightarrow$ \kind{masc}
@@ -288,6 +288,7 @@ expands only into 4 variants, despite there being 8 combinations of
 \t{NP}$\times$\t{AP}.
 
 \begin{itemize}
+\setlength\itemsep{0em}
 \item[--] \pred{sg}{fem}{*~} \t{:} \itemSpa{sg}{fem~} $\rightarrow$ \quality{*} $\rightarrow$ \comment
 \item[--]  \pred{pl}{fem}{*~} \t{:} \itemSpa{pl}{fem~} $\rightarrow$ \quality{*} $\rightarrow$ \comment
 \item[--]  \pred{sg}{masc}{*} \t{:} \itemSpa{sg}{masc} $\rightarrow$ \quality{*} $\rightarrow$ \comment
@@ -437,6 +438,7 @@ however, in bigger grammars, the need arises when testing functions as
 well. 
 In order to test the category \t{AP}, we need in total 12 example sentences:
 \begin{itemize}
+\setlength\itemsep{0em}
 \item[--] 4 test cases for a premodifier \t{AP} as modifier;
 \item[--] 4 test cases for a postmodifier \t{AP} as modifier;
 \item[--] 4 test cases for \emph{any} \t{AP} as predicative.
@@ -448,6 +450,7 @@ cases for the predicative, we use the coercions in the grammar to
 detect when something is redundant.
 
 \subsection{Pruning the trees to test the whole grammar}
+\label{sec:pruning_all}
 So far we have completely ignored that one tree can showcase more
 than one function. In fact, the 8 test sentences created for \t{Mod}
 happen to also test \t{Pred} exhaustively.
@@ -493,6 +496,7 @@ an adverb.
 The tool generates test cases in the way described previously,
 which include the following (slightly simplified) trees: 
 \begin{itemize}
+\setlength\itemsep{0em}
 \item[--] \t{AdvCN (PrepNP next\_to (DetNP your)) hill} `hill next to
 yours'
 \item[--] \t{AdvCN (PrepNP next\_to (DetNP your)) house} `house next
@@ -516,12 +520,13 @@ only show those outputs that differ between the grammars. After our
 fixes, we get the following differences: 
 
 \begin{itemize}
-\item \t{DetCN the (AdvCN (PrepNP next\_to (DetNP your)) house)}
+\setlength\itemsep{0em}
+\item[] \t{DetCN the (AdvCN (PrepNP next\_to (DetNP your)) house)}
   \begin{itemize}
    \item \emph{\sout{la casa al lado {\bf  del tuyo}}}
    \item \emph{la casa al lado {\bf  de la tuya}}
   \end{itemize}
-\item \t{DetCN the (AdvCN (PrepNP without (DetNP this)) house)}
+\item[] \t{DetCN the (AdvCN (PrepNP without (DetNP this)) house)}
   \begin{itemize}
    \item \emph{\sout{la casa sin {\bf  esto}}}
    \item \emph{la casa sin {\bf esta}}
@@ -550,7 +555,7 @@ behaving similarly to each other and Basque significantly worse, both
 in execution time and number of examples generated. 
 
 Table~\ref{results} shows the number of generated trees for 
-in total for all syntactic functions in the three grammars. 
+in total for all syntactic functions in the two grammars. 
 As stated earlier, we do not consider generating test cases for all
 functions an optimal way of testing a whole resource grammar from scratch;
 this gives merely a baseline reduction from all possible trees up to a
@@ -601,17 +606,25 @@ up to depth 5.
 \subsection{Results}
 
 \paragraph{Execution time} We ran all the experiments on a MacBook Air with 1,7 GHz processor and 8 GB RAM.
-For the smaller grammars, all languages took just
-seconds to run. For the resource grammar, Dutch and Estonian finished in
-3--4 minutes.
-However, the Basque resource grammar is noticeably more complex, and
-creating test trees for all functions took several hours. We ran the
-experiment in smaller batches over two days, and noticed a lot of
-variance: functions that handle e.g. noun phrases, adjectives and
-adverbs ran in a few minutes, but a function involving verb phrases
-could take an hour just by itself. 
+For Phrasebook, it took just seconds to generate the test suite for
+all languages. For the resource grammar, Dutch and Estonian finished
+in 3--4 minutes. However, the Basque resource grammar is noticeably
+more complex, and creating test trees for all functions took several
+hours. We ran the experiment in smaller batches over two days, and
+noticed a lot of variance: functions that handle e.g. noun phrases,
+adjectives and adverbs ran in a few minutes, but a function involving
+verb phrases could take an hour just by itself. 
 
-\paragraph{Generated trees} 
+\paragraph{Generated trees}
+
+We report both total and unique trees: total trees are simply the sum
+of all trees for all functions, and unique trees is the count after
+removing duplicates, as explained in Section~\ref{sec:pruning_all}.
+
+\todo{Explain how the trees differed: not making a lot of sense in
+  RGL, making more sense for Phrasebook but redundant, due to actions
+  being constructors with arguments, as opposed to a general
+  ``transitive verb'' constructor + verb as an argument}
 
 We believe this has both language typological and grammar engineering
 implications---there is no way to implement Basque in a way that
@@ -620,6 +633,19 @@ grammarians have reported significant differences in complexity
 between implementations---\cite{enache2010} reports a
 200-time reduction in the number of concrete rules after changing the
 implementation of clitics in verb phrases.
+
+We experimented with a tiny grammar of 5 syntactic functions for
+Basque. In one of them, we implemented nominal morphology using
+inflection tables, and syntactic functions choose the correct one.
+In another grammar, we implemented nouns as stems, and syntactic
+functions concatenate suffixes to the stems. The second approach
+required inherent parameters for nouns, in order to add correct
+suffixes to each noun. For test case generation, this had the added
+benefit or curse of implicitly testing morphology as well---in the first
+approach, there may be a concrete category for animacy or gender, but
+in the second one, also for phonological features. \todo{Numbers here,
+  table if enough space}.
+
 
 \paragraph{Finding bugs} 
 We read through the test sentences of the small grammar in all the
@@ -646,6 +672,8 @@ resources, fix the implementation, and then concentrate on syntax.
 The Phrasebook was implemented using the resource grammar, so the
 same problems apply.
 
+\todo{Finish reading the sentences from Estonian Phrasebook, report
+  total time and bugs}
 We read through the first 500 sentences from Estonian Phrasebook,
 which took around 20 minutes. We found 3 errors in the inflection of
 individual words (they did not come from the resource lexicon, which
