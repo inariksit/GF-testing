@@ -511,13 +511,13 @@ open in an inflection table. We implement a fix by adding gender as a
 parameter to the \t{Adv} type, and have \t{AdvCN} choose the correct
 form based on the gender of the \t{CN}.
 
-After implementing the fix, we run a second test case generation: this
-time, not meant for human eyes, but just to compare the old and new
-versions of the grammar. We want to make sure that our changes 
-have not caused new bugs in other functions. The simplest strategy is
-to generate test cases for \emph{all} functions in both grammars, and
-only show those outputs that differ between the grammars. After our
-fixes, we get the following differences: 
+After implementing the fix, we run a second test case generation, in
+order to compare the old and new versions of the grammar. We want to
+make sure that our changes have not caused new bugs in other
+functions. The simplest strategy is to generate test cases for
+\emph{all} functions in both grammars, and only show those outputs
+that differ between the grammars. After our fixes, we get the
+following differences:
 
 \begin{itemize}
 \setlength\itemsep{0em}
@@ -526,17 +526,17 @@ fixes, we get the following differences:
    \item \emph{\sout{la casa al lado {\bf  del tuyo}}}
    \item \emph{la casa al lado {\bf  de la tuya}}
   \end{itemize}
-\item[] \t{DetCN the (AdvCN (PrepNP without (DetNP this)) house)}
+\item[] \t{DetCN the (AdvCN (PrepNP next\_to (DetNP this)) house)}
   \begin{itemize}
-   \item \emph{\sout{la casa sin {\bf  esto}}}
-   \item \emph{la casa sin {\bf esta}}
+   \item \emph{\sout{la casa al lado de {\bf este}}}
+   \item \emph{la casa al lado de {\bf esta}}
   \end{itemize}
 \end{itemize}
 
 \noindent We notice a side effect that we may not have thought of: the
 gender is retained in all adverbs made of NPs made of determiners, so
-now it has become impossible to say ``the hill without \emph{that}'' and
-pointing to a house. So we do another round of modifications, compute
+now it has become impossible to say ``the house next to \emph{that}'' and
+pointing to a hill. So we do another round of modifications, compute
 the difference (to the original grammar or to the intermediate), and
 see if something else broke.
 
@@ -558,20 +558,20 @@ Table~\ref{results} shows the number of generated trees for
 in total for all syntactic functions in the two grammars. 
 As stated earlier, we do not consider generating test cases for all
 functions an optimal way of testing a whole resource grammar from scratch;
-this gives merely a baseline reduction from all possible trees up to a
-reasonable depth. We introduce the grammars and comment on the results
-in the following sections.
+Table~\ref{results} gives merely a baseline reduction from all
+possible trees up to a reasonable depth. We introduce the grammars and
+comment on the results in the following sections.
 
 \begin{table}[h]
 \centering
 \begin{tabular}{|lll|ll|ll|ll|}
 \hline
 \multicolumn{3}{|r}{Concrete $\rightarrow$}              &
-                                                                   \multicolumn{2}{|c}{\bf Dutch} & \multicolumn{2}{|c}{\bf Basque} & \multicolumn{2}{|c|}{\bf Estonian} \\
+                                                                   \multicolumn{2}{|c}{\bf Dutch} & \multicolumn{2}{|c}{\bf Estonian} & \multicolumn{2}{|c|}{\bf Basque} \\
 $\downarrow$ Abstract  & \#funs+lex & \#trees  &
                                                                  \#total & \#uniq & \#total & \#uniq  & \#total  & \#uniq \\ \hline
-{\bf Phrasebook}       & 130+160         & \textgreater{}480,000       & 2006  & 1892   & 2808    & 2650    & 1513     & 1314   \\ \hline
-{\bf Resource gr.} & 217+446         & \textgreater{}500 billion   & 59,316 & 51,145  & 278,092  & 216,058  & 60,600    & 38,517   \\ \hline
+{\bf Phrasebook}       & 130+160         & \textgreater{}480,000       & 2006  & 1892    & 1513     & 1314   & 2808    & 2650   \\ \hline
+{\bf Resource gr.} & 217+446         & \textgreater{}500 billion   & 59,316 & 51,145  & 60,600    & 38,517   & 278,092  & 216,058\\ \hline
 \end{tabular}
 \caption{Test cases for all functions in two grammars}
 \label{results}
@@ -592,7 +592,7 @@ sentence. Limiting up to depth 3, the Phrasebook grammar produces over
 much more compact than resource grammars, hence depth 3 covers already
 a lot of relevant trees.}.
 
-The second grammar is a restricted version of the \gf{} resource
+The second grammar is a subset of the \gf{} resource
 grammar \cite{ranta2009rgl}, with 84 categories, 217 syntactic
 functions and 446 words in the lexicon. Since all the languages did
 not have a complete implementation, we simply took the subset of functions that was
@@ -657,8 +657,8 @@ the morphological paradigms extensively against existing resources,
 and syntactic functions with a treebank of 425 trees.
 
 We have been developing the tool by testing it on the Dutch resource
-grammar, and during 4 months, we have committed 16 bugfixes in the
-\gf{} main repository. (In the name of honesty, a few of the bugs were
+grammar, and during 6 months, we have committed 22 bugfixes on Dutch
+in the \gf{} main repository. (In the name of honesty, a few of the bugs were
 caused by our earlier ``fixes''---that was before we had implemented
 the comparison against an older version of the grammar!) 
 
@@ -672,18 +672,45 @@ resources, fix the implementation, and then concentrate on syntax.
 The Phrasebook was implemented using the resource grammar, so the
 same problems apply.
 
-\todo{Finish reading the sentences from Estonian Phrasebook, report
-  total time and bugs}
-We read through the first 500 sentences from Estonian Phrasebook,
-which took around 20 minutes. We found 3 errors in the inflection of
-individual words (they did not come from the resource lexicon, which
-was tested, but were implemented separately in the grammar); one error
-of type ``Spaniard restaurant'', and one suggestion for a more idiomatic
-construction. As expected, Phrasebook sentences were easier to read,
-and made more sense semantically than sentences from the resource
-grammar.
+We read through all the 1314 sentences from Estonian Phrasebook,
+which took around 45 minutes (not including the time to fix the bugs).
+We found 4 errors in the inflection of individual words---they did not
+come from the resource lexicon, which was tested in
+\cite{listenmaa_kaljurand2014}, but were implemented separately in the
+grammar. In addition, we found one error in forming compound words,
+also coming from the Phrasebook grammar and not from the resource
+library. There was one bug in a syntactic function: using a wrong form
+of nationality when applied to a human and when to an institution,
+along the lines of ``Spaniard restaurant''. As expected, Phrasebook
+sentences were easier to read, and made more sense semantically than
+sentences from the resource grammar. For a similarly sized grammar,
+reading through the whole test set at one go seems like a feasible
+strategy, even when the tool creates examples for a single function at
+a time.
 
+\section{Conclusion and future work}
 
+We have presented method for automatically generating minimal and exhaustive sets of test cases for testing grammars.  We have found the tool useful in large-scale grammar writing, in a context where grammars need to be \emph{reliable}.
+
+One problem we have encountered is that the test sentences from
+resource grammars are often nonsensical semantically, and hence a
+native speaker might intuitively say that a sentence is wrong, even
+though it is just unnatural. For instance, the function \t{AdvQVP}
+covers constructions such as ``you did \emph{what}?''. However, the
+function itself is completely general and can take any verb phrase and
+any question adverb, thus  bizarre combinations like ``you saw the dog
+why'' may appear in the generated test cases. For future work, we plan
+to use external resources to guide the algorithm to pick trees that
+also make sense semantically.
+
+So far the only mode of operation is generating test cases for a
+single function. As future work, we are planning to add a separate
+mode for testing the whole grammar from scratch: intentionally create
+trees that test several functions at once.
+We have an implementation only for \gf{} grammars so far, but the
+general method works for any grammar formalism that can be compiled
+into \pmcfg{}. \gf{} already supports reading context-free grammars,
+so testing any existing \cfg{} is a matter of some preprocessing. 
 
 
 \bibliographystyle{acl}
