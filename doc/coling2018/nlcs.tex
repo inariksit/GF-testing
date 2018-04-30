@@ -183,12 +183,12 @@ is a table from number to string (\textsc{sg} $\Rightarrow$
 and \emph{variable} number.
 
 The section \t{lin} contains the concrete implementation of the
-functions, introduced in \t{fun}. Here we take care of
-language-specific details, such as agreement: when \t{Pred (This Pizza)
-  Good} is linearized in Spanish, the copula must be singular
-(la pizza \emph{es} buena), and the adjective must be in singular
-feminine (\emph{buena}), matching the gender of \t{Pizza} and the number
-of \t{This}. 
+functions, introduced in \t{fun}. Here we handle
+language-specific details such as agreement: when \t{Pred (This Pizza)
+  Good} is linearized in Spanish, `esta pizza es buena', the copula must be singular
+(\emph{es} instead of plural \emph{son}), and the adjective must be in singular
+feminine (\emph{buena} instead of masculine \emph{bueno} or plural
+\emph{buenas}), matching the gender of \t{Pizza} and the number of \t{This}. 
 If we write an English concrete syntax, then only the number of the copula is
 relevant: this pizza/wine \emph{is} good, these pizzas/wines \emph{are} good.
 \begin{figure}[]
