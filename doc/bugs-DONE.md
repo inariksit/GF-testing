@@ -133,17 +133,4 @@ version gives some expected changes:
 TestLangGer> wir helfen etwas sich zu werfen -- "we help something throw itself"  
 TestLangGer-OLD> wir helfen etwas uns zu werfen -- "we help something throw ourselves"  
 
-But also some unexpected changes:
-
-`UseCl (TTAnt TPres ASimul) PPos (CleftNP (UsePron i_Pron) (UseRCl
-(TTAnt TPres ASimul) PNeg (RelSlash IdRP (SlashVP something_NP
-(SlashVV want_VV (SlashV2a write_V2))))))`  
-* TestLangGer> es ist **ich der** etwas nicht schreiben will
-* TestLangGer-OLD> es ist **mich den** etwas nicht schreiben will
-* TestLangEng> it is me that something doesn't want to write
-
-(Probably the reason was that predVGen adds this line `c2 =
-noPreposition Nom ;`? Not directly related, I just generalised a lot
-of VP->VP functions into VPSlash -> VPSlash functions to reduce
-copypaste, and only updated functions in VerbGer, and a lot of these
-functions are outside it. But the tool is handy to print out all differences!)
+Exactly the same changes were done for English.
