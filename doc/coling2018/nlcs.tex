@@ -106,7 +106,7 @@ has had over 50 contributors, and it consists of 1900 program modules and 3
 million lines of code. \gf{} is well suited for creating
 domain-specific systems: examples include mathematics
 \cite{caprotti2006webalt}, legal documents \cite{camilleri2017} and
-\todo{some nice example}.
+descriptions of accessibility to different sites \cite{ranta2015grammar}.
 
 A \gf{} grammar consists of an \emph{abstract syntax}, which is a set
 of grammatical categories and functions between them, and one or more
@@ -555,7 +555,9 @@ behaving similarly to each other and Basque significantly worse, both
 in execution time and number of examples generated. 
 
 Table~\ref{results} shows the number of generated trees for 
-in total for all syntactic functions in the two grammars. 
+in total for all syntactic functions in the two grammars, and
+Table~\ref{results_indiv} shows some example functions from the
+resource grammar. 
 As stated earlier, we do not consider generating test cases for all
 functions an optimal way of testing a whole resource grammar from scratch;
 Table~\ref{results} gives merely a baseline reduction from all
@@ -575,6 +577,27 @@ $\downarrow$ Abstract  & \#funs+lex & \#trees  &
 \end{tabular}
 \caption{Test cases for all functions in two grammars}
 \label{results}
+\end{table}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|ll|ll|ll|}
+\hline
+{\bf Resource grammar function} &\multicolumn{2}{|c}{\bf Dutch}& \multicolumn{2}{|c}{\bf Estonian} & \multicolumn{2}{|c|}{\bf Basque}  \\
+                               &  \#trees in contexts & \#combinations of args
+                                                                                                  &\#t
+                                                                                                    
+                               & \#c & \#t &
+                                                                    \#c\\ \hline
+\t{ComparA} `younger than me'  &  11      & 3     & 21      & 3    & 36     & 6    \\
+% \t{FunRP~~} `mother of whom'  &  20      & 5     & 708     & 116   & 26     & 26  \\
+\t{RelNP~~} `a cat that I saw' &  25      & 9     & 123     & 12 & 90     & 10   \\
+ \t{ReflVP~} `see myself'      &  1655    & 23    &1608     & 13   & 10838  &  128  \\
+
+\hline
+\end{tabular}
+\caption{Test cases for some individual functions in the resource grammar}
+\label{results_indiv}
 \end{table}
 
 \subsection{Grammars}
@@ -605,15 +628,16 @@ subset of the resource grammar produces hundreds of billions of trees
 up to depth 5.
 \subsection{Results}
 
-\paragraph{Execution time} We ran all the experiments on a MacBook Air with 1,7 GHz processor and 8 GB RAM.
-For Phrasebook, it took just seconds to generate the test suite for
-all languages. For the resource grammar, Dutch and Estonian finished
-in 3--4 minutes. However, the Basque resource grammar is noticeably
-more complex, and creating test trees for all functions took several
-hours. We ran the experiment in smaller batches over two days, and
-noticed a lot of variance: functions that handle e.g. noun phrases,
-adjectives and adverbs ran in a few minutes, but a function involving
-verb phrases could take an hour just by itself. 
+\paragraph{Execution time} We ran all the experiments on a MacBook Air
+with 1,7 GHz processor and 8 GB RAM. For Phrasebook, it took just
+seconds to generate the test suite for all languages. For the resource
+grammar, Dutch and Estonian finished in 3--4 minutes. However, the
+Basque resource grammar is noticeably more complex, and creating test
+trees for all functions took several hours. We ran the experiment in
+smaller batches over two days, and noticed a lot of variance:
+functions that handle e.g. noun phrases, adjectives and adverbs ran in
+a few minutes, but a function involving verb phrases could take an
+hour just by itself.
 
 \paragraph{Generated trees}
 
@@ -621,30 +645,26 @@ We report both total and unique trees: total trees are simply the sum
 of all trees for all functions, and unique trees is the count after
 removing duplicates, as explained in Section~\ref{sec:pruning_all}.
 
-\todo{Explain how the trees differed: not making a lot of sense in
-  RGL, making more sense for Phrasebook but redundant, due to actions
-  being constructors with arguments, as opposed to a general
-  ``transitive verb'' constructor + verb as an argument}
+As we can see, the number of trees differs a lot. We believe this has
+both language typological and grammar engineering reasons---there
+is no way to implement Basque in a way that results in as few example
+sentences as English, but other resource grammarians have reported
+significant differences in complexity between implementation:
+\cite{enache2010} reports a 200-time reduction in the number of
+concrete rules after changing the implementation of clitics in verb
+phrases.
 
-We believe this has both language typological and grammar engineering
-implications---there is no way to implement Basque in a way that
-results in as few example sentences as English, but other resource
-grammarians have reported significant differences in complexity
-between implementations---\cite{enache2010} reports a
-200-time reduction in the number of concrete rules after changing the
-implementation of clitics in verb phrases.
-
-We experimented with a tiny grammar of 5 syntactic functions for
-Basque. In one of them, we implemented nominal morphology using
-inflection tables, and syntactic functions choose the correct one.
-In another grammar, we implemented nouns as stems, and syntactic
-functions concatenate suffixes to the stems. The second approach
-required inherent parameters for nouns, in order to add correct
-suffixes to each noun. For test case generation, this had the added
-benefit or curse of implicitly testing morphology as well---in the first
-approach, there may be a concrete category for animacy or gender, but
-in the second one, also for phonological features. \todo{Numbers here,
-  table if enough space}.
+% We experimented with a tiny grammar of 5 syntactic functions for
+% Basque. In one of them, we implemented nominal morphology using
+% inflection tables, and syntactic functions choose the correct one.
+% In another grammar, we implemented nouns as stems, and syntactic
+% functions concatenate suffixes to the stems. The second approach
+% required inherent parameters for nouns, in order to add correct
+% suffixes to each noun. For test case generation, this had the added
+% benefit or curse of implicitly testing morphology as well---in the first
+% approach, there may be a concrete category for animacy or gender, but
+% in the second one, also for phonological features. \todo{Numbers here,
+%   table if enough space}.
 
 
 \paragraph{Finding bugs} 
@@ -660,7 +680,9 @@ We have been developing the tool by testing it on the Dutch resource
 grammar, and during 6 months, we have committed 22 bugfixes on Dutch
 in the \gf{} main repository. (In the name of honesty, a few of the bugs were
 caused by our earlier ``fixes''---that was before we had implemented
-the comparison against an older version of the grammar!) 
+the comparison against an older version of the grammar!) In addition,
+one of the bugs found in Dutch was also present in other languages, so
+we fixed it in German and English.
 
 The Basque resource grammar is still a work in progress, and the
 test sentences showed serious problems in morphology.
