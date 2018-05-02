@@ -95,12 +95,13 @@ Grammatical Framework (\gf) \cite{ranta2004gf}
 is a framework for building multilingual grammar applications. Its main
 components are a functional programming language for writing grammars
 and a resource library \cite{ranta2009rgl}, which, as of May 2018,
-contains the linguistic details of 40 natural languages. The library
-has had over 50 contributors, and it consists of 1900 program modules and 3
-million lines of code. \gf{} is well suited for creating
-domain-specific systems: examples include mathematics
+contains the linguistic details of 40 natural languages. \gf{} is well suited for creating domain-specific systems: examples include mathematics
 \cite{caprotti2006webalt}, legal documents \cite{camilleri2017} and
 descriptions of accessibility to different sites \cite{ranta2015grammar}.
+
+The library
+has had over 50 contributors, and it consists of 1900 program modules and 3
+million lines of code! The complexity of such a piece of code clearly motivates dedicated test methods, such as the one described in this paper.
 
 A \gf{} grammar consists of an \emph{abstract syntax}, which is a set
 of grammatical categories and functions between them, and one or more
@@ -386,8 +387,9 @@ The important thing here is that the generated set of contexts shows
 all the possible different ways the tree can be used. For example, for
 a test tree with an inflection table of 4 forms, we would generate 4 different sentences in which each of the 4 inflections is used.
 
-By \emph{context}, we mean a tree in the start category \t{S}, with a 
-\emph{hole} of type \t{CN}. 
+More specifically, by \emph{context}, we mean a tree in the start category (in our case \t{S}), with a \emph{hole} of the same type as the function under test (denoted by \verb|_|).
+
+As an example, consider generating contexts for a tree of category \t{CN}.
 Since \t{CN} is variable for number, we need two contexts: 
 one that picks out the singular form and other that picks out
 the plural form. 
@@ -399,9 +401,9 @@ in what form we pick out of the \t{CN}---we just want to pick
 something that has maximally different forms, so the program is sure
 not to pick \t{Warm}, which is invariable for gender. By random
 selection, let us pick \t{Italian}.
-The final contexts are \verb|Pred (This _) Italian| and \verb|Pred (These _) Italian|.
+The final two contexts are therefore \verb|Pred (This _) Italian| and \verb|Pred (These _) Italian|.
 We insert the 4 test cases from Figure~\ref{tab:adjAttr} into the
-holes, and get 8 trees in total: 
+holes, and get 8 trees in total as shown in Figure~\ref{tab:testCases}.
 
 \begin{table}
 \centering
@@ -424,7 +426,17 @@ estas pizzas veganas son italianas          & estos vinos veganos son italianos 
 \label{tab:testCases}
 \end{table}
 
-So, what we want to compute is, given the result category T of the syntactic function, and the start category S of the grammar, a minimal set of contexts in the start category S with hole of type T, such that any string appearing in the linearization of T also appears somewhere in the linearization of S. We compute this by setting up a system of equations for each category C in the grammar: for each C, we define all the relevant contexts with hole type C in terms of all the relevant contexts with hole type C' for other categories C' that use C. So, the answer for each category is expressed in terms of the answer for other categories. In general, this system of equations is \emph{recursive}, and we use a fixpoint iteration to compute the smallest solution.
+\paragraph{Fixpoint iteration} In our tool, computing relevant contexts in a given start category \t{S}, is done once, in advance, for all possible hole types $H$ at the same time, using a fixpoint iteration. It is possible to express the set of relevant contexts for one hole type $H$ in terms of the sets of relevant contexts for other hole types $H'$:
+$$
+\textsf{contexts}(H) = \textsf{filter}(\;\{ C[F(\_)] \; | \; F \in H \rightarrow H', \; C \in \textsf{contexts}(H') \}\;)
+$$
+In words, to generate contexts with holes of type $H$, we enumerate all functions $F$ that have a $H$ as an argument, and enumerate all contexts $C$ that have the result type $H'$ of $F$ as a hole type, and put $C$ and $F$ together to get a new context. Then, we apply a function $\textsf{filter}$ to the result in order to filter out redudant contexts, i.e. contexts whose uses of the strings of $H$ are already covered by other contexts in the same set.
+
+To compute relevant contexts with the start category \t{S} as a hole, we use the following definition:
+$$
+\textsf{contexts}(\t{S}) = \{ \; \_ \; \}
+$$
+Now, in order to compute all sets of contexts for all possible hole categories $H$, we set up a system of equations (as specified above). In general, this system of equations is recursive, and we use a fixpoint iteration to solve it, starting with the empty set $\empty$ for each set of contexts. There is a guaranteed minimal solution, because the RHSs are monotonic in $H'$.
 
 \subsection{Pruning the trees within one set of test cases} 
 On the scope of our tiny example grammar, this pruning method is
