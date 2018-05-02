@@ -559,15 +559,35 @@ object. Contrary to our expectations, we found Dutch and Estonian
 behaving similarly to each other and Basque significantly worse, both
 in execution time and number of examples generated. 
 
-Table~\ref{results} shows the number of generated trees for 
-in total for all syntactic functions in the two grammars, and
-Table~\ref{results_indiv} shows some example functions from the
-resource grammar. 
-As stated earlier, we do not consider generating test cases for all
+Table~\ref{results_indiv} shows what happens when we ran our tool on some example functions from the resource grammar, and Table~\ref{results} shows the number of generated trees in total for all syntactic functions in the two grammars.
+(As stated earlier, we do not consider generating test cases for all
 functions an optimal way of testing a whole resource grammar from scratch;
 Table~\ref{results} gives merely a baseline reduction from all
 possible trees up to a reasonable depth. We introduce the grammars and
-comment on the results in the following sections.
+comment on the results in the following sections.)
+
+\begin{table}[h]
+
+\centering
+\begin{tabular}{|l|ll|ll|ll|}
+\hline
+{\bf Resource grammar function} &\multicolumn{2}{|c}{\bf Dutch}& \multicolumn{2}{|c}{\bf Estonian} & \multicolumn{2}{|c|}{\bf Basque}  \\
+                               &  \#trees in contexts & \#combinations of args
+                                                                                                  &\#t
+                                                                                                    
+                               & \#c & \#t &
+                                                                    \#c\\ \hline
+\t{ComparA} `younger than me'  &  11      & 3     & 21      & 3    & 36     & 6    \\
+
+% \t{FunRP~~} `mother of whom'  &  20      & 5     & 708     & 116   & 26     & 26  \\
+\t{RelNP~~} `a cat that I saw' &  25      & 9     & 123     & 12 & 90     & 10   \\
+ \t{ReflVP~} `see myself'      &  1655    & 23    &1608     & 13   & 10838  &  128  \\
+
+\hline
+\end{tabular}
+\caption{Test cases for some individual functions in the resource grammar}
+\label{results_indiv}
+\end{table}
 
 \begin{table}[h]
 \centering
@@ -582,27 +602,6 @@ $\downarrow$ Abstract  & \#funs+lex & \#trees  &
 \end{tabular}
 \caption{Test cases for all functions in two grammars}
 \label{results}
-\end{table}
-
-\begin{table}[h]
-\centering
-\begin{tabular}{|l|ll|ll|ll|}
-\hline
-{\bf Resource grammar function} &\multicolumn{2}{|c}{\bf Dutch}& \multicolumn{2}{|c}{\bf Estonian} & \multicolumn{2}{|c|}{\bf Basque}  \\
-                               &  \#trees in contexts & \#combinations of args
-                                                                                                  &\#t
-                                                                                                    
-                               & \#c & \#t &
-                                                                    \#c\\ \hline
-\t{ComparA} `younger than me'  &  11      & 3     & 21      & 3    & 36     & 6    \\
-% \t{FunRP~~} `mother of whom'  &  20      & 5     & 708     & 116   & 26     & 26  \\
-\t{RelNP~~} `a cat that I saw' &  25      & 9     & 123     & 12 & 90     & 10   \\
- \t{ReflVP~} `see myself'      &  1655    & 23    &1608     & 13   & 10838  &  128  \\
-
-\hline
-\end{tabular}
-\caption{Test cases for some individual functions in the resource grammar}
-\label{results_indiv}
 \end{table}
 
 \subsection{Grammars}
