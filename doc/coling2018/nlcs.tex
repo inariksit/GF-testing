@@ -18,6 +18,7 @@
 \def\acg{\textsc{acg}}
 \def\tag{\textsc{tag}}
 \def\cfg{\textsc{cfg}}
+\def\feat{\textsc{feat}}
 \def\pmcfg{\textsc{pmcfg}}
 \def\hpsg{\textsc{hpsg}}
 \newcommand{\quality}[1]{${\tt AP_{#1}}$}
@@ -316,7 +317,7 @@ parameters of its arguments. We test each of these versions
 seperately. Each concrete syntactic function may produce one or several trees.
 
 In order to construct trees that use the syntactic function, we need
-to supply it with \emph{arguments}, as well as put the resulting tree
+to supply the function with \emph{arguments}, as well as put the resulting tree
 into a \emph{context} that produces a tree in the correct start
 category.
 
@@ -345,6 +346,8 @@ a set of combinations of arguments, where for each pair of strings
 from the arguments, there is always one test case where those strings
 are different. In this way, if the syntactic function contains a
 mistake, there is always one test case that reveals it.
+
+In our implementation, we use the \feat framework \cite{feat} to enumerate possible combinations of argument trees, in size order. We stop when we have found a suitable set of combinations of arguments, according to the requirement above. We also stop (give up) when too many tries have been made (currently 10.000), but we have not seen this happen in practice.
 
 \paragraph{Example: Test cases using \t{Mod}} Let us test the function
 \t{Mod : AP $\rightarrow$ CN $\rightarrow$ CN} in the Spanish
@@ -376,9 +379,8 @@ one premodifier and one postmodifier \t{AP} (\t{Good} and
 \subsection{Enumerate contexts} The third and last enumeration we
 perform when generating test cases is to generate all possible
 \emph{uses} of a function. After we provide a function with arguments,
-we need to put the result into a context, so that we can generate a
-single string from the result (a sentence). We do this for all trees
-we have generated so far. 
+we need to put the resulting tree into a context, so that we can generate a
+single string from the result (a sentence). Generating contexts thus requires the specification of a top-level \emph{start category}, which is typically the sentence category (\t{S} in our example).
 
 The important thing here is that the generated set of contexts shows
 all the possible different ways the tree can be used. For example, for
