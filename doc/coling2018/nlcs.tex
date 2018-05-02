@@ -432,10 +432,8 @@ $$
 $$
 In words, to generate contexts with holes of type $H$, we enumerate all functions $F$ that have a $H$ as an argument, and enumerate all contexts $C$ that have the result type $H'$ of $F$ as a hole type, and put $C$ and $F$ together to get a new context. Then, we apply a function $\textsf{filter}$ to the result in order to filter out redudant contexts, i.e. contexts whose uses of the strings of $H$ are already covered by other contexts in the same set.
 
-To compute relevant contexts with the start category \t{S} as a hole, we use the following definition:
-$$
-\textsf{contexts}(\t{S}) = \{ \; \_ \; \}
-$$
+To compute relevant contexts with the start category \t{S} as a hole, we use the following definition $\textsf{contexts}(\t{S}) = \{ \; \_ \; \}$.
+
 Now, in order to compute all sets of contexts for all possible hole categories $H$, we set up a system of equations (as specified above). In general, this system of equations is recursive, and we use a fixpoint iteration to solve it, starting with the empty set $\empty$ for each set of contexts. There is a guaranteed minimal solution, because the RHSs are monotonic in $H'$.
 
 \subsection{Pruning the trees within one set of test cases} 
