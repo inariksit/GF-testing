@@ -348,7 +348,7 @@ from the arguments, there is always one test case where those strings
 are different. In this way, if the syntactic function contains a
 mistake, there is always one test case that reveals it.
 
-In our implementation, we use the \feat framework \cite{feat} to enumerate possible combinations of argument trees, in size order. We stop when we have found a suitable set of combinations of arguments, according to the requirement above. We also stop (give up) when too many tries have been made (currently 10.000), but we have not seen this happen in practice.
+In our implementation, we use the \feat{} framework \cite{feat} to enumerate possible combinations of argument trees, in size order. We stop when we have found a suitable set of combinations of arguments, according to the requirement above. We also stop (give up) when too many tries have been made (currently 10.000), but we have not seen this happen in practice.
 
 \paragraph{Example: Test cases using \t{Mod}} Let us test the function
 \t{Mod : AP $\rightarrow$ CN $\rightarrow$ CN} in the Spanish
@@ -448,8 +448,8 @@ In order to test the category \t{AP}, we need in total 12 example sentences:
 \item[--] 4 test cases for a postmodifier \t{AP} as modifier;
 \item[--] 4 test cases for \emph{any} \t{AP} as predicative.
 \end{itemize}
-These categories correspond to the concrete categories \kind{pre},
-\kind{post} and the coercion \kind{*} (as explained in
+These categories correspond to the concrete categories \quality{pre},
+\quality{post} and the coercion \quality{*} (as explained in
 Section~\ref{sec:Coercions}). Instead of generating redundant test
 cases for the predicative, we use the coercions in the grammar to
 detect when something is redundant.
@@ -653,7 +653,7 @@ As we can see, the number of trees differs a lot. We believe this has
 both language typological and grammar engineering reasons---there
 is no way to implement Basque in a way that results in as few example
 sentences as English, but other resource grammarians have reported
-significant differences in complexity between implementation:
+significant differences in complexity between implementations:
 \cite{enache2010} reports a 200-time reduction in the number of
 concrete rules after changing the implementation of clitics in verb
 phrases.
