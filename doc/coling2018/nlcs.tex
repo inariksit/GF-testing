@@ -85,8 +85,8 @@ namely parallel multiple context-free grammars ({\sc pmcfg})
 \cite{seki91pmcfg}, which is the core formalism used by the
 Grammatical Framework (\gf) \cite{ranta2004gf}. However, the general
 method works for any formalism that is at most as expressive as
-\pmcfg{}, including formalisms such as Tree-Adjoining Grammar (\tag)
-\cite{joshi1975tag} and several variants of Categorial Grammar
+\pmcfg{}, including context-free grammars (\cfg), formalisms such as Tree-Adjoining Grammar (\tag)
+\cite{joshi1975tag}, and several variants of Categorial Grammar
 \cite{deGroote2004,steedman1988ccg}.
 % such as Abstract Categorial Grammar (\acg) and
 % Combinatorial Categorial Grammar (\ccg) \cite{steedman1988ccg}.
@@ -122,7 +122,7 @@ a string into a tree and then linearizing the obtained tree into a new
 string. 
 Figure~\ref{fig:exampleGrammar} shows the abstract syntax of a small
 example grammar in GF, slightly modified from
-\cite{ranta2011gfbook}, and Figure~\ref{fig:spanish} shows a Spanish concrete
+\cite{ranta2011gfbook}, and Figure~\ref{fig:spanish} shows a corresponding Spanish concrete
 syntax. We refer to this grammar throughout sections~\ref{sec:GF}--\ref{sec:testing}. 
 
 
@@ -164,9 +164,9 @@ items without arguments, or syntactic functions which manipulate their
 arguments and build new terms. Of the syntactic functions, \t{Pred}
 constructs an \t{S} from an \t{NP} and an \t{AP}, building trees
 such as \t{Pred (This Pizza) Good} `this pizza is good'. \t{Mod}~adds
-an \t{AP} to a \t{CN}, such as \t{Mod Italian   Pizza}. The functions
+an \t{AP} to a \t{CN}, such as \t{Mod Italian   Pizza} `italian pizza'. The functions
 \t{This, That, These} and \t{Those} quantify a \t{CN} into an \t{NP},
-for instance, \t{That (Mod Italian Pizza)}. 
+for instance, \t{That (Mod Italian Pizza)} `that italian pizza'. 
 
 \subsection{Concrete syntax}
 Concrete syntax is an implementation of the abstract syntax.
