@@ -51,16 +51,9 @@ We present a method for finding errors in formalized natural language grammars, 
 %
 \section{Introduction}
 
-\todo{(Write a good first paragraph)
-What is the essence of a language? 
-Suppose we have a potentially infinite grammar, and we want to find a
-minimal and representative set of sentences, along with their
-analyses, to test the correctness of the grammar. Human judgment is
-inavoidable, but we want to minimize the number of sentences the human
-reads.}
+What is the \emph{essence} of a language? When formalizing and implementing a natural language grammar, which example sentences do we need to check in order to convince ourselves that the grammar is correct?
 
-To give an intuitive example: in English we need to test a reflexive
-construct with three different 3rd person singular subjects, because
+Imagine we are formalizing a grammar for English, and in particular we are working on the reflexive construct. In order to check correctness for the 3rd person singular, we need to test for three different subjects, because
 the object has to agree with the subject: ``he sees himself'', ``she
 sees herself'' and ``it sees itself''. Without seeing all three
 examples, we cannot be certain that the reflexive construction is
@@ -73,14 +66,14 @@ name. The agreement only shows in the verb form, thus including both
 Now, what is minimal and representative is highly language-dependent. 
 For instance, Basque transitive verbs agree with both subject and
 object, thus we need 6 $\times$ 6 examples just to cover all verb
-forms. We are not interested in the morphology per se---there are
+forms. In this paper, we are not interested in the morphology per se---there are
 easier methods to test for that---but the correctness of the syntactic
 function: does the function pick the correct verb form for the correct
 combination of subject and object? For that purpose, it is enough to
 test the syntactic construction ``transitive verb phrase'' with just a
 single transitive verb.
 
-Our concrete implementation is for a particular grammar formalism,
+We present a method that, given a grammar (that in general encompasses an infinite set of sentences), generates a finite set of sentences that can be used as test cases for the correctness of the grammar. Our concrete implementation is for a particular grammar formalism,
 namely parallel multiple context-free grammars ({\sc pmcfg})
 \cite{seki91pmcfg}, which is the core formalism used by the
 Grammatical Framework (\gf) \cite{ranta2004gf}. However, the general
@@ -91,8 +84,8 @@ method works for any formalism that is at most as expressive as
 % such as Abstract Categorial Grammar (\acg) and
 % Combinatorial Categorial Grammar (\ccg) \cite{steedman1988ccg}.
 
-\todo{Emphasize the CS background of the work, in particular Feat,
-  QuickCheck, and formal methods in general.}
+%\todo{Emphasize the CS background of the work, in particular Feat,
+%  QuickCheck, and formal methods in general.}
 
 \section{Grammatical Framework}
 \label{sec:GF}
