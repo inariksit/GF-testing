@@ -58,9 +58,15 @@ Right: "ik heb iets toegevoegd"
 
 Was a bug in `mkClause`, fixed with 4 lines.
 
+### Imperatives
+
+Plural imperative should be the same as the singular (simplest solution) 
+
+(TODO write more about this)
+
 ### Lexicon / other small fixes
 
-* youPol_Pron had agreement of `Sg P2`, changed it to `Sg P3` so that a correct reflexive pronoun is chosen. It also affects the inverted word order: *ben je* but *bent u*. (TODO is the new form correct?)
+* youPol_Pron had agreement of `Sg P2`, changed it to `Sg P3` so that a correct reflexive pronoun is chosen. It also affects the inverted word order: *ben je* but *bent u*. This had to be fixed separately in `ImpVP` -- maybe merge that code to mkClause at some point? Seems redundant.
 
 * CleftNP and CleftAdv had *'t*, changed them to *het*.
 
@@ -77,6 +83,20 @@ I think?
 and then you take the "biggest" according to that ordering
 ```
 
+* 1) UseCl (TTAnt TPres ASimul) PPos (GenericCl (ComplVQ know_VQ (UseQCl (TTAnt TPres ASimul) PPos QCl_172)))
+TestLangDut> men weet wat zichzelf vandaag helpen te zijn
+TestLangEng> one knows what help themselves be today
+- is "what" plural here? In which case I would say "welke".
+
+* willen and zullen:
+jij, zij, hij, men *wil* & *zal* (was: *wilt* and *zult*)  
+Past tens of willen "wilde", "wilden" instead of "wou", "wouden"
+
+# TODO / in progress
+
+- niet een -> geen, niet (plural) -> geen (plural)
+
+Had to add yet another parameter (Polarity) into NPs and VPs.
 
 # Other languages
 
@@ -134,3 +154,16 @@ TestLangGer> wir helfen etwas sich zu werfen -- "we help something throw itself"
 TestLangGer-OLD> wir helfen etwas uns zu werfen -- "we help something throw ourselves"  
 
 Exactly the same changes were done for English.
+
+### English word order
+
+
+TestLang: UseCl (TTAnt TPres ASimul) PPos (GenericCl (ComplSlash (SlashVV can8know_VV (Slash3V3 add_V3 (UsePron it_Pron))) (UsePron i_Pron)))  
+TestLangEng: one can me add to it
+
+Lang: UseCl (TTAnt TPres ASimul) PPos (GenericCl (ComplSlash (SlashVV must_VV (Slash3V3 give_V3 (UsePron it_Pron))) (UsePron i_Pron)))  
+LangEng: one must me give it
+
+Lang: UseCl (TTAnt TPres ASimul) PPos (GenericCl (ComplSlash (SlashVV want_VV (Slash3V3 give_V3 (UsePron it_Pron))) (UsePron i_Pron)))  
+LangEng: one wants me to give it
+
