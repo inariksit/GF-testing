@@ -79,9 +79,13 @@ namely parallel multiple context-free grammars ({\sc pmcfg})
 \cite{seki91pmcfg}, which is the core formalism used by the
 Grammatical Framework (\gf) \cite{ranta2004gf}. However, the general
 method works for any formalism that is at most as expressive as
-\pmcfg{}, including context-free grammars (\cfg), formalisms such as Tree-Adjoining Grammar (\tag)
-\cite{joshi1975tag}, and several variants of Categorial Grammar
-\cite{deGroote2004,steedman1988ccg}.
+\pmcfg{}: context-free grammars (\cfg) and multiple
+context-free grammars ({\sc mcfg}), which covers formalisms such as
+Tree-Adjoining Grammar \cite{joshi1975tag}, 
+Combinatorial Categorial Grammar \cite{steedman1988ccg}
+and Minimalist Grammar \cite{Stabler97}.
+
+% several variants of Categorial Grammar \cite{deGroote2004,steedman1988ccg}.
 % such as Abstract Categorial Grammar (\acg) and
 % Combinatorial Categorial Grammar (\ccg) \cite{steedman1988ccg}.
 
@@ -95,13 +99,13 @@ Grammatical Framework (\gf) \cite{ranta2004gf}
 is a framework for building multilingual grammar applications. Its main
 components are a functional programming language for writing grammars
 and a resource library \cite{ranta2009rgl}, which, as of May 2018,
-contains the linguistic details of 40 natural languages. \gf{} is well suited for creating domain-specific systems: examples include mathematics
-\cite{caprotti2006webalt}, legal documents \cite{camilleri2017} and
-descriptions of accessibility to different sites \cite{ranta2015grammar}.
-
-The library
-has had over 50 contributors, and it consists of 1900 program modules and 3
-million lines of code! The complexity of such a piece of code clearly motivates dedicated test methods, such as the one described in this paper.
+contains the linguistic details of 40 natural languages. 
+\gf{} is well suited for tasks where quality matters more than coverage---examples include mathematical and legal domains \cite{caprotti2006webalt,camilleri2017}.
+% and descriptions of accessibility to different sites \cite{ranta2015grammar}.
+The library has had over 50 contributors, and it consists of 1900
+program modules and 3 million lines of code! The complexity of such a
+piece of code clearly motivates dedicated test methods, such as the
+one described in this paper.
 
 A \gf{} grammar consists of an \emph{abstract syntax}, which is a set
 of grammatical categories and functions between them, and one or more
@@ -297,16 +301,18 @@ We now have all building blocks for creating a representative and
 minimal set of test cases.
 In the previous section, we saw how a single abstract category
 compiles into multiple concrete categories, depending on the
-combinations of parameters. This compilation step can dramatically
-increase the number of categories of the grammar, but it also removes
-the need for dealing with these parameters explicitly when we generate
-test cases. 
+combinations of parameters. Instead of dealing with parameters
+directly, we now have a set of new \emph{types}, which is helpful for
+generating test cases.
+% This compilation step can dramatically increase the number of
+% categories of the grammar, but it also removes the need for dealing
+% with these parameters explicitly when we generate test cases. 
 
 We use one syntactic function as the base for one set of test
 cases. For lexical categories, it also makes sense to test the whole
-category, i.e. generate all trees that show that \t{AP} is defined and
-handled correctly in the functions. However, we only explain in detail
-the method with one syntactic function as a base.
+category, i.e. generate all trees that show that adjectives in general
+are defined and handled correctly in the functions. However, we only
+explain in detail the method with one syntactic function as a base.
 
 We assume that all test cases are trees with the same start
 (top-level) category, such as \t{S} in our example grammar. The
@@ -543,7 +549,7 @@ gender is retained in all adverbs made of NPs made of determiners, so
 now it has become impossible to say ``the house next to \emph{that}'' and
 pointing to a hill. So we do another round of modifications, compute
 the difference (to the original grammar or to the intermediate), and
-see if something else broke.
+see if something else fails.
 
 \section{Evaluation}
 
@@ -569,20 +575,15 @@ comment on the results in the following sections.)
 \begin{table}[h]
 
 \centering
-\begin{tabular}{|l|ll|ll|ll|}
+\begin{tabular}{|l|l|l|l|}
 \hline
-{\bf Resource grammar function} &\multicolumn{2}{|c}{\bf Dutch}& \multicolumn{2}{|c}{\bf Estonian} & \multicolumn{2}{|c|}{\bf Basque}  \\
-                               &  \#trees in contexts & \#combinations of args
-                                                                                                  &\#t
-                                                                                                    
-                               & \#c & \#t &
-                                                                    \#c\\ \hline
-\t{ComparA} `younger than me'  &  11      & 3     & 21      & 3    & 36     & 6    \\
-
-% \t{FunRP~~} `mother of whom'  &  20      & 5     & 708     & 116   & 26     & 26  \\
-\t{RelNP~~} `a cat that I saw' &  25      & 9     & 123     & 12 & 90     & 10   \\
- \t{ReflVP~} `see myself'      &  1655    & 23    &1608     & 13   & 10838  &  128  \\
-
+{\bf Resource grammar function} & {\bf Dutch}
+   & {\bf Estonian} & {\bf Basque} \\ \hline
+ 
+\t{ComparA} `younger than me'  & 10   & 20 & 6   \\
+%\t{ComplVS} `say that I sleep' & 89   & 171 & b   \\
+\t{RelNP~~} `a cat that I saw' & 2    & 23 & 20   \\
+\t{ReflVP~} `see myself'       & 1034 & 343 & b   \\
 \hline
 \end{tabular}
 \caption{Test cases for some individual functions in the resource grammar}
@@ -595,10 +596,13 @@ comment on the results in the following sections.)
 \hline
 \multicolumn{3}{|r}{Concrete $\rightarrow$}              &
                                                                    \multicolumn{2}{|c}{\bf Dutch} & \multicolumn{2}{|c}{\bf Estonian} & \multicolumn{2}{|c|}{\bf Basque} \\
-$\downarrow$ Abstract  & \#funs+lex & \#trees  &
-                                                                 \#total & \#uniq & \#total & \#uniq  & \#total  & \#uniq \\ \hline
-{\bf Phrasebook}       & 130+160         & \textgreater{}480,000       & 2006  & 1892    & 1513     & 1314   & 2808    & 2650   \\ \hline
-{\bf Resource gr.} & 217+446         & \textgreater{}500 billion   & 59,316 & 51,145  & 60,600    & 38,517   & 278,092  & 216,058\\ \hline
+  $\downarrow$ Abstract  & \#funs+lex & \#trees
+   & \#total & \#uniq & \#total & \#uniq  & \#total  & \#uniq \\ \hline
+     {\bf Phrasebook}       
+                         & 130+160   & \textgreater{}480,000       
+   & 513     & 419    & 610     & 505     & 538      & 503   \\ \hline
+   {\bf Resource gr.}    & 217+446   & \textgreater{}500 billion  
+   & 21,370  & 19,825 &  13733  & 9194    &   & \\ \hline
 \end{tabular}
 \caption{Test cases for all functions in two grammars}
 \label{results}
@@ -652,8 +656,8 @@ removing duplicates, as explained in Section~\ref{sec:pruning_all}.
 As we can see, the number of trees differs a lot. We believe this has
 both language typological and grammar engineering reasons---there
 is no way to implement Basque in a way that results in as few example
-sentences as English, but other resource grammarians have reported
-significant differences in complexity between implementations:
+sentences as Dutch, but other resource grammarians have reported
+significant differences in complexity between implementations: Enache
 \cite{enache2010} reports a 200-time reduction in the number of
 concrete rules after changing the implementation of clitics in verb
 phrases.
@@ -676,9 +680,10 @@ We read through the test sentences of the small grammar in all the
 three languages. 
 For Dutch we had a native speaker; for Estonian an intermediate non-native,
 and for Basque, a beginner. None of the three grammars had been tested
-systematically before---\cite{listenmaa_kaljurand2014} report testing
-the morphological paradigms extensively against existing resources,
-and syntactic functions with a treebank of 425 trees.
+systematically before---for the Estonian grammar
+\cite{listenmaa_kaljurand2014}, the morphological paradigms had been
+tested extensively against existing resources, but syntactic functions
+were only tested with a treebank of 425 trees.
 
 We have been developing the tool by testing it on the Dutch resource
 grammar, and during 6 months, we have committed 22 bugfixes on Dutch
