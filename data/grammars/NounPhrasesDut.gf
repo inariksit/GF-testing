@@ -1,17 +1,20 @@
 concrete NounPhrasesDut of NounPhrases = open Prelude in {
 
   lincat
-    TopNP = SS ;
-    NP    = NounPhrase ;
-    CN    = CommonNoun ;
-    Adj   = Adjective ;
-    Det   = Determiner ;
-    Prep  = Preposition ;
+    S    = SS ;
+    NP   = NounPhrase ;
+    CN   = CommonNoun ;
+    Adj  = Adjective ;
+    Det  = Determiner ;
+    Prep = Preposition ;
 
   lin
-    topNP np = ss np.s ;
-    DetNP dt = dt ** { s = dt.sp } ;
-    DetCN dt cn = { s = dt.s ! cn.g ++ cn.s ! dt.defi ! dt.n ; contr = <False,[]> } ;
+    PredAdj np adj = { s = np.s ++ copula ! np.n ++ adj.s ! np.g } ;
+    PredAdv np adv = { s = np.s ++ copula ! np.n ++ adv.s } ; 
+    UttNP np = { s = np.s } ;
+    DetNP dt = dt ** { s = dt.sp ; g = Neutr } ; --Oversimplification with gender
+    DetCN dt cn = { s = dt.s ! cn.g ++ cn.s ! dt.defi ! dt.n ;
+                    n = dt.n ; g = cn.g ; contr = <False,[]> } ;
     PrepNP prep np =
       { s = case <prep.contr.p1,np.contr.p1> of {
 	  <True,True> => glue np.contr.p2 prep.contr.p2 ;
@@ -47,7 +50,7 @@ concrete NounPhrasesDut of NounPhrases = open Prelude in {
   oper
     Contracts : Type = { contr : Bool*Str } ;
     Determiner : Type = Contracts ** { s : Gender => Str ; sp : Str ; n : Number ; defi : Defi } ;
-    NounPhrase : Type = Contracts ** { s : Str } ;
+    NounPhrase : Type = Contracts ** { s : Str ; n : Number ; g : Gender } ;
     Preposition : Type = Contracts ** { s : Str } ;
     CommonNoun : Type = { s : Defi => Number => Str ; g : Gender } ;
     Adjective : Type = { s : Gender => Str } ;
@@ -65,4 +68,6 @@ concrete NounPhrasesDut of NounPhrases = open Prelude in {
       { s = table { Utr => goede ; Neutr => goed } } ;
 
     prep : Str -> Preposition = \op -> { s = op ; contr = <True,op> } ;
+
+    copula : Number => Str = table { Sg => "is" ; Pl => "zijn" } ;
 }

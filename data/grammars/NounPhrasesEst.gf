@@ -1,39 +1,42 @@
 concrete NounPhrasesEst of NounPhrases = open Prelude in {
-  flags startcat = TopNP ;
+
   lincat
-    TopNP = SS ;
+    S = SS ;
     NP = NounPhrase ;
     CN = CommonNoun ;
     Det = Determiner ;
     Adj = Adjective ;
     Prep = Preposition ;
 
-  -- linref
-  --   NP = linNP ;   
+  linref
+    NP = linNP ;   
 
   
   lin
-    topNP np = { s = linNP np } ;
-    DetNP det = det ; -- this example is only relevant for Dutch
-    DetCN det cn = { s = \\c => det.s ! c ++ cn.s ! det.n ! c } ;
+    PredAdj np adj = { s = linNP np ++ "on" ++ adj.s ! np.n ! Nom } ;
+    PredAdv np adv = { s = linNP np ++ "on" ++ adv.s } ;    
+    UttNP np = { s = linNP np } ;
+    DetNP det = det ; -- only relevant for Dutch
+    DetCN det cn = { s = \\c => det.s ! c ++ cn.s ! det.n ! c ; n = det.n } ;
     PrepNP pp np = { s = pp.s ++ np.s ! pp.c } ;		       
     AdjCN adj cn = { s = \\n,c => case <adj.at,c> of {
 		       <(Invariable|Participle),_> => adj.s ! Sg ! Nom ++ cn.s ! n ! c ;
 		       <_,Abe> => adj.s ! n ! Gen ++ cn.s ! n ! c ;
-		       _   => adj.s ! n ! c   ++ cn.s ! n ! c }
+		       _   => adj.s ! Sg ! Nom   ++ cn.s ! n ! c }
 		   } ;
     AdvCN adv cn = { s = \\n,c => cn.s ! n ! c ++ adv.s } ;
 
     house = cn "maja" "maja" "majade" ;
     hill = cn "mägi" "mäe" "mägede" ;
-    a, theSg = det [] [] Sg ;
-    thePl = det [] [] Pl ;
+    a, theSg = det Sg ;
+    thePl = det Pl ;
+    your = a ** { s = \\_ => "sinu" } ; -- only relevant for Basque
     this = det "see" "selle" Sg ;
     these = det "need" "nende" Pl ;
- --   your = det "sinu" "sinu" Sg ; -- this example doesn't really matter outside the Basque grammar
     good = adj "hea" "hea" "heade" Regular ;
     small = adj "väike" "väikese" "väikeste" Regular ;
     blue = adj "sinine" "sinise" "siniste" Regular ;
+    tired = adj "väsinud" "väsinu" "väsinute" Participle ;
     ready = invarAdj "valmis" ;
     on = prep [] Ade False ;
     from = prep [] Ela False ;
@@ -46,7 +49,7 @@ concrete NounPhrasesEst of NounPhrases = open Prelude in {
 
 
   oper
-    NounPhrase : Type = { s : Case => Str } ;
+    NounPhrase : Type = { s : Case => Str ; n : Number } ;
     CommonNoun : Type = { s : Number => Case => Str } ;
     Determiner : Type = { s : Case => Str ; n : Number } ;
     Adjective  : Type = CommonNoun ** { at : AdjType } ;
@@ -67,11 +70,15 @@ concrete NounPhrasesEst of NounPhrases = open Prelude in {
 
     invarAdj : Str -> Adjective = \valmis ->
       { s = \\n,c => valmis ; at = Invariable } ;
-    
-    det : (_,_ : Str) -> Number -> Determiner = \need,nende,num ->
-      { s = table { Nom => need ;
-		    x   => nende + cases ! x } ;
-	n = num
+
+    det = overload {
+      det : (_,_ : Str) -> Number -> Determiner = \need,nende,num ->
+        { s = table { Nom => need ;
+	              x   => nende + cases ! x } ;
+          n = num } ;
+      det : Number -> Determiner = \num ->
+        { s = table {_ => [] } ;
+          n = num }
       } ;
 
     prep : Str -> Case -> Bool -> Preposition = \s,cas,gagr ->

@@ -1,21 +1,24 @@
 concrete NounPhrasesEus of NounPhrases = open Prelude in {
 
   lincat
-    TopNP = SS ;
-    NP = NounPhrase ;
-    CN = CommonNoun ;
-    Adj = Adjective ;
-    Det = Determiner ;
+    S    = SS ;
+    NP   = NounPhrase ;
+    CN   = CommonNoun ;
+    Adj  = Adjective ;
+    Det  = Determiner ;
     Prep = Postposition ;
 
   lin
-    topNP np = ss (linNP np) ;
-    DetNP det = det ; -- only relevant for Dutch
+    PredAdj np adj = { s = linNP np ++ adj.s ! Def np.n Abs ++ copula ! np.n } ;
+    PredAdv np adv = { s = linNP np ++ adv.s                ++ copula ! np.n } ; 
+    UttNP np = { s = linNP np } ;
+--    DetNP det = det ; -- only relevant for Dutch
     DetCN dt cn =
       { s = \\c => case dt.pl of {
 	      Suffix => cn.adv ++ cn.s ! Def dt.n c ;
 	      End    => cn.adv ++ cn.s ! Indef ++ dt.s ! c ;
-	      Mid    => cn.adv ++ dt.s ! Abs ++ cn.s ! Def dt.n c } 
+	      Mid    => cn.adv ++ dt.s ! Abs ++ cn.s ! Def dt.n c } ;
+        n = dt.n
       } ;
 
     PrepNP pp np = { s = np.s ! pp.c ++ pp.s } ;
@@ -51,7 +54,7 @@ concrete NounPhrasesEus of NounPhrases = open Prelude in {
     
 
   oper
-    NounPhrase   : Type = { s : Case => Str } ;
+    NounPhrase   : Type = { s : Case => Str ; n : Number } ;
     CommonNoun   : Type = { s : NForm => Str ; adv : Str } ;
     Adjective    : Type = { s : NForm => Str } ;
     Postposition : Type = { s : Str ; c : Case } ;
@@ -74,5 +77,7 @@ concrete NounPhrasesEus of NounPhrases = open Prelude in {
     det : (_,_,_ : Str) -> Number -> Placement -> Determiner = \hau,honen,honetatik,n,p ->
      { s = table { Abs => hau ; Gen => honen ; Ela => honetatik } ; n = n ; pl = p } ;
 
+    copula : Number => Str = table { Sg => "da" ; Pl => "dira" } ;
+    
     linNP : NounPhrase -> Str = \np -> np.s ! Abs ;
 }
