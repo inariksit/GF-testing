@@ -1,4 +1,22 @@
-Dutch:
+## Basque
+
+Creating test cases for `RelNP`, we get the following output.
+```
+* RelNP everything_NP (UseRCl (TTAnt TPres ASimul) PPos (RelCl (ExistNP everything_NP)))
+…
+** 6) ImpPl1 (UseComp (CompNP NP_13246))
+TestLangEus> denaek da denaek
+TestLangEng> let's be everything, such that there is everything
+
+** 7) ImpPl1 (UseComp (CompAdv (PrepNP by8agent_Prep NP_13246)))
+TestLangEus> denaek da denaek
+TestLangEng> let's be by everything, such that there is everything
+```
+
+(Why does the tool generate both of these sentences in Basque, even though they linearise to the same? Because the forms come from different fields (which is wrong)?)
+
+
+## Dutch
 
 ```Lang> p -cat=QCl "which is the best" | l -treebank -lang=Dut
 Lang: QuestIComp (CompIP (IdetIP (IdetQuant which_IQuant NumSg))) (DetNP (DetQuantOrd DefArt NumSg (OrdSuperl good_A)))
@@ -154,13 +172,6 @@ TODO: should make sure that VPSlash created by VPSlashPrep doesn't try to put th
 
 ***
 
-This has bugs in both old and new version:
-
-```
-- UseCl (TTAnt TPres AAnter) PNeg (PredVP (ConjNP either7or_DConj (BaseNP something_NP (UsePron i_Pron))) (ComplSlash (Slash2V3 add_V3 something_NP) (UsePron it_Pron)))
-  new> ofwel iets of ik hebben eraan iets niet toe toegevoegd
-  old> ofwel iets of ik hebben niet eraan iets toe toegevoegd
-  ```
 
 Which one is correct, or are both wrong?
 
