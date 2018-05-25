@@ -443,6 +443,7 @@ To compute relevant contexts with the start category \t{S} as a hole, we use the
 Now, in order to compute all sets of contexts for all possible hole categories $H$, we set up a system of equations (as specified above). In general, this system of equations is recursive, and we use a fixpoint iteration to solve it, starting with the empty set $\empty$ for each set of contexts. There is a guaranteed minimal solution, because the RHSs are monotonic in $H'$.
 
 \subsection{Pruning the trees within one set of test cases} 
+\label{sec:pruning_coercions}
 On the scope of our tiny example grammar, this pruning method is
 easiest to illustrate when we test a category instead of a function;
 however, in bigger grammars, the need arises when testing functions as
@@ -553,24 +554,24 @@ see if something else fails.
 
 \section{Evaluation}
 
-In order to evaluate our method, we generate test cases for two
-grammars of different sizes, using three languages from different
-language families: Dutch, Estonian and Basque. Dutch, an Indo-European
-language, has fairly simple nominal and verbal morphology, but the
-rules for handling word order, prefixes and particles in verb phrases
-are somewhat intricate. Estonian and Basque both have rich morphology,
-each featuring 14 nominal cases, but Basque verb morphology is much
-more complex, with agreement in subject, object and indirect
-object. Contrary to our expectations, we found Dutch and Estonian
-behaving similarly to each other and Basque significantly worse, both
-in execution time and number of examples generated. 
+We generate test cases for two grammars of different sizes, using
+three languages from different language families: Dutch, Estonian and
+Basque. Dutch, an Indo-European language, has fairly simple nominal
+and verbal morphology, but the rules for handling word order, prefixes
+and particles in verb phrases are somewhat intricate. Estonian and
+Basque both have rich noun morphology, each featuring 14 grammatical
+cases, but Basque verb morphology is much more complex, with agreement
+in subject, object and indirect object.  
 
-Table~\ref{results_indiv} shows what happens when we ran our tool on some example functions from the resource grammar, and Table~\ref{results} shows the number of generated trees in total for all syntactic functions in the two grammars.
-(As stated earlier, we do not consider generating test cases for all
+Table~\ref{results_indiv} shows what happens when we ran our tool on
+some example functions from the resource grammar, and
+Table~\ref{results} shows the number of generated trees in total for
+all syntactic functions in the two grammars. 
+As stated earlier, we do not consider generating test cases for all
 functions an optimal way of testing a whole resource grammar from scratch;
 Table~\ref{results} gives merely a baseline reduction from all
 possible trees up to a reasonable depth. We introduce the grammars and
-comment on the results in the following sections.)
+comment on the results in the following sections.
 
 \begin{table}[h]
 
@@ -581,12 +582,13 @@ comment on the results in the following sections.)
    & {\bf Estonian} & {\bf Basque} \\ \hline
  
 \t{ComparA} `younger than me'  & 10   & 20 & 6   \\
-%\t{ComplVS} `say that I sleep' & 89   & 171 & b   \\
+\t{ComplVS} `say that I sleep' & 89   & 171 & 104   \\
 \t{RelNP~~} `a cat that I saw' & 2    & 23 & 20   \\
-\t{ReflVP~} `see myself'       & 1034 & 343 & b   \\
+\t{ReflVP~} `see myself'       & 1034 & 343 & 1082   \\
 \hline
 \end{tabular}
-\caption{Test cases for some individual functions in the resource grammar}
+\caption{Test cases for some individual functions in the resource
+  grammar (with pruning)}
 \label{results_indiv}
 \end{table}
 
@@ -602,11 +604,29 @@ comment on the results in the following sections.)
                          & 130+160   & \textgreater{}480,000       
    & 513     & 419    & 610     & 505     & 538      & 503   \\ \hline
    {\bf Resource gr.}    & 217+446   & \textgreater{}500 billion  
-   & 21,370  & 19,825 &  13733  & 9194    &   & \\ \hline
+   & 21,370  & 19,825 &  13,733  & 9,194    & 10,185  & 8,773 \\ \hline
 \end{tabular}
-\caption{Test cases for all functions in two grammars}
+\caption{Test cases for all functions in two grammars (with pruning)}
 \label{results}
 \end{table}
+
+% \begin{table}[h]
+% \centering
+% \begin{tabular}{|lll|ll|ll|ll|}
+% \hline
+% \multicolumn{3}{|r}{Concrete $\rightarrow$}              &
+%                                                                    \multicolumn{2}{|c}{\bf Dutch} & \multicolumn{2}{|c}{\bf Estonian} & \multicolumn{2}{|c|}{\bf Basque} \\
+%   $\downarrow$ Abstract  & \#funs+lex & \#trees
+%    & \#total & \#uniq & \#total & \#uniq  & \#total  & \#uniq \\ \hline
+%      {\bf Phrasebook}       
+%                          & 130+160   & \textgreater{}480,000       
+%    & 513     & 419    & 610     & 505     & 538      & 503   \\ \hline
+%    {\bf Resource gr.}    & 217+446   & \textgreater{}500 billion  
+%    & 21,370  & 19,825 &  13,733  & 9,194    & 10,185  & 8,773 \\ \hline
+% \end{tabular}
+% \caption{Test cases for all functions in two grammars without pruning}
+% \label{results}
+% \end{table}
 
 \subsection{Grammars}
 
@@ -641,26 +661,38 @@ with 1,7 GHz processor and 8 GB RAM. For Phrasebook, it took just
 seconds to generate the test suite for all languages. For the resource
 grammar, Dutch and Estonian finished in 3--4 minutes. However, the
 Basque resource grammar is noticeably more complex, and creating test
-trees for all functions took several hours. We ran the experiment in
-smaller batches over two days, and noticed a lot of variance:
-functions that handle e.g. noun phrases, adjectives and adverbs ran in
-a few minutes, but a function involving verb phrases could take an
-hour just by itself.
+trees for all functions took several hours. Times for individual
+functions ranged from 5-10 minutes to an hour.
 
 \paragraph{Generated trees}
 
 We report both total and unique trees: total trees are simply the sum
 of all trees for all functions, and unique trees is the count after
-removing duplicates, as explained in Section~\ref{sec:pruning_all}.
+removing duplicates, as explained in Section~\ref{sec:pruning_all}
+(``the pizza gives the pizza the pizza'' style).
 
-As we can see, the number of trees differs a lot. We believe this has
-both language typological and grammar engineering reasons---there
-is no way to implement Basque in a way that results in as few example
-sentences as Dutch, but other resource grammarians have reported
-significant differences in complexity between implementations: Enache
-\cite{enache2010} reports a 200-time reduction in the number of
-concrete rules after changing the implementation of clitics in verb
-phrases.
+
+We were surprised to see the number of trees so similar, and even
+smaller for the morphologically richer languages. 
+In our initial experiments, without the pruning based on coercions
+(explained in Section~\ref{sec:pruning_coercions}), we arrived at much
+larger number of trees, and also much larger differences---an order of
+magnitude for Basque, and 4-5 times higher for Dutch and Estonian. 
+Out of the three languages, Basque is the least mature, thus it is
+possible that the relatively low number is due to a bug somewhere: all
+the distinctions are created on lower levels, but it does not travel all
+the way to the start category, thus creating a large number of coercions.
+
+Table~\ref{results_indiv} 
+shows some expected patterns: Basque and Estonian have more complex
+nouns than Dutch, so \t{RelNP} needs more tests.
+In general, we believe the number of test cases has both language
+typological and grammar engineering reasons. Other resource
+grammarians have reported significant differences in complexity
+between implementations: Enache \cite{enache2010} reports a 200-time
+reduction in the number of concrete rules after changing the
+implementation of clitics in verb phrases. It would be interesting to
+test two different implementations of the same language using this method.
 
 % We experimented with a tiny grammar of 5 syntactic functions for
 % Basque. In one of them, we implemented nominal morphology using
