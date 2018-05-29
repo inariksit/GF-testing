@@ -527,9 +527,10 @@ coherence, but if the grammatical categories already include semantic
 distinctions, e.g. limiting the subject and indirect object of
 \emph{give} to humans, that naturally restricts the generated test suite.
 
-\section{Use cases}
+\section{Example use}
+\label{sec:example_use}
 
-Here is a typical use for the tool. 
+%Here is a typical use for the tool. 
 Let us take the GF resource grammar \cite{ranta2009rgl} for Spanish, and
 pick the function \t{AdvCN : Adv $\rightarrow$ CN $\rightarrow$ CN}, modifies a \t{CN} with
 an adverb.
@@ -590,16 +591,16 @@ Basque. Dutch, an Indo-European language, has fairly simple nominal
 and verbal morphology, but the rules for handling word order, prefixes
 and particles in verb phrases are somewhat intricate. Estonian and
 Basque both have rich noun morphology, each featuring 14 grammatical
-cases, but Basque verb morphology is much more complex
+cases, but Basque verb morphology is much more complex.
 %, with agreement in subject, object and indirect object.  
 Table~\ref{results_indiv} shows what happens when we ran our tool on
 some example functions from the resource grammar, and
 Table~\ref{results} shows the number of generated trees in total for
 all syntactic functions in two different grammars. 
-% As stated earlier, we do not consider generating test cases for all
-% functions an optimal way of testing a whole resource grammar from scratch;
-% Table~\ref{results} gives merely a baseline reduction from all
-% possible trees up to a reasonable depth. 
+As stated earlier, we do not consider generating test cases for all
+functions an optimal way of testing a whole resource grammar from scratch;
+Table~\ref{results} gives merely a baseline reduction from all
+possible trees up to a reasonable depth. 
 We introduce the grammars and comment on the results in the following sections.
 
 \begin{table}[h]
@@ -617,7 +618,7 @@ We introduce the grammars and comment on the results in the following sections.
 \hline
 \end{tabular}
 \caption{Test cases for some individual functions in the resource
-  grammar (with pruning)}
+  grammar}
 \label{results_indiv}
 \end{table}
 
@@ -634,11 +635,9 @@ We introduce the grammars and comment on the results in the following sections.
                          & 130+160   & \textgreater{}480,000       
    & 513     & 419    & 610     & 505     & 538      & 503   \\ \hline
    {\bf Resource gr.}    & 217+446   & \textgreater{}500 billion  
-   & ?? & ?? &  ?? & ?? & ??  & ?? \\ \hline
-  %% Only 149 functions -- TODO run the whole thing for Basque
-  %% & 9,729 & 9,161 &  13,733  & 9,194    & 12,121  & 10,634 \\ \hline
+   & 21,370 & 19,825 & 13,733  & 9,194 & 100,967  & 64,390 \\ \hline
 \end{tabular}}
-\caption{Test cases for all functions in two grammars (with pruning)}
+\caption{Test cases for all functions in two grammars}
 \label{results}
 \end{table}
 
@@ -648,14 +647,18 @@ The first grammar is Phrasebook \cite{ranta2010phrasebook}, a mid-size
 application grammar with 42 categories such as \t{Person, Currency,
   Price} and \t{Nationality}, 160-word lexicon and 130 functions with
 arguments. The trees in the Phrasebook are more semantic than the
-trees we have seen so far: for example, the abstract tree for the sentence ``how far is the bar?'' in the Phrasebook is {\tt PQuestion (HowFar (ThePlace Bar))}, in contrast to the resource grammar tree
-{\tt \small UseQCl (TTAnt TPres ASimul) PPos (QuestIComp
+trees we have seen so far: for example, the abstract tree for the
+sentence ``how far is the bar?'' in the Phrasebook is {\tt PQuestion
+  (HowFar (ThePlace Bar))}, at depth 3, in contrast to the resource
+grammar tree\footnote{{\tt \small UttQS (UseQCl (TTAnt TPres ASimul) PPos (QuestIComp
   (CompIAdv (AdvIAdv how\_IAdv (PositAdvAdj far\_A))) 
-  (DetCN (DetQuant DefArt NumSg) (UseN bar\_N)))} for the same
-sentence. Limiting up to depth 3, the Phrasebook grammar produces over
-480,000 trees\footnote{Application grammars are usually
-much more compact than resource grammars, hence depth 3 covers already
-a lot of relevant trees.}.
+  (DetCN (DetQuant DefArt NumSg) (UseN bar\_N))))}}
+for the same sentence, which is of depth 6.
+Limiting up to depth 3, the Phrasebook grammar produces over
+480,000 trees.
+% \footnote{Application grammars are usually
+% much more compact than resource grammars, hence depth 3 covers already
+% a lot of relevant trees.}
 
 The second grammar is a subset of the \gf{} resource
 grammar \cite{ranta2009rgl}, with 84 categories, 217 syntactic
@@ -665,7 +668,11 @@ common, and removed manually a couple of rare constructions and words
 that are potentially distracting.
 %However, we should not limit the lexicon too much, because we may miss important distinctions in some languages---to give a hypothetical example, some grammar may have a bug that shows up only in animate nouns which end in a consonant. 
 This subset of the resource grammar produces hundreds of billions of
-trees up to depth 5.
+trees already up to depth 5.
+None of the resource grammars has been tested systematically before---for
+the Estonian grammar \cite{listenmaa_kaljurand2014}, the morphological
+paradigms were tested extensively against existing resources, but
+syntactic functions were only tested with a treebank of 425 trees.
 
 \subsection{Results}
 
@@ -674,33 +681,25 @@ with 1,7 GHz processor and 8 GB RAM. For Phrasebook, it took just
 seconds to generate the test suite for all languages. For the resource
 grammar, Dutch and Estonian finished in 3--4 minutes. However, the
 Basque resource grammar is noticeably more complex, and creating test
-trees for all functions took several hours. Times for individual
-functions ranged from 5 minutes to 40 minutes.
+trees for all functions took almost three hours. % Times for individual
+% functions ranged from 5 minutes to 40 minutes---they do not sum up to
+% 3 hours, because the expensive context table is generated for each of them.
 
 \paragraph{Generated trees}
-
 We report both total and unique trees: total trees are simply the sum
 of all trees for all functions, and unique trees is the count after
 removing duplicates, as explained in Section~\ref{sec:pruning_all}
 (``the pizza gives the pizza the pizza'' style).
 
-We were surprised by the similar amount of trees. 
-In our initial experiments, without the pruning based on coercions
-(explained in Section~\ref{sec:pruning_coercions}), we arrived at a
-larger number of trees, and also larger differences---around 3 times
-more for Basque, but only around 10\% more for Dutch and Estonian. 
-On a more speculative note, there might be a bug in the Basque grammar
-which eliminates some of the variation: all the distinctions are
-created on lower levels, but some are ignored on the way to the start
-category, thus creating a large number of coercions.
-
-Table~\ref{results_indiv} 
+As we can see, the number of trees differs a lot. Table~\ref{results_indiv} 
 shows some expected patterns: Basque and Estonian have more complex
-nouns than Dutch, so \t{RelNP} needs more tests.
+nouns than Dutch, so \t{RelNP} needs more tests. Likewise, Basque and
+Dutch have more complex verb phrases (for different reasons!) than
+Estonian, so \t{ReflVP} needs more tests.
 In general, we believe the number of test cases has both language
 typological and grammar engineering reasons. Other resource
 grammarians have reported significant differences in complexity
-between implementations: Enache \cite{enache2010} reports a 200-time
+between implementations: \cite{enache2010} report a 200-time
 reduction in the number of concrete rules after changing the
 implementation of clitics in verb phrases. It would be interesting to
 test two different implementations of the same language using this method.
@@ -719,40 +718,40 @@ test two different implementations of the same language using this method.
 
 
 \paragraph{Finding bugs} 
-We read through the test sentences of Phrasebook in all
-three languages. For Dutch we had a native speaker; for Estonian an
-intermediate non-native, and for Basque, a beginner. None of the three
-grammars had been tested systematically before---for the Estonian grammar
-\cite{listenmaa_kaljurand2014}, the morphological paradigms had been
-tested extensively against existing resources, but syntactic functions
-were only tested with a treebank of 425 trees. 
-
-The Basque resource grammar is still a work in progress, and the
-test sentences showed serious problems in morphology.
-We thought it premature to get a fluent speaker to evaluate the grammar,
+% We read through the test sentences of Phrasebook in all
+% three languages. For Dutch we had a native speaker; for Estonian an
+% intermediate non-native, and for Basque, a beginner.
+ 
+The Basque resource grammar is still a work in progress, and the test
+sentences showed serious problems in morphology. We thought it
+premature to get a fluent speaker to evaluate the grammar, 
 because the errors in morphology would probably make it
 difficult to assess syntax separately. Phrasebook was implemented
-using the resource grammar, so it was as error-ridden as the resource grammar.
-% We think that the best course
-% of action is to evaluate the morphological paradigms against existing
-% resources, fix the implementation, and then concentrate on syntax.
-% The Phrasebook was implemented using the resource grammar, so the
-% same problems apply.
+using the resource grammar, so it was equally error-ridden.
+% We think that the best course of action is to evaluate the
+% morphological paradigms against existing resources, fix the
+% implementation, and then concentrate on syntax. The Phrasebook was
+% implemented using the resource grammar, so the same problems apply.
 
-For Estonian, we found a handful of bugs, all coming
-from the Phrasebook itself and not the resource grammar. For example,
-one function was using a wrong form of nationality when applied to a
-human and when to an institution, along the lines of ``Spaniard restaurant''.
-As expected, Phrasebook sentences were easier to read, and made more sense
-semantically than sentences from the resource grammar.
+For Estonian, we read through all the Phrasebook test sentences. These
+505 sentences showed a handful of bugs, all coming from Phrasebook
+itself not the resource grammar. Most were individual words having the
+wrong inflection paradigm (the right one exists in the resource
+grammar, but wrong one was chosen by the application grammarian), but
+there were also some bugs in more general functions---for example,
+using a wrong form of nationality when applied to a human and when to
+an institution, along the lines of ``Spaniard restaurant''. 
+As expected, Phrasebook sentences were easier to read,
+and made more sense semantically than sentences from the resource grammar.
 
 We have been developing the tool by testing it on the Dutch resource
 grammar, and during 6 months, we have committed 22 bugfixes on Dutch
 in the \gf{} main repository. (In the name of honesty, a few of the bugs were
 caused by our earlier ``fixes''---that was before we had implemented
-the comparison against an older version of the grammar!) In addition,
-one of the bugs found in Dutch was also present in other languages, so
-we fixed it in German and English.
+the comparison against an older version of the grammar, explained in
+Section~\ref{sec:example_use}.) One of the bugs found in Dutch was
+also present in other languages, so we fixed it in German and
+English.
 
 
 
