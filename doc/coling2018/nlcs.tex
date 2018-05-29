@@ -48,7 +48,7 @@
 \maketitle              % typeset the header of the contribution
 %
 \begin{abstract}
-We present a method for finding errors in formalized natural language grammars, by automatically and systematically generating test cases that are intended to be judged by a human oracle. The method works on a per-construction basis; given a construction from the grammar, it generates a finite but complete set of test sentences (typically tens or hundreds), where that construction is used in all possible ways. Our method is an alternative to using a corpus or a treebank, where no such completeness guarantees can be made. The method is language-independent and is implemented for the grammar formalism \pmcfg{}, but also works for weaker grammar formalisms. We evaluate the method on a number of different grammars for different natural languages, with sizes ranging from toy examples to real-world grammars.
+We present a method for finding errors in formalized natural language grammars, by automatically and systematically generating test cases that are intended to be judged by a human oracle. The method works on a per-construction basis; given a construction from the grammar, it generates a finite but complete set of test sentences (typically tens or hundreds), where that construction is used in all possible ways. Our method is an alternative to using a corpus or a treebank, where no such completeness guarantees can be made. The method is language-independent and is implemented for the grammar formalism \pmcfg{}, but also works for weaker grammar formalisms. We evaluate the method on a number of different grammars for different natural languages.
 \end{abstract}
 %
 %
@@ -67,7 +67,7 @@ person subject: \emph{he, she, it}, or any singular noun or proper
 name. The agreement only shows in the verb form, thus including both
 ``she sees a dog'' and ``John sees a dog'' in the test suite is redundant. 
 
-Now, what is minimal and representative is highly language-dependent. 
+What is minimal and representative depends on the language. 
 For instance, Basque transitive verbs agree with both subject and
 object, thus we need 6 $\times$ 6 examples just to cover all verb
 forms. In this paper, we are not interested in the morphology per se---there are
@@ -263,7 +263,7 @@ four strings.
 
 \subsection{Concrete functions}
 Just like categories, each syntactic function from the original
-grammar turns into multiple syntactic functions into the
+grammar turns into multiple syntactic functions in the
 \pmcfg{}---one for each combination of parameters of its arguments.
 
 \begin{itemize}
@@ -348,15 +348,20 @@ string in the result comes from which field from which argument, we
 want to generate test cases that only contain unique strings.
 For example, \t{Good} `bueno/buena/buenos/buenas' is a
 better argument than \t{Warm} `caliente/caliente/calientes/calientes',
-because the latter is invariable for gender.
+because the latter is invariable for gender. 
+If there is no one argument that only contains unique strings, we
+generate a set of arguments, where for each pair of strings from the
+arguments, there is always one test case where those strings are
+different. In this way, if the syntactic function contains 
+a mistake, there is always one test case that reveals it.
 
-It is often possible to generate one combination of arguments where
-all strings in the linearizations are different. However, it is not
-always possible to do this, which is why we in general aim to generate
-a set of combinations of arguments, where for each pair of strings
-from the arguments, there is always one test case where those strings
-are different. In this way, if the syntactic function contains a
-mistake, there is always one test case that reveals it.
+% It is often possible to generate one combination of arguments where
+% all strings in the linearizations are different. However, it is not
+% always possible to do this, which is why we in general aim to generate
+% a set of combinations of arguments, where for each pair of strings
+% from the arguments, there is always one test case where those strings
+% are different. In this way, if the syntactic function contains a
+% mistake, there is always one test case that reveals it.
 
 In our implementation, we use the \feat{} framework \cite{feat} to
 enumerate possible combinations of argument trees, in size order. We
@@ -401,16 +406,16 @@ one premodifier and one postmodifier \t{AP} (\t{Good} and
 \resizebox{\textwidth}{!}{
 \begin{tabular}{| l | l |}
 \hline
-\t{Pred (This (Mod Good Pizza)) Italian} & \t{Pred (This (Mod Good Wine))
+\t{Pred (This (\underline{Mod Good Pizza})) Italian} & \t{Pred (This (\underline{Mod Good Wine}))
                                         Italian} \\ 
 esta buena pizza es italiana          & este buen vino es italiano \\ \hline
-\t{Pred (These (Mod Good Pizza)) Italian} & \t{Pred (These (Mod Good Wine))
+\t{Pred (These (\underline{Mod Good Pizza})) Italian} & \t{Pred (These (\underline{Mod Good Wine}))
                                         Italian} \\ 
 estas buenas pizzas son italianas          & estos buenos vinos son italianos \\ \hline
-\t{Pred (This (Mod Vegan Pizza)) Italian} & \t{Pred (This (Mod Vegan Wine))
+\t{Pred (This (\underline{Mod Vegan Pizza})) Italian} & \t{Pred (This (\underline{Mod Vegan Wine}))
                                         Italian} \\ 
 esta pizza vegana es italiana          & este vino vegano es italiano \\ \hline
-\t{Pred (These (Mod Vegan Pizza)) Italian} & \t{Pred (These (Mod Vegan Wine))
+\t{Pred (These (\underline{Mod Vegan Pizza})) Italian} & \t{Pred (These (\underline{Mod Vegan Wine}))
                                         Italian} \\ 
 estas pizzas veganas son italianas          & estos vinos veganos son italianos \\ \hline
 \end{tabular}}
@@ -442,15 +447,15 @@ one that picks out the singular form and other that picks out
 the plural form. 
 This suggests that we should apply two different
 \t{CN $\rightarrow$ NP} functions, for instance \t{This} and \t{These}, and
-give their results to the \t{Pred} function, which constructs a \t{S}.
+give their results to the \t{Pred} function, which constructs an \t{S}.
 In contrast, the second argument to \t{Pred} doesn't make a difference
 in what form we pick out of the \t{CN}---we just want to pick
 something that has maximally different forms, so the program is sure
 not to pick \t{Warm}, which is invariable for gender. By random
 selection, let us pick \t{Italian}.
 The final two contexts are therefore \verb|Pred (This _) Italian| and \verb|Pred (These _) Italian|.
-We insert the 4 test cases from Figure~\ref{tab:adjAttr} into the
-holes, and get 8 trees in total as shown in Figure~\ref{tab:testCases}.
+We insert the 4 test cases from Table~\ref{tab:adjAttr} into the 2
+contexts, and get 8 trees in total, as shown in Table~\ref{tab:testCases}.
 
 
 \paragraph{Fixpoint iteration} In our tool, computing relevant contexts in a given start category \t{S}, is done once, in advance, for all possible hole types $H$ at the same time, using a fixpoint iteration. It is possible to express the set of relevant contexts for one hole type $H$ in terms of the sets of relevant contexts for other hole types $H'$:
@@ -460,7 +465,6 @@ $$
 In words, to generate contexts with holes of type $H$, we enumerate all functions $F$ that have a $H$ as an argument, and enumerate all contexts $C$ that have the result type $H'$ of $F$ as a hole type, and put $C$ and $F$ together to get a new context. Then, we apply a function $\textsf{filter}$ to the result in order to filter out redudant contexts, i.e. contexts whose uses of the strings of $H$ are already covered by other contexts in the same set.
 
 To compute relevant contexts with the start category \t{S} as a hole, we use the following definition $\textsf{contexts}(\t{S}) = \{ \; \_ \; \}$.
-
 Now, in order to compute all sets of contexts for all possible hole categories $H$, we set up a system of equations (as specified above). In general, this system of equations is recursive, and we use a fixpoint iteration to solve it, starting with the empty set $\empty$ for each set of contexts. There is a guaranteed minimal solution, because the RHSs are monotonic in $H'$.
 
 \subsection{Pruning the trees within one set of test cases} 
@@ -505,9 +509,10 @@ already creates the start category \t{S}.
 There is a simple way to detect the redundancy: make the generation of
 arguments completely deterministic, e.g. always choose the function
 that is alphabetically first. The downside is that we get a lot of
-redundancy, in the style of ``the good pizza is good''. The problem
-gets more severe when testing functions with more arguments: ``the
-pizza gives the pizza the pizza'' is not only boring but confusing.
+redundancy, in the style of ``the pizza gives the pizza the pizza''.
+%``the good pizza is good''.
+% The problem gets more severe when testing functions with more arguments: ``the
+% pizza gives the pizza the pizza'' is not only boring but confusing.
 However, if we want to generate sentences for the whole grammar at one 
 go, we can split the generation in two stages: first stage is
 deterministic, where every feminine noun is \t{Pizza}, and we can 
@@ -667,8 +672,7 @@ not have a complete implementation, we simply took the subset of functions that 
 common, and removed manually a couple of rare constructions and words
 that are potentially distracting.
 %However, we should not limit the lexicon too much, because we may miss important distinctions in some languages---to give a hypothetical example, some grammar may have a bug that shows up only in animate nouns which end in a consonant. 
-This subset of the resource grammar produces hundreds of billions of
-trees already up to depth 5.
+This fragment produces hundreds of billions of trees already up to depth 5.
 None of the resource grammars has been tested systematically before---for
 the Estonian grammar \cite{listenmaa_kaljurand2014}, the morphological
 paradigms were tested extensively against existing resources, but
@@ -704,34 +708,14 @@ reduction in the number of concrete rules after changing the
 implementation of clitics in verb phrases. It would be interesting to
 test two different implementations of the same language using this method.
 
-% We experimented with a tiny grammar of 5 syntactic functions for
-% Basque. In one of them, we implemented nominal morphology using
-% inflection tables, and syntactic functions choose the correct one.
-% In another grammar, we implemented nouns as stems, and syntactic
-% functions concatenate suffixes to the stems. The second approach
-% required inherent parameters for nouns, in order to add correct
-% suffixes to each noun. For test case generation, this had the added
-% benefit or curse of implicitly testing morphology as well---in the first
-% approach, there may be a concrete category for animacy or gender, but
-% in the second one, also for phonological features. \todo{Numbers here,
-%   table if enough space}.
 
-
-\paragraph{Finding bugs} 
-% We read through the test sentences of Phrasebook in all
-% three languages. For Dutch we had a native speaker; for Estonian an
-% intermediate non-native, and for Basque, a beginner.
- 
+\paragraph{Finding bugs}  
 The Basque resource grammar is still a work in progress, and the test
 sentences showed serious problems in morphology. We thought it
 premature to get a fluent speaker to evaluate the grammar, 
 because the errors in morphology would probably make it
 difficult to assess syntax separately. Phrasebook was implemented
 using the resource grammar, so it was equally error-ridden.
-% We think that the best course of action is to evaluate the
-% morphological paradigms against existing resources, fix the
-% implementation, and then concentrate on syntax. The Phrasebook was
-% implemented using the resource grammar, so the same problems apply.
 
 For Estonian, we read through all the Phrasebook test sentences. These
 505 sentences showed a handful of bugs, all coming from Phrasebook
@@ -754,22 +738,35 @@ also present in other languages, so we fixed it in German and
 English.
 
 
+\section{Related work}
+Our approach is inspired by automatic test case generation for general
+software, such as \cite{hamon2004testgen}. Software testing and
+grammar testing both deal with notions of coverage and compactness. 
+In computational linguistics, there has been work on error mining for
+parsing grammars, such as \cite{gardent2012errormining}.
 
-% We read through all the 505 sentences from Estonian Phrasebook,
-% which took around 20 minutes. We found a handful of bugs, all coming
-% from the Phrasebook itself and not the resource grammar. For example,
-% one function was using a wrong form of nationality when applied to a
-% human and when to an institution, along the lines of ``Spaniard restaurant''.
-% As expected, Phrasebook sentences were easier to read, and made more sense
-% semantically than sentences from the resource grammar. 
-% For a similarly
-% sized grammar, reading through the whole test set at one go seems like
-% a feasible strategy, even when the tool creates examples for a single
-% function at a time.
+There is a long tradition of hand-crafted test suites for various
+grammar formalisms. Traditionally, these test suites include also
+ungrammatical sentences: those that the grammar should \emph{not} be
+able to parse. However, most of the previous work is meant for monolingual
+grammars which are either parsing or generation grammars, whereas
+\gf{} is a reversible and multilingual formalism: thus it is natural
+to represent test cases as trees. Finally, our method generalizes to
+many kinds of grammars, including application grammars where the
+distinctions are not syntactic but semantic. 
+
+% Tests made for human oracles \cite{Matinnejad2016automated_testsuite_simulink}.
+
+% every outcome for every decision loosely corresponds to
+% every combination of parameters so that all variation is created.
+
 
 \section{Conclusion and future work}
 
-We have presented method for automatically generating minimal and exhaustive sets of test cases for testing grammars.  We have found the tool useful in large-scale grammar writing, in a context where grammars need to be \emph{reliable}.
+We have presented method for automatically generating minimal and
+exhaustive sets of test cases for testing grammars.  We have found the
+tool useful in large-scale grammar writing, in a context where
+grammars need to be \emph{reliable}.
 
 One problem we have encountered is that the test sentences from
 resource grammars are often nonsensical semantically, and hence a
